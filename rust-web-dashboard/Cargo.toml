@@ -1,0 +1,84 @@
+[package]
+name = "rust-web-dashboard"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+license = "AGPL-3.0-or-later"
+description = "Standalone Rust web dashboard for a DCS-gRPC server (single-binary axum + tonic)"
+publish = false
+
+[dependencies]
+# Async runtime
+tokio = { version = "1.37", features = [
+    "rt-multi-thread",
+    "macros",
+    "net",
+    "sync",
+    "time",
+    "fs",
+    "process",
+    "io-util",
+    "signal",
+] }
+tokio-stream = { version = "0.1", features = ["sync"] }
+
+# HTTP server
+axum = { version = "0.8", features = ["multipart"] }
+tower-http = { version = "0.6", features = ["cors", "trace", "fs"] }
+
+# gRPC client to the DCS-gRPC server
+tonic = "0.13"
+prost = "0.13"
+prost-types = "0.13"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+# proto-loader-compatible JSON for streamed messages (snake_case field names,
+# enum strings, 64-bit ints as strings, oneof discriminators) via runtime
+# protobuf reflection.
+prost-reflect = { version = "0.14", features = ["serde"] }
+
+# Auth (Discord OAuth + signed session cookies)
+jsonwebtoken = "9.3"
+reqwest = { version = "0.12", default-features = false, features = [
+    "json",
+    "rustls-tls",
+] }
+
+# Embedded static frontend (Next.js `out/`)
+rust-embed = { version = "8.5", features = ["mime-guess"] }
+
+# serverSettings.lua parsing
+mlua = { version = "0.10", default-features = false, features = [
+    "lua51",
+    "vendored",
+] }
+
+# Logging / diagnostics
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Error handling
+anyhow = "1.0"
+thiserror = "2.0"
+winapi = { version = "0.3.9", features = [
+    "winbase",
+    "processthreadsapi",
+    "handleapi",
+    "wtsapi32",
+    "userenv",
+    "winnt",
+    "errhandlingapi",
+    "securitybaseapi",
+] }
+
+[build-dependencies]
+tonic-build = "0.13"
+protoc-bundled = { git = "https://github.com/rkusa/protoc-bundled.git", rev = "27.0.0" }
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
