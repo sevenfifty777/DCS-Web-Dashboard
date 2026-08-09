@@ -1,0 +1,13 @@
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1200px;
+}
+
+.main h1 {
+  font-size: 20px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--panel-border);
+  padding-bottom: 10px;
+}

@@ -1,0 +1,111 @@
+.sidebar {
+  width: 250px;
+  min-width: 250px;
+  flex-shrink: 0;
+  background: var(--panel-bg);
+  border-right: 1px solid var(--panel-border);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+  padding: 10px 0 15px 0;
+  border-bottom: 1px solid var(--border-highlight);
+  margin-bottom: 15px;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.link {
+  padding: 8px 12px;
+  border-radius: 2px;
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.2s;
+  border-left: 2px solid transparent;
+}
+
+.link:hover {
+  background: rgba(0, 212, 255, 0.1);
+  color: var(--primary);
+  border-left: 2px solid var(--primary);
+}
+
+.active {
+  background: rgba(0, 212, 255, 0.15);
+  color: var(--primary);
+  border-left: 2px solid var(--primary);
+}
+
+.mobileHeader {
+  display: none;
+}
+
+.hamburger {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobileHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: var(--panel-bg);
+    border-bottom: 1px solid var(--panel-border);
+    padding: 0 15px;
+    z-index: 1000;
+  }
+  
+  .hamburger {
+    display: block;
+    background: transparent;
+    border: none;
+    color: var(--primary);
+    font-size: 24px;
+    cursor: pointer;
+    padding: 5px;
+  }
+  
+  .sidebar {
+    position: fixed;
+    top: 60px;
+    left: -250px;
+    bottom: 0;
+    height: calc(100vh - 60px);
+    transition: left 0.3s ease;
+    z-index: 999;
+    background: var(--background);
+  }
+  
+  .sidebarOpen {
+    left: 0;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+  }
+
+  .desktopTitle {
+    display: none;
+  }
+}
