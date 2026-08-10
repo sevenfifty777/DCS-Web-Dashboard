@@ -210,6 +210,7 @@ export default function SrsPage() {
                   <thead>
                     <tr style={{ borderBottom: '1px solid var(--panel-border)', textAlign: 'left', color: 'var(--text-secondary)' }}>
                       <th style={{ padding: '0.5rem' }}>Name</th>
+                      <th style={{ padding: '0.5rem' }}>Unit Type</th>
                       <th style={{ padding: '0.5rem' }}>Coalition</th>
                       <th style={{ padding: '0.5rem' }}>Radios</th>
                     </tr>
@@ -218,6 +219,7 @@ export default function SrsPage() {
                     {clients.map((c, i) => (
                       <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                         <td style={{ padding: '0.75rem 0.5rem', fontFamily: 'var(--font-mono)' }}>{c.Name}</td>
+                        <td style={{ padding: '0.75rem 0.5rem', fontFamily: 'var(--font-mono)' }}>{c.UnitType || 'Unknown'}</td>
                         <td style={{ padding: '0.75rem 0.5rem' }}>
                           {c.Coalition === 0 ? 'Spectator' : (c.Coalition === 1 ? <span style={{color: '#ff4444'}}>Red</span> : <span style={{color: '#44aaff'}}>Blue</span>)}
                         </td>

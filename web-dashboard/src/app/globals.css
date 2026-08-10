@@ -110,3 +110,8 @@ h1, h2, h3, h4 {
     padding: 1rem;
   }
 }
+
+@keyframes pulse {
+  from { transform: scale(0.8); opacity: 0.8; }
+  to { transform: scale(1.2); opacity: 1; }
+}

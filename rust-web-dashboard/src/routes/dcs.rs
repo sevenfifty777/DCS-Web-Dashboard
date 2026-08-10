@@ -753,9 +753,9 @@ pub async fn announcements(_user: AuthUser, State(state): State<AppState>, Json(
     
     let coalition = if let Some(coalition_str) = payload.get("coalition").and_then(|v| v.as_str()) {
         match coalition_str {
-            "COALITION_RED" => 2,
-            "COALITION_BLUE" => 3,
-            "COALITION_NEUTRAL" => 1,
+            "COALITION_RED" => 1,
+            "COALITION_BLUE" => 2,
+            "COALITION_NEUTRAL" => 0,
             _ => -1,
         }
     } else {
@@ -763,9 +763,9 @@ pub async fn announcements(_user: AuthUser, State(state): State<AppState>, Json(
     };
     
     let result = if coalition >= 0 {
-        grpc::out_text_for_coalition(state.grpc.clone(), coalition, text, display_time, true).await
+        grpc::out_text_for_coalition(state.grpc.clone(), coalition, text, display_time, false).await
     } else {
-        grpc::out_text(state.grpc.clone(), text, display_time, true).await
+        grpc::out_text(state.grpc.clone(), text, display_time, false).await
     };
     
     match result {
@@ -774,41 +774,77 @@ pub async fn announcements(_user: AuthUser, State(state): State<AppState>, Json(
     }
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
-pub struct Weapon {
-    pub name: String,
-    pub count: u32,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
-pub struct UnitDetails {
-    pub fuel: Option<f32>,
-    pub life: Option<f32>,
-    pub life0: Option<f32>,
-    pub weapons: Option<Vec<Weapon>>,
-}
-
 pub async fn get_unit_details(_user: AuthUser, State(state): State<AppState>, axum::extract::Path(name): axum::extract::Path<String>) -> Response {
-    let lua = format!(
-        "local u = Unit.getByName('{}'); if u then local ammo = u:getAmmo(); local weapons = {{}}; if ammo then for i, a in ipairs(ammo) do local n = 'Unknown'; if a.desc then n = a.desc.displayName or a.desc.typeName or 'Unknown' end; table.insert(weapons, {{ count = a.count, name = n }}) end end; return {{ fuel = u:getFuel(), life = u:getLife(), life0 = u:getLife0(), weapons = weapons }} else return nil end",
-        name.replace("'", "\\'")
+    let (life_res, fuel_res, ammo_res, radar_res, sensors_res) = tokio::join!(
+        grpc::get_unit_life(state.grpc.clone(), name.clone()),
+        grpc::get_unit_fuel(state.grpc.clone(), name.clone()),
+        grpc::get_unit_ammo(state.grpc.clone(), name.clone()),
+        grpc::get_unit_radar(state.grpc.clone(), name.clone()),
+        grpc::get_unit_sensors(state.grpc.clone(), name.clone())
     );
-    match grpc::custom_eval(state.grpc.clone(), lua).await {
-        Ok(resp) => {
-            if resp.json == "null" || resp.json.is_empty() {
-                return bad_request("Unit not found");
+
+    let mut details = json!({});
+
+    if let Ok(l) = life_res {
+        details["life"] = json!(l.life);
+        details["life0"] = json!(l.life0);
+    }
+    if let Ok(f) = fuel_res {
+        details["fuel"] = json!(f.fuel);
+    }
+    if let Ok(a) = ammo_res {
+        let weapons: Vec<_> = a.ammo.into_iter().map(|item| {
+            let name = if item.display_name.is_empty() { item.type_name } else { item.display_name };
+            json!({
+                "count": item.count,
+                "name": name
+            })
+        }).collect();
+        details["weapons"] = json!(weapons);
+    }
+    if let Ok(r) = radar_res {
+        details["radar_active"] = json!(r.active);
+    }
+    if let Ok(s) = sensors_res {
+        // Map raw sensor data
+        let mut sensors_list = Vec::new();
+        for category in s.sensors {
+            for sensor in category.sensors {
+                let mut s_data = json!({
+                    "type_name": sensor.type_name
+                });
+                
+                if let Some(crate::pb::dcs::unit::v0::sensor::Sensor::Radar(radar)) = sensor.sensor {
+                    if let Some(dist) = radar.detection_distance_air {
+                        if let Some(upper) = dist.upper_hemisphere {
+                            s_data["radar_head_on"] = json!(upper.head_on);
+                            s_data["radar_tail_on"] = json!(upper.tail_on);
+                        }
+                    }
+                }
+                
+                if let Some(crate::pb::dcs::unit::v0::sensor::Sensor::Irst(irst)) = sensor.sensor {
+                    s_data["irst_distance_maximal"] = json!(irst.detection_distance_maximal);
+                }
+                
+                sensors_list.push(s_data);
             }
-            match serde_json::from_str::<UnitDetails>(&resp.json) {
-                Ok(details) => Json(json!({ 
-                    "fuel": details.fuel.unwrap_or(0.0), 
-                    "life": details.life.unwrap_or(0.0), 
-                    "life0": details.life0.unwrap_or(1.0),
-                    "weapons": details.weapons.unwrap_or_default()
-                })).into_response(),
-                Err(e) => bad_request(&format!("Failed to parse unit details: {}", e)),
-            }
-        },
-        Err(e) => err_detail("Failed to fetch unit details", e),
+        }
+        details["sensors"] = json!(sensors_list);
+    }
+
+    Json(details).into_response()
+}
+
+#[derive(Deserialize)]
+pub struct EmissionPayload {
+    pub emitting: bool,
+}
+
+pub async fn set_unit_emission(_user: AuthUser, State(state): State<AppState>, axum::extract::Path(name): axum::extract::Path<String>, Json(payload): Json<EmissionPayload>) -> Response {
+    match grpc::set_unit_emission(state.grpc.clone(), name, payload.emitting).await {
+        Ok(_) => Json(json!({ "success": true })).into_response(),
+        Err(e) => err_detail("Failed to set emission", e),
     }
 }
 

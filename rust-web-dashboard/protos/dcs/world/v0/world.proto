@@ -17,6 +17,17 @@ service WorldService {
 
   // https://wiki.hoggitworld.com/view/DCS_func_searchObjects
   rpc SearchObjects(SearchObjectsRequest) returns (SearchObjectsResponse) {}
+
+  // https://wiki.hoggitworld.com/view/DCS_func_getParking
+  rpc GetAirbaseParking(GetAirbaseParkingRequest) returns (GetAirbaseParkingResponse) {}
+
+  // https://wiki.hoggitworld.com/view/DCS_func_getRunways
+  rpc GetAirbaseRunways(GetAirbaseRunwaysRequest) returns (GetAirbaseRunwaysResponse) {}
+
+  rpc GetAirbaseID(GetAirbaseIDRequest) returns (GetAirbaseIDResponse) {}
+  rpc GetAirbaseRadioSilentMode(GetAirbaseRadioSilentModeRequest) returns (GetAirbaseRadioSilentModeResponse) {}
+  rpc SetAirbaseRadioSilentMode(SetAirbaseRadioSilentModeRequest) returns (SetAirbaseRadioSilentModeResponse) {}
+  rpc SetAirbaseCoalition(SetAirbaseCoalitionRequest) returns (SetAirbaseCoalitionResponse) {}
 }
 
 message GetAirbasesRequest {
@@ -101,4 +112,69 @@ message PyramidVolume {
   // Horizontal and vertical half-angles in radians.
   double half_angle_horizontal = 6;
   double half_angle_vertical = 7;
+}
+
+message GetAirbaseParkingRequest {
+  string name = 1;
+  optional bool available = 2;
+}
+
+message GetAirbaseParkingResponse {
+  repeated AirbaseParking parking = 1;
+}
+
+message AirbaseParking {
+  uint32 term_index = 1;
+  uint32 term_type = 2;
+  dcs.common.v0.Position position = 3;
+  double distance_to_runway = 4;
+  bool to_ac = 5;
+}
+
+message GetAirbaseRunwaysRequest {
+  string name = 1;
+}
+
+message GetAirbaseRunwaysResponse {
+  repeated AirbaseRunway runways = 1;
+}
+
+message AirbaseRunway {
+  string name = 1;
+  double course = 2;
+  double length = 3;
+  double width = 4;
+  dcs.common.v0.Position position = 5;
+}
+
+message GetAirbaseIDRequest {
+  string name = 1;
+}
+
+message GetAirbaseIDResponse {
+  uint32 id = 1;
+}
+
+message GetAirbaseRadioSilentModeRequest {
+  string name = 1;
+}
+
+message GetAirbaseRadioSilentModeResponse {
+  bool silent = 1;
+}
+
+message SetAirbaseRadioSilentModeRequest {
+  string name = 1;
+  bool silent = 2;
+}
+
+message SetAirbaseRadioSilentModeResponse {
+}
+
+message SetAirbaseCoalitionRequest {
+  string name = 1;
+  dcs.common.v0.Coalition coalition = 2;
+}
+
+message SetAirbaseCoalitionResponse {
 }

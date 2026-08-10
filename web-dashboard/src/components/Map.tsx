@@ -1,9 +1,12 @@
 "use client";
 import { useEffect, useState, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, LayersControl, Circle, Polygon } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, LayersControl, Circle, Polygon, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { apiFetch } from '@/lib/api';
+import UnitPopup from './UnitPopup';
+import AirbasePopup from './AirbasePopup';
+import MapToolbar from './MapToolbar';
 
 // Fix for default Leaflet icons in Next.js
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -48,78 +51,73 @@ const getIcon = (color: string, category: string, isPlayer: boolean = false) => 
   return icon;
 };
 
-const parsePathOptions = (colorArr: number[]) => {
-  if (!colorArr || colorArr.length < 4) return { color: 'white', fillColor: 'white', fillOpacity: 0.15, weight: 2 };
+const parsePathOptions = (colorArr: number[], isDrawing: boolean = false) => {
+  const baseOpts: any = { color: 'white', fillColor: 'white', fillOpacity: 0.15, weight: 2 };
+  if (isDrawing) baseOpts.className = 'pointer-events-none';
+  if (!colorArr || colorArr.length < 4) return baseOpts;
+  
   const r = Math.round(colorArr[0] * 255);
   const g = Math.round(colorArr[1] * 255);
   const b = Math.round(colorArr[2] * 255);
   const a = colorArr[3];
+  
   return {
     color: `rgba(${r}, ${g}, ${b}, ${Math.min(1, a * 2.0)})`,
     fillColor: `rgb(${r}, ${g}, ${b})`,
     fillOpacity: a,
-    weight: 2
+    weight: 2,
+    className: isDrawing ? 'pointer-events-none' : ''
   };
 };
 
-const UnitPopup = ({ unit }: { unit: any }) => {
-  const [details, setDetails] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
+const DrawingEvents = ({ drawingMode, setDrawingMode, drawingStart, setDrawingStart, setMyMarks, refreshMarks, markText, smokeColor }: any) => {
+  useMapEvents({
+    click: async (e) => {
+      if (!drawingMode) return;
+      const { lat, lng } = e.latlng;
+      
+      if (drawingMode === 'smoke') {
+        try {
+          await apiFetch('/api/trigger/effects', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ effect: 'smoke', lat, lon: lng, color: smokeColor })
+          });
+          setDrawingMode(null);
+        } catch(err) { console.error(err); }
+        return;
+      }
 
-  const loadDetails = async () => {
-    setLoading(true);
-    try {
-      const res = await apiFetch(`/api/units/${encodeURIComponent(unit.name)}`);
-      const data = await res.json();
-      setDetails(data);
-    } catch (e) {
-      console.error(e);
+      if (drawingMode === 'mark' || drawingMode === 'circle') {
+         const payload = { shape: drawingMode, lat1: lat, lon1: lng, r: 1.0, g: 0.0, b: 0.0, a: 1.0, radius: 2000.0, text: markText };
+         try {
+           const res = await apiFetch('/api/trigger/marks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+           const data = await res.json();
+           if (data.id) setMyMarks((prev: any) => [...prev, data.id]);
+           setDrawingMode(null);
+           refreshMarks();
+         } catch(err) { console.error(err); }
+         return;
+      }
+
+      if (drawingMode === 'line' || drawingMode === 'rect') {
+        if (!drawingStart) {
+          setDrawingStart({ lat, lon: lng });
+        } else {
+          const payload = { shape: drawingMode, lat1: drawingStart.lat, lon1: drawingStart.lon, lat2: lat, lon2: lng, r: 1.0, g: 0.0, b: 0.0, a: 1.0 };
+          try {
+            const res = await apiFetch('/api/trigger/marks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            const data = await res.json();
+            if (data.id) setMyMarks((prev: any) => [...prev, data.id]);
+            refreshMarks();
+          } catch(err) { console.error(err); }
+          setDrawingStart(null);
+          setDrawingMode(null);
+        }
+      }
     }
-    setLoading(false);
-  };
-
-  const destroyUnit = async () => {
-    if (!confirm('Are you sure you want to destroy this group?')) return;
-    try {
-      await apiFetch(`/api/units/${encodeURIComponent(unit.name)}/destroy`, { method: 'POST' });
-      alert('Group destroyed');
-    } catch(e) {
-      console.error(e);
-    }
-  };
-
-  const playerName = unit.playerName || unit.player_name;
-  const isPlayer = !!playerName && playerName.trim() !== '';
-
-  return (
-    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: '#000', width: '200px' }}>
-      <strong>{unit.name}</strong><br/>
-      {isPlayer && <span style={{ color: '#0056b3', fontWeight: 'bold' }}>👤 Player: {playerName}<br/></span>}
-      Type: {unit.type}<br/>
-      Alt: {Math.round(unit.position.alt)}m<br/>
-      Speed: {Math.round((unit.velocity?.speed || 0) * 1.94384)} kts<br/>
-      <div style={{ marginTop: '10px', display: 'flex', gap: '5px', flexDirection: 'column' }}>
-        {!details && <button onClick={loadDetails} disabled={loading} style={{ padding: '4px', cursor: 'pointer', border: '1px solid #ccc', borderRadius: '2px', background: '#fff' }}>{loading ? 'Loading...' : 'Fetch Fuel & Health'}</button>}
-        {details && (
-          <div style={{ background: '#eee', padding: '5px', borderRadius: '4px', border: '1px solid #ddd' }}>
-            <strong>Health:</strong> {Math.round(details.life)} / {Math.round(details.life0)}<br/>
-            <strong>Fuel:</strong> {(details.fuel * 100).toFixed(1)}%
-            {details.weapons && details.weapons.length > 0 && (
-              <div style={{ marginTop: '5px', borderTop: '1px solid #ccc', paddingTop: '5px' }}>
-                <strong>Weapons:</strong>
-                <ul style={{ margin: '2px 0 0 15px', padding: 0 }}>
-                  {details.weapons.map((w: any, i: number) => (
-                    <li key={i}>{w.count}x {w.name}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        )}
-        <button onClick={destroyUnit} style={{ padding: '4px', background: '#dc3545', color: '#fff', border: 'none', borderRadius: '2px', cursor: 'pointer', marginTop: '5px' }}>Destroy Group</button>
-      </div>
-    </div>
-  );
+  });
+  return null;
 };
 
 export default function Map() {
@@ -131,6 +129,16 @@ export default function Map() {
   
   const [zoneMode, setZoneMode] = useState<'generic' | 'foothold' | 'graveyard'>('generic');
   const [wrecks, setWrecks] = useState<any[]>([]);
+  
+  const [showCombatEvents, setShowCombatEvents] = useState(false);
+  const [liveEvents, setLiveEvents] = useState<any[]>([]);
+
+  // Drawing state
+  const [drawingMode, setDrawingMode] = useState<string | null>(null);
+  const [drawingStart, setDrawingStart] = useState<{lat: number, lon: number} | null>(null);
+  const [myMarks, setMyMarks] = useState<number[]>([]);
+  const [markText, setMarkText] = useState('Dashboard Mark');
+  const [smokeColor, setSmokeColor] = useState(2);
   
   useEffect(() => {
     if (zoneMode === 'graveyard') {
@@ -177,7 +185,7 @@ export default function Map() {
     };
   }, [zoneMode]);
 
-  useEffect(() => {
+  const refreshMarks = () => {
     apiFetch('/api/marks')
       .then(res => res.json())
       .then(data => {
@@ -186,6 +194,10 @@ export default function Map() {
         }
       })
       .catch(err => console.error('Failed to fetch marks', err));
+  };
+
+  useEffect(() => {
+    refreshMarks();
 
     apiFetch('/api/airbases')
       .then(res => res.json())
@@ -223,6 +235,20 @@ export default function Map() {
 
   return (
     <div style={{ position: 'relative', height: 'calc(100vh - 160px)', minHeight: '600px', width: '100%', borderRadius: '4px', overflow: 'hidden', border: '1px solid var(--panel-border)', zIndex: 0 }}>
+      <style>{`
+        .pointer-events-none { pointer-events: none !important; }
+      `}</style>
+      <MapToolbar 
+        drawingMode={drawingMode} 
+        setDrawingMode={(m) => { setDrawingMode(m); setDrawingStart(null); }} 
+        myMarks={myMarks} 
+        setMyMarks={setMyMarks}
+        markText={markText}
+        setMarkText={setMarkText}
+        smokeColor={smokeColor}
+        setSmokeColor={setSmokeColor}
+      />
+
       <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 1000, backgroundColor: 'rgba(0,0,0,0.7)', padding: '8px', borderRadius: '4px', display: 'flex', gap: '8px', alignItems: 'center' }}>
         <span style={{ color: 'white', fontSize: '14px', fontFamily: 'var(--font-mono)' }}>Zones:</span>
         <select 
@@ -238,6 +264,17 @@ export default function Map() {
       {/* Starting map at roughly Caucasus region, users can pan/zoom */}
       <MapContainer center={[42.0, 42.0]} zoom={6} style={{ height: '100%', width: '100%', backgroundColor: '#0b1118', zIndex: 0 }}>
         
+        <DrawingEvents 
+          drawingMode={drawingMode}
+          setDrawingMode={setDrawingMode}
+          drawingStart={drawingStart}
+          setDrawingStart={setDrawingStart}
+          setMyMarks={setMyMarks}
+          refreshMarks={refreshMarks}
+          markText={markText}
+          smokeColor={smokeColor}
+        />
+
         <LayersControl position="bottomleft">
           <LayersControl.BaseLayer checked name="CARTO Dark">
             <TileLayer
@@ -268,7 +305,7 @@ export default function Map() {
         {Array.isArray(zones) && zones.map((zone, idx) => {
           if (!zone || !zone.lat || !zone.lon) return null;
           
-          let pathOptions: any = { color: 'white', fillColor: 'white', fillOpacity: 0.15, weight: 2 };
+          let pathOptions: any = { color: 'white', fillColor: 'white', fillOpacity: 0.15, weight: 2, className: drawingMode ? 'pointer-events-none' : '' };
           if (zoneMode === 'foothold') {
             let color = '#6c757d';
             let fillColor = '#6c757d';
@@ -278,11 +315,12 @@ export default function Map() {
               color,
               fillColor,
               fillOpacity: Math.min(0.8, 0.15 + ((zone.level || 1) * 0.1)),
-              weight: 2
+              weight: 2,
+              className: drawingMode ? 'pointer-events-none' : ''
             };
           } else {
             if (zone.hidden) return null;
-            pathOptions = parsePathOptions(zone.color);
+            pathOptions = parsePathOptions(zone.color, !drawingMode);
           }
           
           if (zone.type === 0 && zone.radius) {

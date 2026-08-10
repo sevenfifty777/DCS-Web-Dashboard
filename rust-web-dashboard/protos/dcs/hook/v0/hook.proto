@@ -72,6 +72,14 @@ service HookService {
   // Get a count of ballistics objects
   rpc GetBallisticsCount(GetBallisticsCountRequest)
     returns (GetBallisticsCountResponse) {}
+
+  rpc GetModelTime(GetModelTimeRequest) returns (GetModelTimeResponse) {}
+  rpc GetMissionOptions(GetMissionOptionsRequest) returns (GetMissionOptionsResponse) {}
+  rpc GetCurrentMission(GetCurrentMissionRequest) returns (GetCurrentMissionResponse) {}
+  rpc GetAvailableSlots(GetAvailableSlotsRequest) returns (GetAvailableSlotsResponse) {}
+  rpc GetAvailableCoalitions(GetAvailableCoalitionsRequest) returns (GetAvailableCoalitionsResponse) {}
+  rpc GetMissionResult(GetMissionResultRequest) returns (GetMissionResultResponse) {}
+  rpc GetUnitProperty(GetUnitPropertyRequest) returns (GetUnitPropertyResponse) {}
 }
 
 message GetMissionNameRequest {
@@ -236,4 +244,57 @@ message GetBallisticsCountRequest {
 
 message GetBallisticsCountResponse {
   uint32 count = 1;
+}
+
+message GetModelTimeRequest {
+}
+
+message GetModelTimeResponse {
+  double time = 1;
+}
+
+message GetMissionOptionsRequest {
+}
+
+message GetMissionOptionsResponse {
+  string options_json = 1;
+}
+
+message GetCurrentMissionRequest {
+}
+
+message GetCurrentMissionResponse {
+  string mission_json = 1;
+}
+
+message GetAvailableSlotsRequest {
+  string coalition = 1;
+}
+
+message GetAvailableSlotsResponse {
+  string slots_json = 1;
+}
+
+message GetAvailableCoalitionsRequest {
+}
+
+message GetAvailableCoalitionsResponse {
+  string coalitions_json = 1;
+}
+
+message GetMissionResultRequest {
+  string side = 1;
+}
+
+message GetMissionResultResponse {
+  int32 result = 1;
+}
+
+message GetUnitPropertyRequest {
+  string id = 1;
+  int32 property = 2;
+}
+
+message GetUnitPropertyResponse {
+  string property_value_json = 1;
 }

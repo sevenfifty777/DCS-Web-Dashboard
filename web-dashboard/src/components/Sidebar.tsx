@@ -158,6 +158,7 @@ export default function Sidebar() {
           <Link href="/mission" className={`${styles.link} ${pathname === '/mission' ? styles.active : ''}`}>Mission</Link>
           <Link href="/weather" className={`${styles.link} ${pathname === '/weather' ? styles.active : ''}`}>Weather</Link>
           <Link href="/radar" className={`${styles.link} ${pathname === '/radar' ? styles.active : ''}`}>Radar</Link>
+          <Link href="/orbat" className={`${styles.link} ${pathname === '/orbat' ? styles.active : ''}`}>ORBAT</Link>
           <Link href="/events" className={`${styles.link} ${pathname === '/events' ? styles.active : ''}`}>Events</Link>
           <Link href="/triggers" className={`${styles.link} ${pathname === '/triggers' ? styles.active : ''}`}>Triggers</Link>
           <Link href="/srs" className={`${styles.link} ${pathname === '/srs' ? styles.active : ''}`}>SRS</Link>

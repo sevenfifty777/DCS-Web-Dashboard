@@ -1,7 +1,7 @@
 //! HTTP route definitions. Mounted onto the application router in `main`.
 
 use axum::{
-    routing::{get, post},
+    routing::{delete, get, post},
     Json, Router,
 };
 use serde_json::json;
@@ -14,6 +14,9 @@ mod stream;
 mod system;
 pub mod srs;
 mod warehouse;
+mod coalition;
+mod world;
+mod trigger;
 
 /// Build the `/api` router with the dashboard's HTTP endpoints. Feature routes
 /// are added here as later phases land (see `docs/PLAN.md` §8).
@@ -49,6 +52,7 @@ pub fn router() -> Router<AppState> {
         .route("/api/zones/foothold", get(dcs::get_foothold_zones))
         .route("/api/units/{name}", get(dcs::get_unit_details))
         .route("/api/units/{name}/destroy", post(dcs::destroy_unit_group))
+        .route("/api/units/{name}/emission", post(dcs::set_unit_emission))
         // Filesystem- and OS-backed endpoints (session-protected).
         .route(
             "/api/settings",
@@ -87,6 +91,28 @@ pub fn router() -> Router<AppState> {
                 .route("/inventory", get(warehouse::get_inventory))
                 .route("/item/add", post(warehouse::add_item))
                 .route("/liquid/add", post(warehouse::add_liquid))
+        )
+        .nest(
+            "/api/coalition",
+            Router::new()
+                .route("/groups", get(coalition::groups))
+                .route("/players", get(coalition::player_units))
+                .route("/statics", get(coalition::statics))
+                .route("/bullseye", get(coalition::bullseye))
+        )
+        .nest(
+            "/api/world",
+            Router::new()
+                .route("/airbases/{name}/parking", get(world::parking))
+                .route("/airbases/{name}/runways", get(world::runways))
+                .route("/airbases/{name}/coalition", post(world::set_coalition))
+        )
+        .nest(
+            "/api/trigger",
+            Router::new()
+                .route("/marks", post(trigger::create_mark))
+                .route("/marks/{id}", delete(trigger::remove_mark))
+                .route("/effects", post(trigger::trigger_effect))
         )
         // Telemetry streams (public; an EventSource cannot send auth headers).
         .route("/api/events/stream", get(stream::events_stream))

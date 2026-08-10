@@ -120,7 +120,7 @@ pub async fn post_settings(
 pub async fn get_clients(_user: AuthUser, State(state): State<AppState>) -> Result<Json<Value>, Response> {
     match crate::grpc::get_srs_clients(state.grpc.clone()).await {
         Ok(resp) => {
-            let clients: Vec<_> = resp.clients.into_iter().filter_map(|c| {
+            let mut clients: Vec<_> = resp.clients.into_iter().filter_map(|c| {
                 let unit = c.unit?;
                 let coalition = match unit.coalition {
                     2 => 1, // Red
@@ -136,12 +136,20 @@ pub async fn get_clients(_user: AuthUser, State(state): State<AppState>) -> Resu
 
                 Some(json!({
                     "Name": display_name,
+                    "UnitType": unit.r#type.clone().unwrap_or_default(),
                     "Coalition": coalition,
                     "RadioInfo": {
                         "radios": radios
                     }
                 }))
             }).collect();
+            
+            // Sort clients alphabetically by Name so the UI order remains stable
+            clients.sort_by(|a, b| {
+                let name_a = a["Name"].as_str().unwrap_or("");
+                let name_b = b["Name"].as_str().unwrap_or("");
+                name_a.to_lowercase().cmp(&name_b.to_lowercase())
+            });
             
             Ok(Json(json!({ "Clients": clients })))
         }

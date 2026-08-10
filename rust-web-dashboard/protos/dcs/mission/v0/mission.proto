@@ -195,6 +195,12 @@ message StreamEventsResponse {
   message MissionEndEvent {
   }
 
+  // Occurs when a player takes control.
+  message TookControlEvent {
+    // The object that the player took control of.
+    dcs.common.v0.Initiator initiator = 1;
+  }
+
   // Occurs when an aircraft is finished taking fuel.
   message RefuelingStopEvent {
     // he unit that was receiving fuel.
@@ -247,6 +253,12 @@ message StreamEventsResponse {
   message PlayerLeaveUnitEvent {
     // The unit the player relieves control of.
     dcs.common.v0.Initiator initiator = 1;
+  }
+
+  // Occurs when a player comment is made.
+  message PlayerCommentEvent {
+    dcs.common.v0.Initiator initiator = 1;
+    string comment = 2;
   }
 
   // Occurs when a unit begins firing a machine gun- or autocannon-based weapon
@@ -370,6 +382,11 @@ message StreamEventsResponse {
     string weapon_name = 2;
   }
 
+  // Occurs when a unit enters a trigger zone.
+  message TriggerZoneEvent {
+    dcs.common.v0.Initiator initiator = 1;
+  }
+
   // Occurs when an aircraft receives an LSO rating after recovering on an
   // aircraft carrier.
   message LandingQualityMarkEvent {
@@ -379,6 +396,12 @@ message StreamEventsResponse {
     string comment = 2;
     // The ship the unit landed at.
     dcs.common.v0.Airbase place = 3;
+  }
+
+  // Battle Damage Assessment event
+  message BdaEvent {
+    dcs.common.v0.Initiator initiator = 1;
+    dcs.common.v0.Target target = 2;
   }
 
   // Occurs when a chat message is sent on the server
@@ -535,7 +558,7 @@ message StreamEventsResponse {
     BaseCaptureEvent base_capture = 13;
     MissionStartEvent mission_start = 14;
     MissionEndEvent mission_end = 15;
-    // @exclude 16 reserved for S_EVENT_TOOK_CONTROL
+    TookControlEvent took_control = 16;
     RefuelingStopEvent refueling_stop = 17;
     BirthEvent birth = 18;
     HumanFailureEvent human_failure = 19;
@@ -544,7 +567,7 @@ message StreamEventsResponse {
     EngineShutdownEvent engine_shutdown = 22;
     PlayerEnterUnitEvent player_enter_unit = 23;
     PlayerLeaveUnitEvent player_leave_unit = 24;
-    // @exclude 25 reserved for S_EVENT_PLAYER_COMMENT
+    PlayerCommentEvent player_comment = 25;
     ShootingStartEvent shooting_start = 26;
     ShootingEndEvent shooting_end = 27;
     MarkAddEvent mark_add = 28;
@@ -557,9 +580,9 @@ message StreamEventsResponse {
     // @exclude 35 reserved for S_EVENT_PARATROOPER_LENDING
     DiscardChairAfterEjectionEvent discard_chair_after_ejection = 36;
     WeaponAddEvent weapon_add = 37;
-    // @exclude 38 reserved for S_EVENT_TRIGGER_ZONE
+    TriggerZoneEvent trigger_zone = 38;
     LandingQualityMarkEvent landing_quality_mark = 39;
-    // @exclude 40 reserved for S_EVENT_BDA
+    BdaEvent bda = 40;
 
     RunwayTakeoffEvent runway_takeoff = 54;
     RunwayTouchEvent runway_touch = 55;

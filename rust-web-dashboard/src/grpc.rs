@@ -27,6 +27,8 @@ use dcs::world::v0::world_service_client::WorldServiceClient;
 use dcs::group::v0::group_service_client::GroupServiceClient;
 use dcs::srs::v0::srs_service_client::SrsServiceClient;
 use dcs::warehouse::v0::{warehouse_service_client::WarehouseServiceClient, get_inventory_request, add_item_request, add_liquid_request};
+use dcs::coalition::v0::coalition_service_client::CoalitionServiceClient;
+use dcs::unit::v0::unit_service_client::UnitServiceClient;
 
 // --- MetadataService -------------------------------------------------------
 
@@ -247,6 +249,125 @@ pub async fn out_text_for_coalition(channel: Channel, coalition: i32, text: Stri
     Ok(())
 }
 
+pub async fn mark_to_all(
+    channel: Channel,
+    text: String,
+    lat: f64,
+    lon: f64,
+    read_only: bool,
+    message: String,
+) -> Result<u32, Status> {
+    let mut client = TriggerServiceClient::new(channel);
+    let resp = client
+        .mark_to_all(Request::new(dcs::trigger::v0::MarkToAllRequest {
+            text,
+            position: Some(dcs::common::v0::InputPosition { lat, lon, alt: 0.0 }),
+            read_only,
+            message,
+        }))
+        .await?;
+    Ok(resp.into_inner().id)
+}
+
+pub async fn remove_mark(
+    channel: Channel,
+    id: u32,
+) -> Result<(), Status> {
+    let mut client = TriggerServiceClient::new(channel);
+    client
+        .remove_mark(Request::new(dcs::trigger::v0::RemoveMarkRequest { id }))
+        .await?;
+    Ok(())
+}
+
+pub async fn circle_to_all(
+    channel: Channel,
+    lat: f64,
+    lon: f64,
+    radius: f64,
+    border_color: dcs::trigger::v0::Color,
+    fill_color: dcs::trigger::v0::Color,
+) -> Result<u32, Status> {
+    let mut client = TriggerServiceClient::new(channel);
+    let resp = client
+        .circle_to_all(Request::new(dcs::trigger::v0::CircleToAllRequest {
+            coalition: 0,
+            center: Some(dcs::common::v0::InputPosition { lat, lon, alt: 0.0 }),
+            radius,
+            border_color: Some(border_color),
+            fill_color: Some(fill_color),
+            line_type: 1, // Solid
+            read_only: false,
+            message: "".into(),
+        }))
+        .await?;
+    Ok(resp.into_inner().id)
+}
+
+pub async fn line_to_all(
+    channel: Channel,
+    lat1: f64,
+    lon1: f64,
+    lat2: f64,
+    lon2: f64,
+    color: dcs::trigger::v0::Color,
+) -> Result<u32, Status> {
+    let mut client = TriggerServiceClient::new(channel);
+    let resp = client
+        .line_to_all(Request::new(dcs::trigger::v0::LineToAllRequest {
+            coalition: 0,
+            start_point: Some(dcs::common::v0::InputPosition { lat: lat1, lon: lon1, alt: 0.0 }),
+            end_point: Some(dcs::common::v0::InputPosition { lat: lat2, lon: lon2, alt: 0.0 }),
+            color: Some(color),
+            line_type: 1,
+            read_only: false,
+            message: "".into(),
+        }))
+        .await?;
+    Ok(resp.into_inner().id)
+}
+
+pub async fn rect_to_all(
+    channel: Channel,
+    lat1: f64,
+    lon1: f64,
+    lat2: f64,
+    lon2: f64,
+    border_color: dcs::trigger::v0::Color,
+    fill_color: dcs::trigger::v0::Color,
+) -> Result<u32, Status> {
+    let mut client = TriggerServiceClient::new(channel);
+    let resp = client
+        .rect_to_all(Request::new(dcs::trigger::v0::RectToAllRequest {
+            coalition: 0,
+            start_point: Some(dcs::common::v0::InputPosition { lat: lat1, lon: lon1, alt: 0.0 }),
+            end_point: Some(dcs::common::v0::InputPosition { lat: lat2, lon: lon2, alt: 0.0 }),
+            border_color: Some(border_color),
+            fill_color: Some(fill_color),
+            line_type: 1,
+            read_only: false,
+            message: "".into(),
+        }))
+        .await?;
+    Ok(resp.into_inner().id)
+}
+
+pub async fn smoke(
+    channel: Channel,
+    lat: f64,
+    lon: f64,
+    color: i32,
+) -> Result<(), Status> {
+    let mut client = TriggerServiceClient::new(channel);
+    client
+        .smoke(Request::new(dcs::trigger::v0::SmokeRequest {
+            position: Some(dcs::common::v0::InputPosition { lat, lon, alt: 0.0 }),
+            color,
+        }))
+        .await?;
+    Ok(())
+}
+
 // --- AtmosphereService -----------------------------------------------------
 
 /// `AtmosphereService.GetWind` — wind heading/strength at a map position.
@@ -308,6 +429,47 @@ pub async fn get_airbases(
         }))
         .await?;
     Ok(resp.into_inner())
+}
+
+pub async fn get_airbase_parking(
+    channel: Channel,
+    name: String,
+    available: Option<bool>,
+) -> Result<dcs::world::v0::GetAirbaseParkingResponse, Status> {
+    let mut client = WorldServiceClient::new(channel);
+    let resp = client
+        .get_airbase_parking(Request::new(dcs::world::v0::GetAirbaseParkingRequest {
+            name,
+            available,
+        }))
+        .await?;
+    Ok(resp.into_inner())
+}
+
+pub async fn get_airbase_runways(
+    channel: Channel,
+    name: String,
+) -> Result<dcs::world::v0::GetAirbaseRunwaysResponse, Status> {
+    let mut client = WorldServiceClient::new(channel);
+    let resp = client
+        .get_airbase_runways(Request::new(dcs::world::v0::GetAirbaseRunwaysRequest { name }))
+        .await?;
+    Ok(resp.into_inner())
+}
+
+pub async fn set_airbase_coalition(
+    channel: Channel,
+    name: String,
+    coalition: i32,
+) -> Result<(), Status> {
+    let mut client = WorldServiceClient::new(channel);
+    client
+        .set_airbase_coalition(Request::new(dcs::world::v0::SetAirbaseCoalitionRequest {
+            name,
+            coalition,
+        }))
+        .await?;
+    Ok(())
 }
 
 // --- SrsService ------------------------------------------------------------
@@ -375,6 +537,44 @@ pub async fn add_liquid(
     Ok(())
 }
 
+// --- UnitService -----------------------------------------------------------
+
+pub async fn get_unit_life(channel: Channel, name: String) -> Result<dcs::unit::v0::GetLifeResponse, Status> {
+    let mut client = UnitServiceClient::new(channel);
+    let resp = client.get_life(Request::new(dcs::unit::v0::GetLifeRequest { name })).await?;
+    Ok(resp.into_inner())
+}
+
+pub async fn get_unit_fuel(channel: Channel, name: String) -> Result<dcs::unit::v0::GetFuelResponse, Status> {
+    let mut client = UnitServiceClient::new(channel);
+    let resp = client.get_fuel(Request::new(dcs::unit::v0::GetFuelRequest { name })).await?;
+    Ok(resp.into_inner())
+}
+
+pub async fn get_unit_ammo(channel: Channel, name: String) -> Result<dcs::unit::v0::GetAmmoResponse, Status> {
+    let mut client = UnitServiceClient::new(channel);
+    let resp = client.get_ammo(Request::new(dcs::unit::v0::GetAmmoRequest { name })).await?;
+    Ok(resp.into_inner())
+}
+
+pub async fn get_unit_radar(channel: Channel, name: String) -> Result<dcs::unit::v0::GetRadarResponse, Status> {
+    let mut client = UnitServiceClient::new(channel);
+    let resp = client.get_radar(Request::new(dcs::unit::v0::GetRadarRequest { name })).await?;
+    Ok(resp.into_inner())
+}
+
+pub async fn set_unit_emission(channel: Channel, name: String, emitting: bool) -> Result<(), Status> {
+    let mut client = UnitServiceClient::new(channel);
+    client.set_emission(Request::new(dcs::unit::v0::SetEmissionRequest { name, emitting })).await?;
+    Ok(())
+}
+
+pub async fn get_unit_sensors(channel: Channel, name: String) -> Result<dcs::unit::v0::GetSensorsResponse, Status> {
+    let mut client = UnitServiceClient::new(channel);
+    let resp = client.get_sensors(Request::new(dcs::unit::v0::GetSensorsRequest { name })).await?;
+    Ok(resp.into_inner())
+}
+
 // --- GroupService ----------------------------------------------------------
 
 /// `GroupService.Destroy` — destroy a group.
@@ -382,6 +582,62 @@ pub async fn destroy_group(channel: Channel, name: String) -> Result<(), Status>
     let mut client = GroupServiceClient::new(channel);
     client.destroy(Request::new(dcs::group::v0::DestroyRequest { group_name: name })).await?;
     Ok(())
+}
+
+// --- CoalitionService ------------------------------------------------------
+
+pub async fn get_groups(
+    channel: Channel,
+    coalition: i32,
+    category: i32,
+) -> Result<dcs::coalition::v0::GetGroupsResponse, Status> {
+    let mut client = CoalitionServiceClient::new(channel);
+    let resp = client
+        .get_groups(Request::new(dcs::coalition::v0::GetGroupsRequest {
+            coalition,
+            category,
+        }))
+        .await?;
+    Ok(resp.into_inner())
+}
+
+pub async fn get_player_units(
+    channel: Channel,
+    coalition: i32,
+) -> Result<dcs::coalition::v0::GetPlayerUnitsResponse, Status> {
+    let mut client = CoalitionServiceClient::new(channel);
+    let resp = client
+        .get_player_units(Request::new(dcs::coalition::v0::GetPlayerUnitsRequest {
+            coalition,
+        }))
+        .await?;
+    Ok(resp.into_inner())
+}
+
+pub async fn get_static_objects(
+    channel: Channel,
+    coalition: i32,
+) -> Result<dcs::coalition::v0::GetStaticObjectsResponse, Status> {
+    let mut client = CoalitionServiceClient::new(channel);
+    let resp = client
+        .get_static_objects(Request::new(dcs::coalition::v0::GetStaticObjectsRequest {
+            coalition,
+        }))
+        .await?;
+    Ok(resp.into_inner())
+}
+
+pub async fn get_bullseye(
+    channel: Channel,
+    coalition: i32,
+) -> Result<dcs::coalition::v0::GetBullseyeResponse, Status> {
+    let mut client = CoalitionServiceClient::new(channel);
+    let resp = client
+        .get_bullseye(Request::new(dcs::coalition::v0::GetBullseyeRequest {
+            coalition,
+        }))
+        .await?;
+    Ok(resp.into_inner())
 }
 
 // --- MissionService (server-streaming) -------------------------------------

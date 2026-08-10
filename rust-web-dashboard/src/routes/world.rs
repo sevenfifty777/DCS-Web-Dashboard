@@ -1,0 +1,82 @@
+use axum::{
+    extract::{Path, Query, State},
+    response::{IntoResponse, Response},
+    Json,
+};
+use serde::Deserialize;
+use serde_json::json;
+
+use crate::auth::AuthUser;
+use crate::grpc;
+use crate::state::AppState;
+
+fn err_resp(msg: &str) -> Response {
+    Json(json!({ "error": msg })).into_response()
+}
+
+#[derive(Deserialize)]
+pub struct ParkingQuery {
+    available: Option<bool>,
+}
+
+#[derive(Deserialize)]
+pub struct SetCoalitionPayload {
+    coalition: i32,
+}
+
+pub async fn parking(
+    _user: AuthUser,
+    State(state): State<AppState>,
+    Path(name): Path<String>,
+    Query(q): Query<ParkingQuery>,
+) -> Response {
+    match grpc::get_airbase_parking(state.grpc.clone(), name, q.available).await {
+        Ok(resp) => {
+            let parking_json: Vec<_> = resp.parking.into_iter().map(|p| {
+                json!({
+                    "term_index": p.term_index,
+                    "term_type": p.term_type,
+                    "distance_to_runway": p.distance_to_runway,
+                    "to_ac": p.to_ac,
+                    "position": p.position.map(|pos| json!({ "lat": pos.lat, "lon": pos.lon, "alt": pos.alt })).unwrap_or(json!(null))
+                })
+            }).collect();
+            Json(json!({ "parking": parking_json })).into_response()
+        }
+        Err(e) => err_resp(e.message()),
+    }
+}
+
+pub async fn runways(
+    _user: AuthUser,
+    State(state): State<AppState>,
+    Path(name): Path<String>,
+) -> Response {
+    match grpc::get_airbase_runways(state.grpc.clone(), name).await {
+        Ok(resp) => {
+            let runways_json: Vec<_> = resp.runways.into_iter().map(|r| {
+                json!({
+                    "name": r.name,
+                    "course": r.course,
+                    "length": r.length,
+                    "width": r.width,
+                    "position": r.position.map(|pos| json!({ "lat": pos.lat, "lon": pos.lon, "alt": pos.alt })).unwrap_or(json!(null))
+                })
+            }).collect();
+            Json(json!({ "runways": runways_json })).into_response()
+        }
+        Err(e) => err_resp(e.message()),
+    }
+}
+
+pub async fn set_coalition(
+    _user: AuthUser,
+    State(state): State<AppState>,
+    Path(name): Path<String>,
+    Json(payload): Json<SetCoalitionPayload>,
+) -> Response {
+    match grpc::set_airbase_coalition(state.grpc.clone(), name, payload.coalition).await {
+        Ok(_) => Json(json!({ "success": true })).into_response(),
+        Err(e) => err_resp(e.message()),
+    }
+}
