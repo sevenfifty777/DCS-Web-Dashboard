@@ -104,6 +104,16 @@ const UnitPopup = ({ unit }: { unit: any }) => {
           <div style={{ background: '#eee', padding: '5px', borderRadius: '4px', border: '1px solid #ddd' }}>
             <strong>Health:</strong> {Math.round(details.life)} / {Math.round(details.life0)}<br/>
             <strong>Fuel:</strong> {(details.fuel * 100).toFixed(1)}%
+            {details.weapons && details.weapons.length > 0 && (
+              <div style={{ marginTop: '5px', borderTop: '1px solid #ccc', paddingTop: '5px' }}>
+                <strong>Weapons:</strong>
+                <ul style={{ margin: '2px 0 0 15px', padding: 0 }}>
+                  {details.weapons.map((w: any, i: number) => (
+                    <li key={i}>{w.count}x {w.name}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         )}
         <button onClick={destroyUnit} style={{ padding: '4px', background: '#dc3545', color: '#fff', border: 'none', borderRadius: '2px', cursor: 'pointer', marginTop: '5px' }}>Destroy Group</button>
