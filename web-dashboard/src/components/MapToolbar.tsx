@@ -18,6 +18,7 @@ export default function MapToolbar({ drawingMode, setDrawingMode, myMarks, setMy
     { id: 'line', label: '📏 Line', desc: 'Draw a line (click start, click end)' },
     { id: 'rect', label: '⬜ Rect', desc: 'Draw a rectangle (click corner 1, corner 2)' },
     { id: 'smoke', label: '💨 Smoke', desc: 'Spawn colored smoke' },
+    { id: 'spawn', label: '🚜 Spawn', desc: 'Spawn units' },
   ];
 
   const clearMyMarks = async () => {

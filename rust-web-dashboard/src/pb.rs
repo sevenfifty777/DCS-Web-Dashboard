@@ -28,11 +28,7 @@ pub mod dcs {
             tonic::include_proto!("dcs.common.v0");
         }
     }
-    pub mod common {
-        pub mod v0 {
-            tonic::include_proto!("dcs.common.v0");
-        }
-    }
+
     pub mod controller {
         pub mod v0 {
             tonic::include_proto!("dcs.controller.v0");

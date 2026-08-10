@@ -17,6 +17,7 @@ mod warehouse;
 mod coalition;
 mod world;
 mod trigger;
+mod spawner;
 
 /// Build the `/api` router with the dashboard's HTTP endpoints. Feature routes
 /// are added here as later phases land (see `docs/PLAN.md` §8).
@@ -37,6 +38,9 @@ pub fn router() -> Router<AppState> {
         .route("/api/players/ban", post(dcs::ban_player))
         .route("/api/players/unban", post(dcs::unban_player))
         .route("/api/players/banned", get(dcs::banned_players))
+        
+        // Spawner
+        .route("/api/spawn/ground", post(spawner::spawn_ground))
         .route("/api/chat", post(dcs::chat))
         .route("/api/announcements", post(dcs::announcements))
         .route("/api/console", post(dcs::console))

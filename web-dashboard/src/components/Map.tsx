@@ -70,7 +70,7 @@ const parsePathOptions = (colorArr: number[], isDrawing: boolean = false) => {
   };
 };
 
-const DrawingEvents = ({ drawingMode, setDrawingMode, drawingStart, setDrawingStart, setMyMarks, refreshMarks, markText, smokeColor, jtacMode, setJtacMode, setActiveLasers }: any) => {
+const DrawingEvents = ({ drawingMode, setDrawingMode, drawingStart, setDrawingStart, setMyMarks, refreshMarks, markText, smokeColor, jtacMode, setJtacMode, setActiveLasers, spawnSettings }: any) => {
   useMapEvents({
     click: async (e) => {
       if (!drawingMode) return;
@@ -93,6 +93,26 @@ const DrawingEvents = ({ drawingMode, setDrawingMode, drawingStart, setDrawingSt
         setJtacMode(null);
         return;
       }
+
+        if (drawingMode === 'spawn' && spawnSettings) {
+          try {
+            await apiFetch('/api/spawn/ground', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                country: spawnSettings.country,
+                name: spawnSettings.name,
+                unit_type: spawnSettings.unitType,
+                lat,
+                lon: lng,
+                heading: spawnSettings.heading,
+                count: spawnSettings.count
+              })
+            });
+            setDrawingMode(null);
+          } catch(err) { console.error(err); }
+          return;
+        }
 
       if (drawingMode === 'smoke') {
         try {
@@ -159,6 +179,7 @@ export default function Map() {
   const [smokeColor, setSmokeColor] = useState(2);
   const [jtacMode, setJtacMode] = useState<{ unitName: string, type: 'lase' | 'ir', code?: number } | null>(null);
   const [activeLasers, setActiveLasers] = useState<any[]>([]);
+  const [spawnSettings, setSpawnSettings] = useState({ country: 0, name: 'Spawned Group', unitType: 'BTR-80', heading: 0, count: 1 });
   
   useEffect(() => {
     if (zoneMode === 'graveyard') {
@@ -268,6 +289,75 @@ export default function Map() {
         smokeColor={smokeColor}
         setSmokeColor={setSmokeColor}
       />
+
+        {drawingMode === 'spawn' && (
+          <div style={{ position: 'absolute', top: 50, left: 60, zIndex: 1000, backgroundColor: 'rgba(20, 20, 20, 0.95)', padding: '15px', borderRadius: '4px', border: '1px solid #444', color: 'white', display: 'flex', flexDirection: 'column', gap: '10px', boxShadow: '0 4px 6px rgba(0,0,0,0.5)', width: '250px' }}>
+            <h3 style={{ margin: 0, fontSize: '14px', borderBottom: '1px solid #444', paddingBottom: '5px' }}>Spawn Ground Group</h3>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <label style={{ fontSize: '12px', color: '#aaa' }}>Coalition</label>
+              <select 
+                value={spawnSettings.country}
+                onChange={e => setSpawnSettings(s => ({ ...s, country: parseInt(e.target.value) }))}
+                style={{ background: '#222', color: 'white', border: '1px solid #444', padding: '4px', borderRadius: '2px' }}
+              >
+                <option value={2}>USA (Blue)</option>
+                <option value={0}>Russia (Red)</option>
+                <option value={82}>UN Peacekeepers (Neutral)</option>
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <label style={{ fontSize: '12px', color: '#aaa' }}>Group Name</label>
+              <input 
+                type="text" 
+                value={spawnSettings.name}
+                onChange={e => setSpawnSettings(s => ({ ...s, name: e.target.value }))}
+                style={{ background: '#222', color: 'white', border: '1px solid #444', padding: '4px', borderRadius: '2px' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <label style={{ fontSize: '12px', color: '#aaa' }}>Unit Type</label>
+              <select 
+                value={spawnSettings.unitType}
+                onChange={e => setSpawnSettings(s => ({ ...s, unitType: e.target.value }))}
+                style={{ background: '#222', color: 'white', border: '1px solid #444', padding: '4px', borderRadius: '2px' }}
+              >
+                <optgroup label="Armor">
+                  <option value="M-1 Abrams">M-1 Abrams</option>
+                  <option value="T-90">T-90</option>
+                  <option value="BTR-80">BTR-80</option>
+                </optgroup>
+                <optgroup label="Air Defense">
+                  <option value="SA-15 Tor">SA-15 Tor</option>
+                  <option value="ZSU-23-4 Shilka">ZSU-23-4 Shilka</option>
+                  <option value="M1097 Avenger">M1097 Avenger</option>
+                </optgroup>
+                <optgroup label="Unarmed / Support">
+                  <option value="Ural-375">Ural-375</option>
+                  <option value="M 818">M 818</option>
+                  <option value="Hummer">Hummer</option>
+                </optgroup>
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <label style={{ fontSize: '12px', color: '#aaa' }}>Unit Count (1-10)</label>
+              <input 
+                type="number" 
+                min={1} max={10}
+                value={spawnSettings.count}
+                onChange={e => setSpawnSettings(s => ({ ...s, count: parseInt(e.target.value) || 1 }))}
+                style={{ background: '#222', color: 'white', border: '1px solid #444', padding: '4px', borderRadius: '2px' }}
+              />
+            </div>
+
+            <div style={{ marginTop: '5px', fontSize: '12px', color: '#28a745', textAlign: 'center' }}>
+              Click anywhere on the map to spawn!
+            </div>
+          </div>
+        )}
 
       <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 1000, backgroundColor: 'rgba(0,0,0,0.7)', padding: '8px', borderRadius: '4px', display: 'flex', gap: '8px', alignItems: 'center' }}>
         <span style={{ color: 'white', fontSize: '14px', fontFamily: 'var(--font-mono)' }}>Zones:</span>
