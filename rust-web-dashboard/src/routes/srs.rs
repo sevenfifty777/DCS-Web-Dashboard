@@ -129,8 +129,13 @@ pub async fn get_clients(_user: AuthUser, State(state): State<AppState>) -> Resu
                 };
                 let radios: Vec<_> = c.frequencies.into_iter().map(|f| json!({ "freq": f })).collect();
                 
+                let display_name = match unit.player_name {
+                    Some(ref p) if !p.is_empty() => p.clone(),
+                    _ => unit.name.clone(),
+                };
+
                 Some(json!({
-                    "Name": unit.name,
+                    "Name": display_name,
                     "Coalition": coalition,
                     "RadioInfo": {
                         "radios": radios
