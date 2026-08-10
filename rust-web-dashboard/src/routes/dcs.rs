@@ -31,7 +31,7 @@ use crate::state::AppState;
 
 /// 500 with `{ "error": <prefix>, "details": <grpc message> }` (matches the
 /// health/players/chat routes).
-fn err_detail(prefix: &str, status: tonic::Status) -> Response {
+pub fn err_detail(prefix: &str, status: tonic::Status) -> Response {
     (
         StatusCode::INTERNAL_SERVER_ERROR,
         Json(json!({ "error": prefix, "details": status.message() })),
@@ -110,6 +110,30 @@ pub async fn players(_user: AuthUser, State(state): State<AppState>) -> Response
             Json(json!({ "players": players })).into_response()
         }
         Err(e) => err_detail("Failed to fetch players", e),
+    }
+}
+
+/// `GET /api/players/banned` → banned players (HookService.GetBannedPlayers).
+pub async fn banned_players(_user: AuthUser, State(state): State<AppState>) -> Response {
+    match grpc::get_banned_players(state.grpc.clone()).await {
+        Ok(resp) => {
+            let bans: Vec<_> = resp
+                .bans
+                .into_iter()
+                .map(|b| {
+                    json!({
+                        "ucid": b.ucid,
+                        "ip_address": b.ip_address,
+                        "player_name": b.player_name,
+                        "reason": b.reason,
+                        "banned_from": b.banned_from,
+                        "banned_until": b.banned_until,
+                    })
+                })
+                .collect();
+            Json(json!({ "bans": bans })).into_response()
+        }
+        Err(e) => err_detail("Failed to fetch banned players", e),
     }
 }
 

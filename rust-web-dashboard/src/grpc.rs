@@ -24,8 +24,9 @@ use dcs::mission::v0::mission_service_client::MissionServiceClient;
 use dcs::net::v0::net_service_client::NetServiceClient;
 use dcs::trigger::v0::trigger_service_client::TriggerServiceClient;
 use dcs::world::v0::world_service_client::WorldServiceClient;
-
 use dcs::group::v0::group_service_client::GroupServiceClient;
+use dcs::srs::v0::srs_service_client::SrsServiceClient;
+use dcs::warehouse::v0::warehouse_service_client::WarehouseServiceClient;
 
 // --- MetadataService -------------------------------------------------------
 
@@ -169,6 +170,15 @@ pub async fn unban_player(channel: Channel, ucid: String) -> Result<(), Status> 
     Ok(())
 }
 
+/// `HookService.GetBannedPlayers` — get list of banned players.
+pub async fn get_banned_players(channel: Channel) -> Result<dcs::hook::v0::GetBannedPlayersResponse, Status> {
+    let mut client = HookServiceClient::new(channel);
+    let resp = client
+        .get_banned_players(Request::new(dcs::hook::v0::GetBannedPlayersRequest {}))
+        .await?;
+    Ok(resp.into_inner())
+}
+
 // --- CustomService ---------------------------------------------------------
 
 /// `CustomService.Eval` — evaluate Lua in the mission environment; the result
@@ -298,6 +308,74 @@ pub async fn get_airbases(
         }))
         .await?;
     Ok(resp.into_inner())
+}
+
+// --- SrsService ------------------------------------------------------------
+
+/// `SrsService.GetClients` — list of connected SRS clients.
+pub async fn get_srs_clients(
+    channel: Channel,
+) -> Result<dcs::srs::v0::GetClientsResponse, Status> {
+    let mut client = SrsServiceClient::new(channel);
+    let resp = client
+        .get_clients(Request::new(dcs::srs::v0::GetClientsRequest {}))
+        .await?;
+    Ok(resp.into_inner())
+}
+
+// --- WarehouseService --------------------------------------------------------
+
+/// `WarehouseService.GetInventory` — get the full inventory of an airbase or static object.
+pub async fn get_inventory(
+    channel: Channel,
+    airbase_name: String,
+) -> Result<dcs::warehouse::v0::GetInventoryResponse, Status> {
+    let mut client = WarehouseServiceClient::new(channel);
+    let resp = client
+        .get_inventory(Request::new(dcs::warehouse::v0::GetInventoryRequest {
+            airbase_name,
+            static_name: "".to_string(),
+        }))
+        .await?;
+    Ok(resp.into_inner())
+}
+
+/// `WarehouseService.AddItem` — add an item to an airbase inventory.
+pub async fn add_item(
+    channel: Channel,
+    airbase_name: String,
+    item_name: String,
+    count: i32,
+) -> Result<(), Status> {
+    let mut client = WarehouseServiceClient::new(channel);
+    client
+        .add_item(Request::new(dcs::warehouse::v0::AddItemRequest {
+            airbase_name,
+            static_name: "".to_string(),
+            item_name,
+            count,
+        }))
+        .await?;
+    Ok(())
+}
+
+/// `WarehouseService.AddLiquid` — add a liquid to an airbase inventory.
+pub async fn add_liquid(
+    channel: Channel,
+    airbase_name: String,
+    liquid_type: i32,
+    amount: f64,
+) -> Result<(), Status> {
+    let mut client = WarehouseServiceClient::new(channel);
+    client
+        .add_liquid(Request::new(dcs::warehouse::v0::AddLiquidRequest {
+            airbase_name,
+            static_name: "".to_string(),
+            liquid_type,
+            amount,
+        }))
+        .await?;
+    Ok(())
 }
 
 // --- GroupService ----------------------------------------------------------

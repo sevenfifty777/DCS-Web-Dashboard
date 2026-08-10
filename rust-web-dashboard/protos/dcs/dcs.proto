@@ -16,4 +16,5 @@ import "dcs/srs/v0/srs.proto";
 import "dcs/timer/v0/timer.proto";
 import "dcs/trigger/v0/trigger.proto";
 import "dcs/unit/v0/unit.proto";
+import "dcs/warehouse/v0/warehouse.proto";
 import "dcs/world/v0/world.proto";

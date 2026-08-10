@@ -13,6 +13,7 @@ mod dcs;
 mod stream;
 mod system;
 pub mod srs;
+mod warehouse;
 
 /// Build the `/api` router with the dashboard's HTTP endpoints. Feature routes
 /// are added here as later phases land (see `docs/PLAN.md` §8).
@@ -32,6 +33,7 @@ pub fn router() -> Router<AppState> {
         .route("/api/players/kick", post(dcs::kick_player))
         .route("/api/players/ban", post(dcs::ban_player))
         .route("/api/players/unban", post(dcs::unban_player))
+        .route("/api/players/banned", get(dcs::banned_players))
         .route("/api/chat", post(dcs::chat))
         .route("/api/announcements", post(dcs::announcements))
         .route("/api/console", post(dcs::console))
@@ -79,6 +81,13 @@ pub fn router() -> Router<AppState> {
         )
         .route("/api/weather", get(system::weather_get))
         .route("/api/weather/apply", post(system::weather_apply))
+        .nest(
+            "/api/warehouse",
+            Router::new()
+                .route("/inventory", get(warehouse::get_inventory))
+                .route("/item/add", post(warehouse::add_item))
+                .route("/liquid/add", post(warehouse::add_liquid))
+        )
         // Telemetry streams (public; an EventSource cannot send auth headers).
         .route("/api/events/stream", get(stream::events_stream))
         .route("/api/radar/stream", get(stream::radar_stream))

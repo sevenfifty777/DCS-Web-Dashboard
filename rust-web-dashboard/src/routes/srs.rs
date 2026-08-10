@@ -5,7 +5,6 @@ use axum::{
     Json,
 };
 use serde_json::{json, Value};
-use std::path::PathBuf;
 
 use crate::state::AppState;
 use crate::auth::AuthUser;
@@ -119,38 +118,30 @@ pub async fn post_settings(
 }
 
 pub async fn get_clients(_user: AuthUser, State(state): State<AppState>) -> Result<Json<Value>, Response> {
-    let cfg_path = state.config.srs_cfg_path.clone()
-        .ok_or_else(|| err_500("SRS_CFG_PATH not configured."))?;
-    
-    let mut export_path = PathBuf::from("clients-list.json");
-    
-    if let Ok(content) = std::fs::read_to_string(&cfg_path) {
-        for line in content.lines() {
-            let trimmed = line.trim();
-            if let Some((k, v)) = trimmed.split_once('=') {
-                if k.trim() == "CLIENT_EXPORT_FILE_PATH" {
-                    export_path = PathBuf::from(v.trim());
-                    break;
-                }
-            }
+    match crate::grpc::get_srs_clients(state.grpc.clone()).await {
+        Ok(resp) => {
+            let clients: Vec<_> = resp.clients.into_iter().filter_map(|c| {
+                let unit = c.unit?;
+                let coalition = match unit.coalition {
+                    2 => 1, // Red
+                    3 => 2, // Blue
+                    _ => 0, // Spectator/Neutral
+                };
+                let radios: Vec<_> = c.frequencies.into_iter().map(|f| json!({ "freq": f })).collect();
+                
+                Some(json!({
+                    "Name": unit.name,
+                    "Coalition": coalition,
+                    "RadioInfo": {
+                        "radios": radios
+                    }
+                }))
+            }).collect();
+            
+            Ok(Json(json!({ "Clients": clients })))
         }
-    }
-    
-    let full_export_path = if export_path.is_absolute() {
-        export_path
-    } else {
-        if let Some(parent) = cfg_path.parent() {
-            parent.join(export_path)
-        } else {
-            export_path
+        Err(e) => {
+            Ok(Json(json!({ "error": format!("gRPC Error: {}", e.message()), "Clients": [] })))
         }
-    };
-    
-    if full_export_path.exists() {
-        let json_content = std::fs::read_to_string(&full_export_path).map_err(|e| err_500(&e.to_string()))?;
-        let parsed: Value = serde_json::from_str(&json_content).map_err(|e| err_500(&e.to_string()))?;
-        Ok(Json(parsed))
-    } else {
-        Ok(Json(json!({ "Clients": [] })))
     }
 }

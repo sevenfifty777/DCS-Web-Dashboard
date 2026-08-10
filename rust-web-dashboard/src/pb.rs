@@ -88,4 +88,9 @@ pub mod dcs {
             tonic::include_proto!("dcs.world.v0");
         }
     }
+    pub mod warehouse {
+        pub mod v0 {
+            tonic::include_proto!("dcs.warehouse.v0");
+        }
+    }
 }
