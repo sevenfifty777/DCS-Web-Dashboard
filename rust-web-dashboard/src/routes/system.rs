@@ -839,38 +839,7 @@ pub async fn dcs_log_stream(
     Sse::new(ReceiverStream::new(rx)).keep_alive(KeepAlive::default())
 }
 
-// --- /api/leaderboard -------------------------------------------------------
 
-/// `GET /api/leaderboard` -> Returns the current leaderboard JSON
-pub async fn leaderboard_get(
-    _user: auth::AuthUser,
-    State(state): State<AppState>,
-) -> impl IntoResponse {
-    let path = state.config.dcs_saved_games_dir.join("Logs").join("leaderboard.json");
-    let board = crate::leaderboard::Leaderboard::load_or_default(&path);
-    Json(board).into_response()
-}
-
-/// `POST /api/leaderboard/process` -> Triggers debrief log parsing
-pub async fn leaderboard_process(
-    _user: auth::AuthUser,
-    State(state): State<AppState>,
-) -> impl IntoResponse {
-    let debrief_path = state.config.debrief_log_path();
-    let leaderboard_path = state.config.dcs_saved_games_dir.join("Logs").join("leaderboard.json");
-    
-    match crate::leaderboard::process_debrief_log(&debrief_path, &leaderboard_path) {
-        Ok(board) => {
-            tracing::info!("Successfully processed debrief log into leaderboard.");
-            Json(json!({ "success": true, "leaderboard": board })).into_response()
-        }
-        Err(e) => {
-            tracing::error!("Failed to process debrief log: {:#}", e);
-            let msg = format!("Failed to process debrief log: {:#}", e);
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": msg }))).into_response()
-        }
-    }
-}
 
 // --- /api/graveyard ---------------------------------------------------------
 

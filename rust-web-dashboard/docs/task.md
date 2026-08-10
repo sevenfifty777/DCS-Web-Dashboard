@@ -1,0 +1,18 @@
+- `[/]` 1. Advanced Player Management (Kick & Ban)
+  - `[x]` Expose `KickPlayer`, `BanPlayer`, `UnbanPlayer` in `grpc.rs`
+  - `[x]` Add `POST /api/players/kick` and `/ban` in `routes/dcs.rs`
+  - `[x]` Mount routes in `routes/mod.rs`
+  - `[x]` Add Kick/Ban UI in `web-dashboard/src/app/players/page.tsx`
+- `[ ]` 2. Admin Announcements (Screen Text)
+  - `[x]` Expose `OutText` and `OutTextForCoalition` in `grpc.rs`
+  - `[x]` Add `POST /api/announcements` in `routes/dcs.rs`
+  - `[x]` Mount routes in `routes/mod.rs`
+  - `[x]` Add UI toggle in `web-dashboard/src/app/chat/page.tsx`
+- `[/]` 3. Interactive Map & Unit Details
+  - `[x]` Expose `GetFuel`, `GetAmmo`, `GetLife`, and `Destroy` in `grpc.rs`
+  - `[x]` Add endpoints for unit details in `routes/dcs.rs`
+  - `[x]` Enhance radar UI to show details and allow destruction
+- `[x]` 4. Mission Environment & Time
+  - `[x]` Expose `GetTime` and `GetTheatre` in `grpc.rs`
+  - `[x]` Integrate into `/api/mission` status response
+  - `[x]` Display in dashboard header/layout

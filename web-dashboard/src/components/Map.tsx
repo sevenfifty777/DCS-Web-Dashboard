@@ -62,7 +62,58 @@ const parsePathOptions = (colorArr: number[]) => {
   };
 };
 
+const UnitPopup = ({ unit }: { unit: any }) => {
+  const [details, setDetails] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+
+  const loadDetails = async () => {
+    setLoading(true);
+    try {
+      const res = await apiFetch(`/api/units/${encodeURIComponent(unit.name)}`);
+      const data = await res.json();
+      setDetails(data);
+    } catch (e) {
+      console.error(e);
+    }
+    setLoading(false);
+  };
+
+  const destroyUnit = async () => {
+    if (!confirm('Are you sure you want to destroy this group?')) return;
+    try {
+      await apiFetch(`/api/units/${encodeURIComponent(unit.name)}/destroy`, { method: 'POST' });
+      alert('Group destroyed');
+    } catch(e) {
+      console.error(e);
+    }
+  };
+
+  const playerName = unit.playerName || unit.player_name;
+  const isPlayer = !!playerName && playerName.trim() !== '';
+
+  return (
+    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: '#000', width: '200px' }}>
+      <strong>{unit.name}</strong><br/>
+      {isPlayer && <span style={{ color: '#0056b3', fontWeight: 'bold' }}>👤 Player: {playerName}<br/></span>}
+      Type: {unit.type}<br/>
+      Alt: {Math.round(unit.position.alt)}m<br/>
+      Speed: {Math.round((unit.velocity?.speed || 0) * 1.94384)} kts<br/>
+      <div style={{ marginTop: '10px', display: 'flex', gap: '5px', flexDirection: 'column' }}>
+        {!details && <button onClick={loadDetails} disabled={loading} style={{ padding: '4px', cursor: 'pointer', border: '1px solid #ccc', borderRadius: '2px', background: '#fff' }}>{loading ? 'Loading...' : 'Fetch Fuel & Health'}</button>}
+        {details && (
+          <div style={{ background: '#eee', padding: '5px', borderRadius: '4px', border: '1px solid #ddd' }}>
+            <strong>Health:</strong> {Math.round(details.life)} / {Math.round(details.life0)}<br/>
+            <strong>Fuel:</strong> {(details.fuel * 100).toFixed(1)}%
+          </div>
+        )}
+        <button onClick={destroyUnit} style={{ padding: '4px', background: '#dc3545', color: '#fff', border: 'none', borderRadius: '2px', cursor: 'pointer', marginTop: '5px' }}>Destroy Group</button>
+      </div>
+    </div>
+  );
+};
+
 export default function Map() {
+
   const [units, setUnits] = useState<Record<string, any>>({});
   const [marks, setMarks] = useState<any[]>([]);
   const [airbases, setAirbases] = useState<any[]>([]);
@@ -273,13 +324,7 @@ export default function Map() {
           return (
             <Marker key={unit.id} position={[unit.position.lat, unit.position.lon]} icon={icon}>
               <Popup>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: '#000' }}>
-                  <strong>{unit.name}</strong><br/>
-                  {isPlayer && <span style={{ color: '#0056b3', fontWeight: 'bold' }}>👤 Player: {playerName}<br/></span>}
-                  Type: {unit.type}<br/>
-                  Alt: {Math.round(unit.position.alt)}m<br/>
-                  Speed: {Math.round((unit.velocity?.speed || 0) * 1.94384)} kts
-                </div>
+                <UnitPopup unit={unit} />
               </Popup>
             </Marker>
           );

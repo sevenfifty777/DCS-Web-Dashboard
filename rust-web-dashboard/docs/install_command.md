@@ -1,8 +1,8 @@
-cd C:\Users\thierry\Documents\GitHub\DCS-gRPC\web-dashboard
+cd C:\Users\thierry\Documents\GitHub\sevenfifty777\DCS-Web-Dashboard\web-dashboard
 npm install
 npm run build
 
-Remove-Item -Recurse -Force C:\Users\thierry\Documents\GitHub\DCS-gRPC\rust-web-dashboard\static\*
-Copy-Item -Path C:\Users\thierry\Documents\GitHub\DCS-gRPC\web-dashboard\out\* -Destination C:\Users\thierry\Documents\GitHub\DCS-gRPC\rust-web-dashboard\static\ -Recurse
+Remove-Item -Recurse -Force C:\Users\thierry\Documents\GitHub\sevenfifty777\DCS-Web-Dashboard\rust-web-dashboard\static\*
+Copy-Item -Path C:\Users\thierry\Documents\GitHub\sevenfifty777\DCS-Web-Dashboard\web-dashboard\out\* -Destination C:\Users\thierry\Documents\GitHub\sevenfifty777\DCS-Web-Dashboard\rust-web-dashboard\static\ -Recurse
 
-cargo build --release --manifest-path "C:\Users\thierry\Documents\GitHub\DCS-gRPC\rust-web-dashboard\Cargo.toml"
+cargo build --release --manifest-path "C:\Users\thierry\Documents\GitHub\sevenfifty777\DCS-Web-Dashboard\rust-web-dashboard\Cargo.toml"

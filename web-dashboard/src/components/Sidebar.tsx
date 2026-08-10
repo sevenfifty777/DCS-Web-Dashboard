@@ -8,6 +8,7 @@ import styles from './Sidebar.module.css';
 export default function Sidebar() {
   const pathname = usePathname();
   const [rdpStatus, setRdpStatus] = useState<{active: boolean, users: any[]} | null>(null);
+  const [missionStatus, setMissionStatus] = useState<any>(null);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
@@ -21,10 +22,33 @@ export default function Sidebar() {
       }
     };
 
+    const fetchMissionStatus = async () => {
+      try {
+        const res = await apiFetch('/api/mission');
+        const data = await res.json();
+        setMissionStatus(data);
+      } catch (err) {
+        console.error('Failed to fetch mission status:', err);
+      }
+    };
+
     fetchRdpStatus();
-    const interval = setInterval(fetchRdpStatus, 15000);
-    return () => clearInterval(interval);
+    fetchMissionStatus();
+    const intervalRdp = setInterval(fetchRdpStatus, 15000);
+    const intervalMission = setInterval(fetchMissionStatus, 15000);
+    return () => {
+      clearInterval(intervalRdp);
+      clearInterval(intervalMission);
+    };
   }, []);
+
+  const formatTime = (seconds: number) => {
+    if (!seconds) return '00:00:00';
+    const h = Math.floor(seconds / 3600) % 24;
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
 
   // Auto-close sidebar on mobile when navigating
   useEffect(() => {
@@ -102,6 +126,30 @@ export default function Sidebar() {
                 Users: {rdpStatus.users.map(u => u.username).join(', ')}
               </div>
             )}
+          </div>
+        )}
+
+        {missionStatus && (
+          <div style={{
+            padding: '12px 15px',
+            marginBottom: '15px',
+            borderRadius: '6px',
+            backgroundColor: 'var(--card-bg)',
+            border: '1px solid var(--panel-border)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '5px',
+            flexShrink: 0
+          }}>
+            <div style={{ fontSize: '11px', color: 'var(--text-dim)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '1px' }}>Mission Environment</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Theatre:</span>
+              <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--foreground)' }}>{missionStatus.theatre}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Time:</span>
+              <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--primary)', fontFamily: 'var(--font-mono)' }}>{formatTime(missionStatus.time)}</span>
+            </div>
           </div>
         )}
 

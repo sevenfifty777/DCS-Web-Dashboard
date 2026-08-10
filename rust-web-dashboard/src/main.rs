@@ -15,7 +15,7 @@ mod settings_lua;
 mod state;
 mod telemetry;
 mod win_session;
-mod leaderboard;
+
 mod graveyard;
 mod foothold;
 
@@ -43,8 +43,6 @@ async fn main() -> anyhow::Result<()> {
         app_state.units_tx.clone(),
         app_state.config.clone(),
     );
-
-    tokio::spawn(leaderboard::start_auto_processor(app_state.config.clone()));
 
     let addr: SocketAddr = std::env::var("DASHBOARD_ADDR")
         .unwrap_or_else(|_| DEFAULT_ADDR.to_string())

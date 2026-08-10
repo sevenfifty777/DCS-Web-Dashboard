@@ -212,13 +212,7 @@ impl Config {
         self.dcs_saved_games_dir.join("Logs").join("dcs.log")
     }
 
-    /// Path to the DCS `debrief.log` file, typically generated in the DCS root
-    /// or Saved Games Logs folder on the server.
-    pub fn debrief_log_path(&self) -> PathBuf {
-        // Depending on server configuration, debrief.log is often found in the DCS root folder 
-        // or the Logs folder. We'll default to the Logs folder as it aligns with standard Dedicated Server behavior.
-        self.dcs_saved_games_dir.join("Logs").join("debrief.log")
-    }
+
 }
 
 /// Read an environment variable, treating empty/whitespace values as absent.

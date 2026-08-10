@@ -566,6 +566,12 @@ pub async fn mission_status(_user: AuthUser, State(state): State<AppState>) -> R
         }
     };
 
+    let lua = "return { theatre = env.mission.theatre, time = timer.getAbsTime() }";
+    let env_data = match grpc::custom_eval(state.grpc.clone(), lua.to_string()).await {
+        Ok(resp) => serde_json::from_str::<serde_json::Value>(&resp.json).unwrap_or(json!({})),
+        Err(_) => json!({}),
+    };
+
     let uploaded = list_uploaded_missions(&state.config.uploads_dir()).await;
 
     Json(json!({
@@ -575,6 +581,8 @@ pub async fn mission_status(_user: AuthUser, State(state): State<AppState>) -> R
         "serverInfo": server_info,
         "queue": queue,
         "uploadedMissions": uploaded,
+        "theatre": env_data.get("theatre"),
+        "time": env_data.get("time"),
     }))
     .into_response()
 }
@@ -686,6 +694,107 @@ pub async fn mission_action(
         Ok(()) => Json(json!({ "success": true, "action": action })).into_response(),
         Err(e) => err_simple(e),
     }
+}// --- Recovered Endpoints ---
+
+pub async fn kick_player(_user: AuthUser, State(state): State<AppState>, Json(payload): Json<serde_json::Value>) -> Response {
+    let id = payload["id"].as_u64().unwrap_or(0) as u32;
+    let reason = payload["reason"].as_str().unwrap_or("Kicked").to_string();
+    match grpc::kick_player(state.grpc.clone(), id, reason).await {
+        Ok(()) => Json(json!({"success":true})).into_response(),
+        Err(e) => err_detail("Failed to kick player", e),
+    }
 }
 
+pub async fn ban_player(_user: AuthUser, State(state): State<AppState>, Json(payload): Json<serde_json::Value>) -> Response {
+    let id = payload["id"].as_u64().unwrap_or(0) as u32;
+    let period = payload["period"].as_u64().unwrap_or(0) as u32;
+    let reason = payload["reason"].as_str().unwrap_or("Banned").to_string();
+    match grpc::ban_player(state.grpc.clone(), id, period, reason).await {
+        Ok(()) => Json(json!({"success":true})).into_response(),
+        Err(e) => err_detail("Failed to ban player", e),
+    }
+}
 
+pub async fn unban_player(_user: AuthUser, State(state): State<AppState>, Json(payload): Json<serde_json::Value>) -> Response {
+    let ucid = payload["ucid"].as_str().unwrap_or("").to_string();
+    match grpc::unban_player(state.grpc.clone(), ucid).await {
+        Ok(()) => Json(json!({"success":true})).into_response(),
+        Err(e) => err_detail("Failed to unban player", e),
+    }
+}
+
+pub async fn announcements(_user: AuthUser, State(state): State<AppState>, Json(payload): Json<serde_json::Value>) -> Response {
+    let text = payload["text"].as_str().unwrap_or("").to_string();
+    let display_time = payload["display_time"].as_u64().unwrap_or(10) as u32;
+    let coalition = payload["coalition"].as_i64().unwrap_or(-1) as i32;
+    
+    let result = if coalition >= 0 {
+        grpc::out_text_for_coalition(state.grpc.clone(), coalition, text, display_time, true).await
+    } else {
+        grpc::out_text(state.grpc.clone(), text, display_time, true).await
+    };
+    
+    match result {
+        Ok(()) => Json(json!({"success":true})).into_response(),
+        Err(e) => err_detail("Failed to send announcement", e),
+    }
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+pub struct Weapon {
+    pub name: String,
+    pub count: u32,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+pub struct UnitDetails {
+    pub fuel: Option<f32>,
+    pub life: Option<f32>,
+    pub life0: Option<f32>,
+    pub weapons: Option<Vec<Weapon>>,
+}
+
+pub async fn get_unit_details(_user: AuthUser, State(state): State<AppState>, axum::extract::Path(name): axum::extract::Path<String>) -> Response {
+    let lua = format!(
+        "local u = Unit.getByName('{}'); if u then local ammo = u:getAmmo(); local weapons = {{}}; if ammo then for i, a in ipairs(ammo) do local n = 'Unknown'; if a.desc then n = a.desc.displayName or a.desc.typeName or 'Unknown' end; table.insert(weapons, {{ count = a.count, name = n }}) end end; return {{ fuel = u:getFuel(), life = u:getLife(), life0 = u:getLife0(), weapons = weapons }} else return nil end",
+        name.replace("'", "\\'")
+    );
+    match grpc::custom_eval(state.grpc.clone(), lua).await {
+        Ok(resp) => {
+            if resp.json == "null" || resp.json.is_empty() {
+                return bad_request("Unit not found");
+            }
+            match serde_json::from_str::<UnitDetails>(&resp.json) {
+                Ok(details) => Json(json!({ 
+                    "fuel": details.fuel.unwrap_or(0.0), 
+                    "life": details.life.unwrap_or(0.0), 
+                    "life0": details.life0.unwrap_or(1.0),
+                    "weapons": details.weapons.unwrap_or_default()
+                })).into_response(),
+                Err(e) => bad_request(&format!("Failed to parse unit details: {}", e)),
+            }
+        },
+        Err(e) => err_detail("Failed to fetch unit details", e),
+    }
+}
+
+pub async fn destroy_unit_group(_user: AuthUser, State(state): State<AppState>, axum::extract::Path(name): axum::extract::Path<String>) -> Response {
+    let lua = format!(
+        "local u = Unit.getByName('{}'); if u then return u:getGroup():getName() else return nil end",
+        name.replace("'", "\\'")
+    );
+    let group_name = match grpc::custom_eval(state.grpc.clone(), lua).await {
+        Ok(resp) => {
+            if resp.json == "null" || resp.json.is_empty() {
+                return bad_request("Unit not found");
+            }
+            resp.json.trim_matches('"').to_string()
+        },
+        Err(e) => return err_detail("Failed to fetch unit's group", e),
+    };
+    
+    match grpc::destroy_group(state.grpc.clone(), group_name).await {
+        Ok(()) => Json(json!({ "success": true })).into_response(),
+        Err(e) => err_detail("Failed to destroy group", e),
+    }
+}

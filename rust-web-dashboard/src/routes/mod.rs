@@ -29,7 +29,11 @@ pub fn router() -> Router<AppState> {
         .route("/api/auth/callback", get(auth::discord_callback))
         // DCS data + control (session-protected).
         .route("/api/players", get(dcs::players))
+        .route("/api/players/kick", post(dcs::kick_player))
+        .route("/api/players/ban", post(dcs::ban_player))
+        .route("/api/players/unban", post(dcs::unban_player))
         .route("/api/chat", post(dcs::chat))
+        .route("/api/announcements", post(dcs::announcements))
         .route("/api/console", post(dcs::console))
         .route("/api/triggers", get(dcs::get_flag).post(dcs::set_flag))
         .route("/api/atmosphere", get(dcs::atmosphere))
@@ -41,6 +45,8 @@ pub fn router() -> Router<AppState> {
         .route("/api/airbases", get(dcs::get_airbases))
         .route("/api/zones", get(dcs::get_zones))
         .route("/api/zones/foothold", get(dcs::get_foothold_zones))
+        .route("/api/units/{name}", get(dcs::get_unit_details))
+        .route("/api/units/{name}/destroy", post(dcs::destroy_unit_group))
         // Filesystem- and OS-backed endpoints (session-protected).
         .route(
             "/api/settings",
@@ -50,8 +56,6 @@ pub fn router() -> Router<AppState> {
         .route("/api/mission/browse", get(system::mission_browse))
         .route("/api/logs/access", get(system::logs_access))
         .route("/api/logs/dcs/stream", get(system::dcs_log_stream))
-        .route("/api/leaderboard", get(system::leaderboard_get))
-        .route("/api/leaderboard/process", post(system::leaderboard_process))
         .route("/api/graveyard", get(system::graveyard_get))
         .route("/api/foothold", get(system::foothold_get))
         .route("/api/rdp-status", get(system::rdp_status))

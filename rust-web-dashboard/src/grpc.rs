@@ -25,6 +25,8 @@ use dcs::net::v0::net_service_client::NetServiceClient;
 use dcs::trigger::v0::trigger_service_client::TriggerServiceClient;
 use dcs::world::v0::world_service_client::WorldServiceClient;
 
+use dcs::group::v0::group_service_client::GroupServiceClient;
+
 // --- MetadataService -------------------------------------------------------
 
 /// `MetadataService.GetHealth` — server liveness reported by DCS itself.
@@ -58,6 +60,18 @@ pub async fn get_players(
         .get_players(Request::new(dcs::net::v0::GetPlayersRequest {}))
         .await?;
     Ok(resp.into_inner())
+}
+
+/// `NetService.KickPlayer` — kick a connected player.
+pub async fn kick_player(channel: Channel, id: u32, message: String) -> Result<(), Status> {
+    let mut client = NetServiceClient::new(channel);
+    client
+        .kick_player(Request::new(dcs::net::v0::KickPlayerRequest {
+            id,
+            message,
+        }))
+        .await?;
+    Ok(())
 }
 
 /// `NetService.SendChat` — broadcast a chat message. `coalition` is a
@@ -133,6 +147,28 @@ pub async fn load_mission(channel: Channel, file_name: String) -> Result<(), Sta
     Ok(())
 }
 
+/// `HookService.BanPlayer` — ban a player by ID.
+pub async fn ban_player(channel: Channel, id: u32, period: u32, reason: String) -> Result<(), Status> {
+    let mut client = HookServiceClient::new(channel);
+    client
+        .ban_player(Request::new(dcs::hook::v0::BanPlayerRequest {
+            id,
+            period,
+            reason,
+        }))
+        .await?;
+    Ok(())
+}
+
+/// `HookService.UnbanPlayer` — unban a player by UCID.
+pub async fn unban_player(channel: Channel, ucid: String) -> Result<(), Status> {
+    let mut client = HookServiceClient::new(channel);
+    client
+        .unban_player(Request::new(dcs::hook::v0::UnbanPlayerRequest { ucid }))
+        .await?;
+    Ok(())
+}
+
 // --- CustomService ---------------------------------------------------------
 
 /// `CustomService.Eval` — evaluate Lua in the mission environment; the result
@@ -169,6 +205,33 @@ pub async fn set_user_flag(channel: Channel, flag: String, value: u32) -> Result
         .set_user_flag(Request::new(dcs::trigger::v0::SetUserFlagRequest {
             flag,
             value,
+        }))
+        .await?;
+    Ok(())
+}
+
+/// `TriggerService.OutText` — display text on everyone's screen.
+pub async fn out_text(channel: Channel, text: String, display_time: u32, clear_view: bool) -> Result<(), Status> {
+    let mut client = TriggerServiceClient::new(channel);
+    client
+        .out_text(Request::new(dcs::trigger::v0::OutTextRequest {
+            text,
+            display_time: display_time as i32,
+            clear_view,
+        }))
+        .await?;
+    Ok(())
+}
+
+/// `TriggerService.OutTextForCoalition` — display text for a specific coalition.
+pub async fn out_text_for_coalition(channel: Channel, coalition: i32, text: String, display_time: u32, clear_view: bool) -> Result<(), Status> {
+    let mut client = TriggerServiceClient::new(channel);
+    client
+        .out_text_for_coalition(Request::new(dcs::trigger::v0::OutTextForCoalitionRequest {
+            coalition,
+            text,
+            display_time: display_time as i32,
+            clear_view,
         }))
         .await?;
     Ok(())
@@ -235,6 +298,15 @@ pub async fn get_airbases(
         }))
         .await?;
     Ok(resp.into_inner())
+}
+
+// --- GroupService ----------------------------------------------------------
+
+/// `GroupService.Destroy` — destroy a group.
+pub async fn destroy_group(channel: Channel, name: String) -> Result<(), Status> {
+    let mut client = GroupServiceClient::new(channel);
+    client.destroy(Request::new(dcs::group::v0::DestroyRequest { group_name: name })).await?;
+    Ok(())
 }
 
 // --- MissionService (server-streaming) -------------------------------------

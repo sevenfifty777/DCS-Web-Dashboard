@@ -8,14 +8,22 @@ export default function Chat() {
   const [coalition, setCoalition] = useState('COALITION_ALL');
   const [status, setStatus] = useState('');
 
+  const [isAnnouncement, setIsAnnouncement] = useState(false);
+  const [displayTime, setDisplayTime] = useState(10);
+
   const sendChat = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus('Sending...');
     try {
-      const res = await apiFetch('/api/chat', {
+      const endpoint = isAnnouncement ? '/api/announcements' : '/api/chat';
+      const payload = isAnnouncement 
+        ? { message, coalition: coalition === 'COALITION_ALL' ? 'ALL' : coalition, display_time: displayTime }
+        : { message, coalition };
+
+      const res = await apiFetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, coalition })
+        body: JSON.stringify(payload)
       });
       const data = await res.json();
       if (data.success) {
@@ -60,6 +68,31 @@ export default function Chat() {
               required
               style={{ background: 'var(--background)', border: '1px solid var(--panel-border)', color: 'var(--foreground)', padding: '10px', fontFamily: 'var(--font-ui)', fontSize: '14px', outline: 'none' }}
             />
+          </div>
+          
+          <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: 'var(--text-dim)', cursor: 'pointer' }}>
+              <input 
+                type="checkbox" 
+                checked={isAnnouncement} 
+                onChange={(e) => setIsAnnouncement(e.target.checked)}
+                style={{ accentColor: 'var(--primary)' }}
+              />
+              Send as Screen Text (Announcement)
+            </label>
+            
+            {isAnnouncement && (
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: 'var(--text-dim)' }}>
+                Display Time (s):
+                <input 
+                  type="number" 
+                  value={displayTime} 
+                  onChange={(e) => setDisplayTime(parseInt(e.target.value) || 10)}
+                  min="1" max="60"
+                  style={{ width: '60px', background: 'var(--background)', border: '1px solid var(--panel-border)', color: 'var(--foreground)', padding: '5px', outline: 'none' }}
+                />
+              </label>
+            )}
           </div>
 
           <button 
