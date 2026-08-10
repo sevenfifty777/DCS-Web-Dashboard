@@ -85,6 +85,28 @@ pub async fn health(State(state): State<AppState>) -> Response {
     }
 }
 
+pub async fn performance(State(state): State<AppState>) -> Response {
+    let ballistics_fut = grpc::get_ballistics_count(state.grpc.clone());
+    let model_time_fut = grpc::get_model_time(state.grpc.clone());
+    let real_time_fut = grpc::get_real_time(state.grpc.clone());
+
+    let (ballistics_res, model_time_res, real_time_res) = tokio::join!(ballistics_fut, model_time_fut, real_time_fut);
+
+    let mut details = json!({});
+
+    if let Ok(b) = ballistics_res {
+        details["ballistics_count"] = json!(b.count);
+    }
+    if let Ok(m) = model_time_res {
+        details["model_time"] = json!(m.time);
+    }
+    if let Ok(r) = real_time_res {
+        details["real_time"] = json!(r.time);
+    }
+
+    Json(details).into_response()
+}
+
 // --- /api/players ----------------------------------------------------------
 
 /// `GET /api/players` → connected players (NetService.GetPlayers).
@@ -863,8 +885,50 @@ pub async fn destroy_unit_group(_user: AuthUser, State(state): State<AppState>, 
         Err(e) => return err_detail("Failed to fetch unit's group", e),
     };
     
-    match grpc::destroy_group(state.grpc.clone(), group_name).await {
+        match grpc::destroy_group(state.grpc.clone(), group_name).await {
         Ok(()) => Json(json!({ "success": true })).into_response(),
         Err(e) => err_detail("Failed to destroy group", e),
+    }
+}
+
+#[derive(Deserialize)]
+pub struct ROEPayload {
+    pub roe: i32,
+}
+
+pub async fn set_group_roe(_user: AuthUser, State(state): State<AppState>, axum::extract::Path(name): axum::extract::Path<String>, Json(payload): Json<ROEPayload>) -> Response {
+    let group_resp = match grpc::get_unit_group(state.grpc.clone(), name).await {
+        Ok(r) => r,
+        Err(e) => return err_detail("Failed to find unit group", e),
+    };
+    let group = match group_resp.group {
+        Some(g) => g,
+        None => return bad_request("Unit has no group"),
+    };
+    
+    match grpc::set_group_roe(state.grpc.clone(), group.name, payload.roe).await {
+        Ok(_) => Json(json!({ "success": true })).into_response(),
+        Err(e) => err_detail("Failed to set ROE", e),
+    }
+}
+
+#[derive(Deserialize)]
+pub struct AlarmStatePayload {
+    pub alarm_state: i32,
+}
+
+pub async fn set_group_alarm_state(_user: AuthUser, State(state): State<AppState>, axum::extract::Path(name): axum::extract::Path<String>, Json(payload): Json<AlarmStatePayload>) -> Response {
+    let group_resp = match grpc::get_unit_group(state.grpc.clone(), name).await {
+        Ok(r) => r,
+        Err(e) => return err_detail("Failed to find unit group", e),
+    };
+    let group = match group_resp.group {
+        Some(g) => g,
+        None => return bad_request("Unit has no group"),
+    };
+    
+    match grpc::set_group_alarm_state(state.grpc.clone(), group.name, payload.alarm_state).await {
+        Ok(_) => Json(json!({ "success": true })).into_response(),
+        Err(e) => err_detail("Failed to set alarm state", e),
     }
 }

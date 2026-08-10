@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { apiFetch } from '@/lib/api';
+import ServerPerformance from './ServerPerformance';
 import styles from './Sidebar.module.css';
 
 export default function Sidebar() {
@@ -174,6 +175,8 @@ export default function Sidebar() {
           <Link href="/logs/dcs" className={`${styles.link} ${pathname === '/logs/dcs' ? styles.active : ''}`}>DCS Logs</Link>
           <Link href="/tasks" className={`${styles.link} ${pathname === '/tasks' ? styles.active : ''}`}>Tasks</Link>
         </div>
+        
+        <ServerPerformance />
       </nav>
       
       {/* Mobile Overlay (Click to close) */}

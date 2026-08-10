@@ -18,6 +18,7 @@ use crate::pb::dcs;
 
 use dcs::atmosphere::v0::atmosphere_service_client::AtmosphereServiceClient;
 use dcs::custom::v0::custom_service_client::CustomServiceClient;
+use dcs::controller::v0::controller_service_client::ControllerServiceClient;
 use dcs::hook::v0::hook_service_client::HookServiceClient;
 use dcs::metadata::v0::metadata_service_client::MetadataServiceClient;
 use dcs::mission::v0::mission_service_client::MissionServiceClient;
@@ -178,6 +179,24 @@ pub async fn get_banned_players(channel: Channel) -> Result<dcs::hook::v0::GetBa
     let resp = client
         .get_banned_players(Request::new(dcs::hook::v0::GetBannedPlayersRequest {}))
         .await?;
+    Ok(resp.into_inner())
+}
+
+pub async fn get_ballistics_count(channel: Channel) -> Result<dcs::hook::v0::GetBallisticsCountResponse, Status> {
+    let mut client = HookServiceClient::new(channel);
+    let resp = client.get_ballistics_count(Request::new(dcs::hook::v0::GetBallisticsCountRequest {})).await?;
+    Ok(resp.into_inner())
+}
+
+pub async fn get_real_time(channel: Channel) -> Result<dcs::hook::v0::GetRealTimeResponse, Status> {
+    let mut client = HookServiceClient::new(channel);
+    let resp = client.get_real_time(Request::new(dcs::hook::v0::GetRealTimeRequest {})).await?;
+    Ok(resp.into_inner())
+}
+
+pub async fn get_model_time(channel: Channel) -> Result<dcs::hook::v0::GetModelTimeResponse, Status> {
+    let mut client = HookServiceClient::new(channel);
+    let resp = client.get_model_time(Request::new(dcs::hook::v0::GetModelTimeRequest {})).await?;
     Ok(resp.into_inner())
 }
 
@@ -573,6 +592,34 @@ pub async fn get_unit_sensors(channel: Channel, name: String) -> Result<dcs::uni
     let mut client = UnitServiceClient::new(channel);
     let resp = client.get_sensors(Request::new(dcs::unit::v0::GetSensorsRequest { name })).await?;
     Ok(resp.into_inner())
+}
+
+pub async fn get_unit_group(channel: Channel, name: String) -> Result<dcs::unit::v0::GetGroupResponse, Status> {
+    let mut client = UnitServiceClient::new(channel);
+    let resp = client.get_group(Request::new(dcs::unit::v0::GetGroupRequest { name })).await?;
+    Ok(resp.into_inner())
+}
+
+// --- ControllerService -----------------------------------------------------
+
+pub async fn set_group_roe(channel: Channel, group_name: String, roe_value: i32) -> Result<(), Status> {
+    let mut client = ControllerServiceClient::new(channel);
+    // Option ID 0 is ROE
+    client.set_option(Request::new(dcs::controller::v0::SetOptionRequest {
+        name: Some(dcs::controller::v0::set_option_request::Name::GroupName(group_name)),
+        option_id: 0,
+        value: Some(dcs::controller::v0::set_option_request::Value::IntValue(roe_value)),
+    })).await?;
+    Ok(())
+}
+
+pub async fn set_group_alarm_state(channel: Channel, group_name: String, alarm_state: i32) -> Result<(), Status> {
+    let mut client = ControllerServiceClient::new(channel);
+    client.set_alarm_state(Request::new(dcs::controller::v0::SetAlarmStateRequest {
+        name: Some(dcs::controller::v0::set_alarm_state_request::Name::GroupName(group_name)),
+        alarm_state,
+    })).await?;
+    Ok(())
 }
 
 // --- GroupService ----------------------------------------------------------

@@ -42,6 +42,7 @@ pub fn router() -> Router<AppState> {
         .route("/api/console", post(dcs::console))
         .route("/api/triggers", get(dcs::get_flag).post(dcs::set_flag))
         .route("/api/atmosphere", get(dcs::atmosphere))
+        .route("/api/performance", get(dcs::performance))
         .route(
             "/api/mission",
             get(dcs::mission_status).post(dcs::mission_action),
@@ -53,6 +54,8 @@ pub fn router() -> Router<AppState> {
         .route("/api/units/{name}", get(dcs::get_unit_details))
         .route("/api/units/{name}/destroy", post(dcs::destroy_unit_group))
         .route("/api/units/{name}/emission", post(dcs::set_unit_emission))
+        .route("/api/units/{name}/roe", post(dcs::set_group_roe))
+        .route("/api/units/{name}/alarm-state", post(dcs::set_group_alarm_state))
         // Filesystem- and OS-backed endpoints (session-protected).
         .route(
             "/api/settings",
