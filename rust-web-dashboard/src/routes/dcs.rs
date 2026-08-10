@@ -748,9 +748,19 @@ pub async fn unban_player(_user: AuthUser, State(state): State<AppState>, Json(p
 }
 
 pub async fn announcements(_user: AuthUser, State(state): State<AppState>, Json(payload): Json<serde_json::Value>) -> Response {
-    let text = payload["text"].as_str().unwrap_or("").to_string();
-    let display_time = payload["display_time"].as_u64().unwrap_or(10) as u32;
-    let coalition = payload["coalition"].as_i64().unwrap_or(-1) as i32;
+    let text = payload.get("message").or_else(|| payload.get("text")).and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let display_time = payload.get("display_time").and_then(|v| v.as_u64()).unwrap_or(10) as u32;
+    
+    let coalition = if let Some(coalition_str) = payload.get("coalition").and_then(|v| v.as_str()) {
+        match coalition_str {
+            "COALITION_RED" => 2,
+            "COALITION_BLUE" => 3,
+            "COALITION_NEUTRAL" => 1,
+            _ => -1,
+        }
+    } else {
+        payload.get("coalition").and_then(|v| v.as_i64()).unwrap_or(-1) as i32
+    };
     
     let result = if coalition >= 0 {
         grpc::out_text_for_coalition(state.grpc.clone(), coalition, text, display_time, true).await
