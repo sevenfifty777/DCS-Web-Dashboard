@@ -23,6 +23,7 @@ use dcs::hook::v0::hook_service_client::HookServiceClient;
 use dcs::metadata::v0::metadata_service_client::MetadataServiceClient;
 use dcs::mission::v0::mission_service_client::MissionServiceClient;
 use dcs::net::v0::net_service_client::NetServiceClient;
+use dcs::spot::v0::spot_service_client::SpotServiceClient;
 use dcs::trigger::v0::trigger_service_client::TriggerServiceClient;
 use dcs::world::v0::world_service_client::WorldServiceClient;
 use dcs::group::v0::group_service_client::GroupServiceClient;
@@ -600,6 +601,12 @@ pub async fn get_unit_group(channel: Channel, name: String) -> Result<dcs::unit:
     Ok(resp.into_inner())
 }
 
+pub async fn get_unit_position(channel: Channel, name: String) -> Result<dcs::unit::v0::GetPositionResponse, Status> {
+    let mut client = UnitServiceClient::new(channel);
+    let resp = client.get_position(Request::new(dcs::unit::v0::GetPositionRequest { name })).await?;
+    Ok(resp.into_inner())
+}
+
 // --- ControllerService -----------------------------------------------------
 
 pub async fn set_group_roe(channel: Channel, group_name: String, roe_value: i32) -> Result<(), Status> {
@@ -619,6 +626,35 @@ pub async fn set_group_alarm_state(channel: Channel, group_name: String, alarm_s
         name: Some(dcs::controller::v0::set_alarm_state_request::Name::GroupName(group_name)),
         alarm_state,
     })).await?;
+    Ok(())
+}
+
+// --- SpotService -----------------------------------------------------------
+
+pub async fn create_laser(channel: Channel, source_unit_name: String, dir_x: f64, dir_y: f64, dir_z: f64, code: u32) -> Result<u32, Status> {
+    let mut client = SpotServiceClient::new(channel);
+    let resp = client.create_laser(Request::new(dcs::spot::v0::CreateLaserRequest {
+        source_unit_name,
+        offset: Some(dcs::common::v0::Vector { x: 0.0, y: 0.0, z: 0.0 }), // from unit center
+        direction: Some(dcs::common::v0::Vector { x: dir_x, y: dir_y, z: dir_z }),
+        code,
+    })).await?;
+    Ok(resp.into_inner().spot_id)
+}
+
+pub async fn create_ir_pointer(channel: Channel, source_unit_name: String, dir_x: f64, dir_y: f64, dir_z: f64) -> Result<u32, Status> {
+    let mut client = SpotServiceClient::new(channel);
+    let resp = client.create_infra_red(Request::new(dcs::spot::v0::CreateInfraRedRequest {
+        source_unit_name,
+        offset: Some(dcs::common::v0::Vector { x: 0.0, y: 0.0, z: 0.0 }),
+        direction: Some(dcs::common::v0::Vector { x: dir_x, y: dir_y, z: dir_z }),
+    })).await?;
+    Ok(resp.into_inner().spot_id)
+}
+
+pub async fn destroy_spot(channel: Channel, spot_id: u32) -> Result<(), Status> {
+    let mut client = SpotServiceClient::new(channel);
+    client.destroy(Request::new(dcs::spot::v0::DestroyRequest { spot_id })).await?;
     Ok(())
 }
 

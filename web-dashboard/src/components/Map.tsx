@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, LayersControl, Circle, Polygon, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, LayersControl, Circle, Polygon, Polyline, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { apiFetch } from '@/lib/api';
@@ -70,12 +70,30 @@ const parsePathOptions = (colorArr: number[], isDrawing: boolean = false) => {
   };
 };
 
-const DrawingEvents = ({ drawingMode, setDrawingMode, drawingStart, setDrawingStart, setMyMarks, refreshMarks, markText, smokeColor }: any) => {
+const DrawingEvents = ({ drawingMode, setDrawingMode, drawingStart, setDrawingStart, setMyMarks, refreshMarks, markText, smokeColor, jtacMode, setJtacMode, setActiveLasers }: any) => {
   useMapEvents({
     click: async (e) => {
       if (!drawingMode) return;
       const { lat, lng } = e.latlng;
       
+      if (drawingMode === 'jtac_lase' || drawingMode === 'jtac_ir') {
+        if (!jtacMode) return;
+        const payload = { target_x: lat, target_z: lng, code: jtacMode.code };
+        try {
+          const endpoint = drawingMode === 'jtac_lase' ? 'lase' : 'ir-point';
+          const res = await apiFetch(`/api/units/${encodeURIComponent(jtacMode.unitName)}/${endpoint}`, { 
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) 
+          });
+          const data = await res.json();
+          if (data.spot_id) {
+            setActiveLasers((prev: any) => [...prev, { id: data.spot_id, sourceUnit: jtacMode.unitName, target: {lat, lng}, type: drawingMode }]);
+          }
+        } catch(err) { console.error(err); }
+        setDrawingMode(null);
+        setJtacMode(null);
+        return;
+      }
+
       if (drawingMode === 'smoke') {
         try {
           await apiFetch('/api/trigger/effects', {
@@ -139,6 +157,8 @@ export default function Map() {
   const [myMarks, setMyMarks] = useState<number[]>([]);
   const [markText, setMarkText] = useState('Dashboard Mark');
   const [smokeColor, setSmokeColor] = useState(2);
+  const [jtacMode, setJtacMode] = useState<{ unitName: string, type: 'lase' | 'ir', code?: number } | null>(null);
+  const [activeLasers, setActiveLasers] = useState<any[]>([]);
   
   useEffect(() => {
     if (zoneMode === 'graveyard') {
@@ -273,6 +293,9 @@ export default function Map() {
           refreshMarks={refreshMarks}
           markText={markText}
           smokeColor={smokeColor}
+          jtacMode={jtacMode}
+          setJtacMode={setJtacMode}
+          setActiveLasers={setActiveLasers}
         />
 
         <LayersControl position="bottomleft">
@@ -372,9 +395,59 @@ export default function Map() {
           return (
             <Marker key={unit.id} position={[unit.position.lat, unit.position.lon]} icon={icon}>
               <Popup>
-                <UnitPopup unit={unit} />
+                <UnitPopup 
+                  unit={unit} 
+                  onStartLase={(unitName, code) => {
+                    setJtacMode({ unitName, type: 'lase', code });
+                    setDrawingMode('jtac_lase');
+                    document.body.click(); // close popup hack
+                  }}
+                  onStartIR={(unitName) => {
+                    setJtacMode({ unitName, type: 'ir' });
+                    setDrawingMode('jtac_ir');
+                    document.body.click(); // close popup hack
+                  }}
+                />
               </Popup>
             </Marker>
+          );
+        })}
+
+        {activeLasers.map((laser, i) => {
+          const unit = units[laser.sourceUnit];
+          if (!unit) return null;
+          const isIR = laser.type === 'jtac_ir';
+          const color = isIR ? '#28a745' : '#dc3545';
+          return (
+            <Polyline 
+              key={`laser-${i}`}
+              positions={[
+                [unit.position.lat, unit.position.lon],
+                [laser.target.lat, laser.target.lng]
+              ]}
+              pathOptions={{
+                color: color,
+                weight: 2,
+                dashArray: isIR ? '10, 10' : '5, 5',
+                opacity: 0.8
+              }}
+            >
+              <Popup>
+                <strong>{isIR ? 'IR Pointer' : 'Laser'}</strong><br/>
+                Source: {laser.sourceUnit}<br/>
+                <button 
+                  onClick={async () => {
+                    try {
+                      await apiFetch(`/api/spots/${laser.id}`, { method: 'DELETE' });
+                      setActiveLasers(prev => prev.filter(l => l.id !== laser.id));
+                    } catch(e) { console.error(e); }
+                  }}
+                  style={{ padding: '2px 6px', marginTop: '5px', background: '#dc3545', color: '#fff', border: 'none', borderRadius: '2px', cursor: 'pointer' }}
+                >
+                  Turn Off
+                </button>
+              </Popup>
+            </Polyline>
           );
         })}
 

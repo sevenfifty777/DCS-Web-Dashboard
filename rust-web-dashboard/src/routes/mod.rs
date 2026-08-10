@@ -56,6 +56,9 @@ pub fn router() -> Router<AppState> {
         .route("/api/units/{name}/emission", post(dcs::set_unit_emission))
         .route("/api/units/{name}/roe", post(dcs::set_group_roe))
         .route("/api/units/{name}/alarm-state", post(dcs::set_group_alarm_state))
+        .route("/api/units/{name}/lase", post(dcs::lase))
+        .route("/api/units/{name}/ir-point", post(dcs::ir_pointer))
+        .route("/api/spots/{id}", delete(dcs::destroy_spot))
         // Filesystem- and OS-backed endpoints (session-protected).
         .route(
             "/api/settings",

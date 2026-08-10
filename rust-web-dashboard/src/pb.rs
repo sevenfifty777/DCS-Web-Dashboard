@@ -28,6 +28,11 @@ pub mod dcs {
             tonic::include_proto!("dcs.common.v0");
         }
     }
+    pub mod common {
+        pub mod v0 {
+            tonic::include_proto!("dcs.common.v0");
+        }
+    }
     pub mod controller {
         pub mod v0 {
             tonic::include_proto!("dcs.controller.v0");
@@ -86,6 +91,11 @@ pub mod dcs {
     pub mod world {
         pub mod v0 {
             tonic::include_proto!("dcs.world.v0");
+        }
+    }
+    pub mod spot {
+        pub mod v0 {
+            tonic::include_proto!("dcs.spot.v0");
         }
     }
     pub mod warehouse {

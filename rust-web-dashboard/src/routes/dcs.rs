@@ -932,3 +932,101 @@ pub async fn set_group_alarm_state(_user: AuthUser, State(state): State<AppState
         Err(e) => err_detail("Failed to set alarm state", e),
     }
 }
+
+#[derive(Deserialize)]
+pub struct LasePayload {
+    pub target_x: f64,
+    pub target_z: f64,
+    pub code: u32,
+}
+
+pub async fn lase(_user: AuthUser, State(state): State<AppState>, axum::extract::Path(name): axum::extract::Path<String>, Json(payload): Json<LasePayload>) -> Response {
+    let lua = format!(
+        "local src = Unit.getByName('{}')
+        if not src then return 'UNIT_NOT_FOUND' end
+        local srcPos = src:getPosition().p
+        local targetLO = coord.LLtoLO({}, {})
+        targetLO.y = land.getHeight({{x = targetLO.x, y = targetLO.z}})
+        local dx = targetLO.x - srcPos.x
+        local dy = targetLO.y - srcPos.y
+        local dz = targetLO.z - srcPos.z
+        local dist = math.sqrt(dx*dx + dy*dy + dz*dz)
+        if dist == 0 then return '0,0,0' end
+        return string.format('%f,%f,%f', dx/dist, dy/dist, dz/dist)",
+        name.replace("'", "\\'"), payload.target_x, payload.target_z
+    );
+
+    let eval_resp = match grpc::custom_eval(state.grpc.clone(), lua).await {
+        Ok(r) => r,
+        Err(e) => return err_detail("Failed to evaluate vector in lua", e),
+    };
+    let json = eval_resp.json.trim_matches('"');
+    if json == "UNIT_NOT_FOUND" || json.is_empty() {
+        return bad_request("Source unit not found");
+    }
+
+    let parts: Vec<&str> = json.split(',').collect();
+    if parts.len() != 3 {
+        return bad_request("Invalid vector calculation");
+    }
+    let dir_x: f64 = parts[0].parse().unwrap_or(0.0);
+    let dir_y: f64 = parts[1].parse().unwrap_or(0.0);
+    let dir_z: f64 = parts[2].parse().unwrap_or(0.0);
+
+    match grpc::create_laser(state.grpc.clone(), name, dir_x, dir_y, dir_z, payload.code).await {
+        Ok(spot_id) => Json(json!({ "success": true, "spot_id": spot_id })).into_response(),
+        Err(e) => err_detail("Failed to create laser", e),
+    }
+}
+
+#[derive(Deserialize)]
+pub struct IrPointerPayload {
+    pub target_x: f64,
+    pub target_z: f64,
+}
+
+pub async fn ir_pointer(_user: AuthUser, State(state): State<AppState>, axum::extract::Path(name): axum::extract::Path<String>, Json(payload): Json<IrPointerPayload>) -> Response {
+    let lua = format!(
+        "local src = Unit.getByName('{}')
+        if not src then return 'UNIT_NOT_FOUND' end
+        local srcPos = src:getPosition().p
+        local targetLO = coord.LLtoLO({}, {})
+        targetLO.y = land.getHeight({{x = targetLO.x, y = targetLO.z}})
+        local dx = targetLO.x - srcPos.x
+        local dy = targetLO.y - srcPos.y
+        local dz = targetLO.z - srcPos.z
+        local dist = math.sqrt(dx*dx + dy*dy + dz*dz)
+        if dist == 0 then return '0,0,0' end
+        return string.format('%f,%f,%f', dx/dist, dy/dist, dz/dist)",
+        name.replace("'", "\\'"), payload.target_x, payload.target_z
+    );
+
+    let eval_resp = match grpc::custom_eval(state.grpc.clone(), lua).await {
+        Ok(r) => r,
+        Err(e) => return err_detail("Failed to evaluate vector in lua", e),
+    };
+    let json = eval_resp.json.trim_matches('"');
+    if json == "UNIT_NOT_FOUND" || json.is_empty() {
+        return bad_request("Source unit not found");
+    }
+
+    let parts: Vec<&str> = json.split(',').collect();
+    if parts.len() != 3 {
+        return bad_request("Invalid vector calculation");
+    }
+    let dir_x: f64 = parts[0].parse().unwrap_or(0.0);
+    let dir_y: f64 = parts[1].parse().unwrap_or(0.0);
+    let dir_z: f64 = parts[2].parse().unwrap_or(0.0);
+
+    match grpc::create_ir_pointer(state.grpc.clone(), name, dir_x, dir_y, dir_z).await {
+        Ok(spot_id) => Json(json!({ "success": true, "spot_id": spot_id })).into_response(),
+        Err(e) => err_detail("Failed to create IR pointer", e),
+    }
+}
+
+pub async fn destroy_spot(_user: AuthUser, State(state): State<AppState>, axum::extract::Path(id): axum::extract::Path<u32>) -> Response {
+    match grpc::destroy_spot(state.grpc.clone(), id).await {
+        Ok(_) => Json(json!({ "success": true })).into_response(),
+        Err(e) => err_detail("Failed to destroy spot", e),
+    }
+}

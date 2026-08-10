@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { apiFetch } from '@/lib/api';
 
-export default function UnitPopup({ unit }: { unit: any }) {
+export default function UnitPopup({ unit, onStartLase, onStartIR }: { unit: any, onStartLase?: (unitName: string, code: number) => void, onStartIR?: (unitName: string) => void }) {
   const [details, setDetails] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'info' | 'ai'>('info');
+  const [activeTab, setActiveTab] = useState<'info' | 'ai' | 'jtac'>('info');
+  const [laserCode, setLaserCode] = useState<string>('1688');
 
   const loadDetails = async () => {
     setLoading(true);
@@ -93,6 +94,12 @@ export default function UnitPopup({ unit }: { unit: any }) {
         >
           AI Control
         </button>
+        <button 
+          onClick={() => setActiveTab('jtac')} 
+          style={{ padding: '2px 8px', cursor: 'pointer', background: activeTab === 'jtac' ? '#0056b3' : '#eee', color: activeTab === 'jtac' ? '#fff' : '#000', border: '1px solid #ccc', borderRadius: '4px' }}
+        >
+          JTAC
+        </button>
       </div>
 
       <div style={{ marginTop: '10px', display: 'flex', gap: '5px', flexDirection: 'column' }}>
@@ -168,6 +175,39 @@ export default function UnitPopup({ unit }: { unit: any }) {
               </select>
             </div>
             <p style={{ fontSize: '10px', color: '#666', marginTop: '5px', marginBottom: 0 }}>These commands apply to the entire group that this unit belongs to.</p>
+          </div>
+        )}
+
+        {activeTab === 'jtac' && (
+          <div style={{ background: '#eee', padding: '10px', borderRadius: '4px', border: '1px solid #ddd', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <label style={{ fontWeight: 'bold' }}>Laser Code:</label>
+              <input 
+                type="number" 
+                value={laserCode} 
+                onChange={(e) => setLaserCode(e.target.value)} 
+                style={{ padding: '4px' }} 
+              />
+            </div>
+            
+            <button 
+              onClick={() => {
+                if (onStartLase) onStartLase(unit.name, parseInt(laserCode));
+              }}
+              style={{ padding: '6px', background: '#0056b3', color: '#fff', border: 'none', borderRadius: '2px', cursor: 'pointer' }}
+            >
+              Lase Target on Map
+            </button>
+
+            <button 
+              onClick={() => {
+                if (onStartIR) onStartIR(unit.name);
+              }}
+              style={{ padding: '6px', background: '#28a745', color: '#fff', border: 'none', borderRadius: '2px', cursor: 'pointer', marginTop: '4px' }}
+            >
+              Point IR on Map
+            </button>
+            <p style={{ fontSize: '10px', color: '#666', marginTop: '5px', marginBottom: 0 }}>Clicking these buttons will enter targeting mode. Click on the map to place the laser.</p>
           </div>
         )}
       </div>
