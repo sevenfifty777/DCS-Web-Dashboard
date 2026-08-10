@@ -26,6 +26,7 @@ use dcs::trigger::v0::trigger_service_client::TriggerServiceClient;
 use dcs::world::v0::world_service_client::WorldServiceClient;
 use dcs::group::v0::group_service_client::GroupServiceClient;
 use dcs::srs::v0::srs_service_client::SrsServiceClient;
+use dcs::warehouse::v0::{warehouse_service_client::WarehouseServiceClient, get_inventory_request, add_item_request, add_liquid_request};
 
 // --- MetadataService -------------------------------------------------------
 
@@ -322,25 +323,20 @@ pub async fn get_srs_clients(
     Ok(resp.into_inner())
 }
 
-// --- WarehouseService (via Lua Eval) -----------------------------------------
+// --- WarehouseService --------------------------------------------------------
 
 /// `WarehouseService.GetInventory` — get the full inventory of an airbase or static object.
 pub async fn get_inventory(
     channel: Channel,
     airbase_name: String,
 ) -> Result<dcs::warehouse::v0::GetInventoryResponse, Status> {
-    let lua = format!(
-        "local ab = Airbase.getByName('{}')
-        if not ab then return {{}} end
-        local wh = ab:getWarehouse()
-        if not wh then return {{}} end
-        return wh:getInventory()",
-        airbase_name.replace("'", "\\'")
-    );
-    let resp = custom_eval(channel, lua).await?;
-    Ok(dcs::warehouse::v0::GetInventoryResponse {
-        inventory_json: resp.json,
-    })
+    let mut client = WarehouseServiceClient::new(channel);
+    let resp = client
+        .get_inventory(Request::new(dcs::warehouse::v0::GetInventoryRequest {
+            name: Some(get_inventory_request::Name::AirbaseName(airbase_name)),
+        }))
+        .await?;
+    Ok(resp.into_inner())
 }
 
 /// `WarehouseService.AddItem` — add an item to an airbase inventory.
@@ -350,17 +346,14 @@ pub async fn add_item(
     item_name: String,
     count: i32,
 ) -> Result<(), Status> {
-    let lua = format!(
-        "local ab = Airbase.getByName('{}')
-        if ab then
-            local wh = ab:getWarehouse()
-            if wh then wh:addItem('{}', {}) end
-        end",
-        airbase_name.replace("'", "\\'"),
-        item_name.replace("'", "\\'"),
-        count
-    );
-    custom_eval(channel, lua).await?;
+    let mut client = WarehouseServiceClient::new(channel);
+    client
+        .add_item(Request::new(dcs::warehouse::v0::AddItemRequest {
+            name: Some(add_item_request::Name::AirbaseName(airbase_name)),
+            item_name,
+            count,
+        }))
+        .await?;
     Ok(())
 }
 
@@ -371,17 +364,14 @@ pub async fn add_liquid(
     liquid_type: i32,
     amount: f64,
 ) -> Result<(), Status> {
-    let lua = format!(
-        "local ab = Airbase.getByName('{}')
-        if ab then
-            local wh = ab:getWarehouse()
-            if wh then wh:addLiquid({}, {}) end
-        end",
-        airbase_name.replace("'", "\\'"),
-        liquid_type,
-        amount
-    );
-    custom_eval(channel, lua).await?;
+    let mut client = WarehouseServiceClient::new(channel);
+    client
+        .add_liquid(Request::new(dcs::warehouse::v0::AddLiquidRequest {
+            name: Some(add_liquid_request::Name::AirbaseName(airbase_name)),
+            liquid_type,
+            amount,
+        }))
+        .await?;
     Ok(())
 }
 
