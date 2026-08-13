@@ -74,14 +74,38 @@ impl FromRequestParts<AppState> for AuthUser {
         parts: &mut Parts,
         state: &AppState,
     ) -> Result<Self, Self::Rejection> {
-        let token = parts
-            .headers
-            .get(header::AUTHORIZATION)
-            .and_then(|value| value.to_str().ok())
-            .and_then(|value| value.strip_prefix("Bearer "))
-            .map(str::trim)
-            .filter(|token| !token.is_empty())
-            .ok_or(AuthError::Missing)?;
+        let mut token_opt = None;
+
+        // 1. Try Authorization header
+        if let Some(auth_val) = parts.headers.get(header::AUTHORIZATION) {
+            if let Ok(auth_str) = auth_val.to_str() {
+                if let Some(token) = auth_str.strip_prefix("Bearer ") {
+                    let t = token.trim();
+                    if !t.is_empty() {
+                        token_opt = Some(t.to_string());
+                    }
+                }
+            }
+        }
+
+        // 2. Try auth_token cookie
+        if token_opt.is_none() {
+            if let Some(cookie_val) = parts.headers.get(header::COOKIE) {
+                if let Ok(cookie_str) = cookie_val.to_str() {
+                    for cookie in cookie_str.split(';') {
+                        let cookie = cookie.trim();
+                        if let Some(t) = cookie.strip_prefix("auth_token=") {
+                            if !t.is_empty() {
+                                token_opt = Some(t.to_string());
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        let token = token_opt.ok_or(AuthError::Missing)?;
 
         // Legacy static mobile key (constant-time compare).
         if let Some(key) = state.config.mobile_api_key.as_deref() {
@@ -93,7 +117,7 @@ impl FromRequestParts<AppState> for AuthUser {
             }
         }
 
-        let claims = verify_token(&state.config.jwt_secret, token).map_err(|_| AuthError::Invalid)?;
+        let claims = verify_token(&state.config.jwt_secret, &token).map_err(|_| AuthError::Invalid)?;
         Ok(AuthUser {
             subject: claims.sub,
             kind: claims.kind,
