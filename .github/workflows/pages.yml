@@ -50,8 +50,9 @@ jobs:
             -v $(pwd)/web-dashboard/protos:/protos \
             -v $(pwd)/docs/src:/out \
             pseudomuto/protoc-gen-doc \
+            -I /protos \
             --doc_opt=markdown,api_grpc.md \
-            $(find web-dashboard/protos -name "*.proto" | sed 's|web-dashboard/protos/|/protos/|g')
+            $(find web-dashboard/protos -name "*.proto" | sed 's|web-dashboard/protos/||g')
 
       - name: Build mdBook
         run: |
