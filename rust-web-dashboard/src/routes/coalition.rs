@@ -10,12 +10,12 @@ use crate::auth::AuthUser;
 use crate::grpc;
 use crate::state::AppState;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::IntoParams)]
 pub struct CoalitionQuery {
     coalition: i32,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::IntoParams)]
 pub struct GroupsQuery {
     coalition: i32,
     category: i32,
@@ -25,6 +25,14 @@ fn err_resp(msg: &str) -> Response {
     Json(json!({ "error": msg })).into_response()
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/coalition/groups",
+    tags = ["coalition"],
+    security(("jwt" = [])),
+    params(GroupsQuery),
+    responses((status = 200, description = "Coalition groups"))
+)]
 pub async fn groups(
     _user: AuthUser,
     State(state): State<AppState>,
@@ -46,6 +54,14 @@ pub async fn groups(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/coalition/players",
+    tags = ["coalition"],
+    security(("jwt" = [])),
+    params(CoalitionQuery),
+    responses((status = 200, description = "Player units"))
+)]
 pub async fn player_units(
     _user: AuthUser,
     State(state): State<AppState>,
@@ -68,6 +84,14 @@ pub async fn player_units(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/coalition/statics",
+    tags = ["coalition"],
+    security(("jwt" = [])),
+    params(CoalitionQuery),
+    responses((status = 200, description = "Static objects"))
+)]
 pub async fn statics(
     _user: AuthUser,
     State(state): State<AppState>,
@@ -90,6 +114,14 @@ pub async fn statics(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/coalition/bullseye",
+    tags = ["coalition"],
+    security(("jwt" = [])),
+    params(CoalitionQuery),
+    responses((status = 200, description = "Coalition bullseye"))
+)]
 pub async fn bullseye(
     _user: AuthUser,
     State(state): State<AppState>,

@@ -104,6 +104,14 @@ pub async fn settings_get(_user: AuthUser, State(state): State<AppState>) -> Res
 }
 
 /// `POST /api/settings` → rewrite `serverSettings.lua` (byte-faithful CRLF/tabs).
+#[utoipa::path(
+    post,
+    path = "/api/settings",
+    tags = ["system"],
+    security(("jwt" = [])),
+    request_body(content = inline(serde_json::Value), description = "New server settings"),
+    responses((status = 200, description = "Settings saved successfully"))
+)]
 pub async fn settings_post(
     _user: AuthUser,
     State(state): State<AppState>,
@@ -118,6 +126,14 @@ pub async fn settings_post(
 // --- /api/mission/upload ---------------------------------------------------
 
 /// `POST /api/mission/upload` → save a `.miz` upload into `Missions/Uploads`.
+#[utoipa::path(
+    post,
+    path = "/api/mission/upload",
+    tags = ["system"],
+    security(("jwt" = [])),
+    request_body(content_type = "multipart/form-data"),
+    responses((status = 200, description = "Mission uploaded successfully"))
+)]
 pub async fn mission_upload(
     _user: AuthUser,
     State(state): State<AppState>,
@@ -175,6 +191,13 @@ pub async fn mission_upload(
 
 /// `GET /api/mission/browse` → recursively list `.miz` files under `Missions`
 /// (depth ≤ 3, skipping hidden folders and `Uploads`).
+#[utoipa::path(
+    get,
+    path = "/api/mission/browse",
+    tags = ["system"],
+    security(("jwt" = [])),
+    responses((status = 200, description = "List of .miz files"))
+)]
 pub async fn mission_browse(_user: AuthUser, State(state): State<AppState>) -> Response {
     let mut files: Vec<String> = Vec::new();
     let mut stack = vec![(state.config.missions_dir(), 0u32)];
@@ -220,6 +243,13 @@ pub async fn mission_browse(_user: AuthUser, State(state): State<AppState>) -> R
 
 /// `GET /api/logs/access` → authentication audit log, mapped to the frontend
 /// shape (`timestamp` ms / `userId`).
+#[utoipa::path(
+    get,
+    path = "/api/logs/access",
+    tags = ["system"],
+    security(("jwt" = [])),
+    responses((status = 200, description = "Audit log data"))
+)]
 pub async fn logs_access(_user: AuthUser, State(state): State<AppState>) -> Response {
     let logs = auth::read_audit_logs(&state.config.audit_log_path).await;
     let mapped: Vec<Value> = logs
@@ -240,6 +270,13 @@ pub async fn logs_access(_user: AuthUser, State(state): State<AppState>) -> Resp
 // --- /api/rdp-status -------------------------------------------------------
 
 /// `GET /api/rdp-status` → active Windows interactive/RDP sessions (`quser`).
+#[utoipa::path(
+    get,
+    path = "/api/rdp-status",
+    tags = ["system"],
+    security(("jwt" = [])),
+    responses((status = 200, description = "RDP session status"))
+)]
 pub async fn rdp_status(_user: AuthUser, State(_state): State<AppState>) -> Response {
     let output = match Command::new("quser").output().await {
         Ok(out) => out,
@@ -288,6 +325,13 @@ pub async fn rdp_status(_user: AuthUser, State(_state): State<AppState>) -> Resp
 // --- /api/server/tasks -----------------------------------------------------
 
 /// `GET /api/server/tasks` → root-folder scheduled tasks (PowerShell).
+#[utoipa::path(
+    get,
+    path = "/api/server/tasks",
+    tags = ["system"],
+    security(("jwt" = [])),
+    responses((status = 200, description = "Scheduled tasks"))
+)]
 pub async fn tasks_get(_user: AuthUser, State(state): State<AppState>) -> Response {
     let ps =
         "Get-ScheduledTask | Where-Object TaskPath -eq '\\' | Select-Object TaskName, State | ConvertTo-Json";
@@ -352,7 +396,7 @@ pub async fn tasks_get(_user: AuthUser, State(state): State<AppState>) -> Respon
     Json(json!({ "tasks": out })).into_response()
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 pub struct TaskActionBody {
     #[serde(rename = "taskName")]
     task_name: Option<String>,
@@ -360,6 +404,14 @@ pub struct TaskActionBody {
 }
 
 /// `POST /api/server/tasks` → start/stop/restart a scheduled task.
+#[utoipa::path(
+    post,
+    path = "/api/server/tasks",
+    tags = ["system"],
+    security(("jwt" = [])),
+    request_body = TaskActionBody,
+    responses((status = 200, description = "Task action sent"))
+)]
 pub async fn tasks_post(
     _user: AuthUser,
     State(state): State<AppState>,
@@ -414,6 +466,13 @@ pub async fn tasks_post(
 
 /// `GET /api/weather` → presets + current applied weather state. Overrides the
 /// reported mission name with the live DCS mission when reachable.
+#[utoipa::path(
+    get,
+    path = "/api/weather",
+    tags = ["system"],
+    security(("jwt" = [])),
+    responses((status = 200, description = "Weather state and presets"))
+)]
 pub async fn weather_get(_user: AuthUser, State(state): State<AppState>) -> Response {
     let weather_dir = match &state.config.dcs_dynamic_weather_dir {
         Some(dir) => dir.clone(),
@@ -463,12 +522,21 @@ pub async fn weather_get(_user: AuthUser, State(state): State<AppState>) -> Resp
     .into_response()
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 pub struct WeatherApplyBody {
+    #[schema(value_type = Object)]
     preset_id: Option<Value>,
 }
 
 /// `POST /api/weather/apply` → run the weather generator and reload the mission.
+#[utoipa::path(
+    post,
+    path = "/api/weather/apply",
+    tags = ["system"],
+    security(("jwt" = [])),
+    request_body = WeatherApplyBody,
+    responses((status = 200, description = "Weather applied"))
+)]
 pub async fn weather_apply(
     _user: AuthUser,
     State(state): State<AppState>,
@@ -573,6 +641,13 @@ pub async fn weather_apply(
 // --- /api/server/dcs-process ------------------------------------------------
 
 /// `GET /api/server/dcs-process` → check if DCS.exe or DCS_server.exe is running.
+#[utoipa::path(
+    get,
+    path = "/api/server/dcs-process",
+    tags = ["system"],
+    security(("jwt" = [])),
+    responses((status = 200, description = "DCS process running state"))
+)]
 pub async fn dcs_process_get(_user: AuthUser, State(_state): State<AppState>) -> Response {
     let ps = "Get-Process -Name 'DCS', 'DCS_server' -ErrorAction SilentlyContinue | Measure-Object | Select-Object -ExpandProperty Count";
     let output = match Command::new("powershell")
@@ -590,12 +665,20 @@ pub async fn dcs_process_get(_user: AuthUser, State(_state): State<AppState>) ->
     Json(json!({ "running": count > 0 })).into_response()
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 pub struct DcsProcessAction {
     pub action: String,
 }
 
 /// `POST /api/server/dcs-process` → start/stop/restart DCS.exe.
+#[utoipa::path(
+    post,
+    path = "/api/server/dcs-process",
+    tags = ["system"],
+    security(("jwt" = [])),
+    request_body = DcsProcessAction,
+    responses((status = 200, description = "DCS process action executed"))
+)]
 pub async fn dcs_process_post(
     _user: AuthUser,
     State(state): State<AppState>,
@@ -694,6 +777,13 @@ pub async fn dcs_process_post(
 // --- /api/server/srs-process ------------------------------------------------
 
 /// `GET /api/server/srs-process` → check if SRS-Server.exe is running.
+#[utoipa::path(
+    get,
+    path = "/api/server/srs-process",
+    tags = ["system"],
+    security(("jwt" = [])),
+    responses((status = 200, description = "SRS process running state"))
+)]
 pub async fn srs_process_get(_user: AuthUser, State(_state): State<AppState>) -> Response {
     let ps = "Get-Process -Name 'SRS-Server' -ErrorAction SilentlyContinue | Measure-Object | Select-Object -ExpandProperty Count";
     let output = match Command::new("powershell")
@@ -711,12 +801,20 @@ pub async fn srs_process_get(_user: AuthUser, State(_state): State<AppState>) ->
     Json(json!({ "running": count > 0 })).into_response()
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 pub struct SrsProcessAction {
     pub action: String,
 }
 
 /// `POST /api/server/srs-process` → start/stop/restart SRS-Server.exe.
+#[utoipa::path(
+    post,
+    path = "/api/server/srs-process",
+    tags = ["system"],
+    security(("jwt" = [])),
+    request_body = SrsProcessAction,
+    responses((status = 200, description = "SRS process action executed"))
+)]
 pub async fn srs_process_post(
     _user: AuthUser,
     State(state): State<AppState>,
@@ -805,6 +903,13 @@ pub async fn srs_process_post(
 // --- /api/logs/dcs/stream ---------------------------------------------------
 
 /// `GET /api/logs/dcs/stream` → tail DCS log using SSE.
+#[utoipa::path(
+    get,
+    path = "/api/logs/dcs/stream",
+    tags = ["system"],
+    security(("jwt" = [])),
+    responses((status = 200, description = "SSE stream of DCS log"))
+)]
 pub async fn dcs_log_stream(
     _user: auth::AuthQueryUser,
     State(state): State<AppState>,
@@ -856,6 +961,13 @@ pub async fn dcs_log_stream(
 // --- /api/graveyard ---------------------------------------------------------
 
 /// `GET /api/graveyard` -> Returns the current live graveyard JSON
+#[utoipa::path(
+    get,
+    path = "/api/graveyard",
+    tags = ["system"],
+    security(("jwt" = [])),
+    responses((status = 200, description = "Graveyard state"))
+)]
 pub async fn graveyard_get(
     _user: auth::AuthUser,
     State(state): State<AppState>,
@@ -865,6 +977,13 @@ pub async fn graveyard_get(
     Json(board).into_response()
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/foothold",
+    tags = ["system"],
+    security(("jwt" = [])),
+    responses((status = 200, description = "Foothold data"))
+)]
 pub async fn foothold_get(
     State(app_state): State<AppState>,
 ) -> Result<Json<crate::foothold::FootholdData>, (StatusCode, String)> {

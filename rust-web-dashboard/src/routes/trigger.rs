@@ -15,7 +15,7 @@ fn err_resp(msg: &str) -> Response {
     Json(json!({ "error": msg })).into_response()
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 pub struct MarkPayload {
     pub shape: String, // "mark", "circle", "line", "rect"
     pub lat1: f64,
@@ -30,7 +30,7 @@ pub struct MarkPayload {
     pub a: f64,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 pub struct EffectPayload {
     pub effect: String, // "smoke"
     pub lat: f64,
@@ -38,6 +38,14 @@ pub struct EffectPayload {
     pub color: i32, // 1=Green, 2=Red, 3=White, 4=Orange, 5=Blue
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/trigger/mark",
+    tags = ["trigger"],
+    security(("jwt" = [])),
+    request_body = MarkPayload,
+    responses((status = 200, description = "Mark created"))
+)]
 pub async fn create_mark(
     _user: AuthUser,
     State(state): State<AppState>,
@@ -61,6 +69,14 @@ pub async fn create_mark(
     }
 }
 
+#[utoipa::path(
+    delete,
+    path = "/api/trigger/mark/{id}",
+    tags = ["trigger"],
+    security(("jwt" = [])),
+    params(("id" = u32, Path, description = "Mark ID")),
+    responses((status = 200, description = "Mark removed"))
+)]
 pub async fn remove_mark(
     _user: AuthUser,
     State(state): State<AppState>,
@@ -72,6 +88,14 @@ pub async fn remove_mark(
     }
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/trigger/effect",
+    tags = ["trigger"],
+    security(("jwt" = [])),
+    request_body = EffectPayload,
+    responses((status = 200, description = "Effect triggered"))
+)]
 pub async fn trigger_effect(
     _user: AuthUser,
     State(state): State<AppState>,

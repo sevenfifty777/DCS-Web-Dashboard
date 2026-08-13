@@ -14,16 +14,27 @@ fn err_resp(msg: &str) -> Response {
     Json(json!({ "error": msg })).into_response()
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::IntoParams)]
 pub struct ParkingQuery {
     available: Option<bool>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 pub struct SetCoalitionPayload {
     coalition: i32,
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/airbases/{name}/parking",
+    tags = ["world"],
+    security(("jwt" = [])),
+    params(
+        ("name" = String, Path, description = "Airbase name"),
+        ParkingQuery
+    ),
+    responses((status = 200, description = "Airbase parking spots"))
+)]
 pub async fn parking(
     _user: AuthUser,
     State(state): State<AppState>,
@@ -47,6 +58,14 @@ pub async fn parking(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/airbases/{name}/runways",
+    tags = ["world"],
+    security(("jwt" = [])),
+    params(("name" = String, Path, description = "Airbase name")),
+    responses((status = 200, description = "Airbase runways"))
+)]
 pub async fn runways(
     _user: AuthUser,
     State(state): State<AppState>,
@@ -69,6 +88,15 @@ pub async fn runways(
     }
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/airbases/{name}/coalition",
+    tags = ["world"],
+    security(("jwt" = [])),
+    params(("name" = String, Path, description = "Airbase name")),
+    request_body = SetCoalitionPayload,
+    responses((status = 200, description = "Airbase coalition set"))
+)]
 pub async fn set_coalition(
     _user: AuthUser,
     State(state): State<AppState>,

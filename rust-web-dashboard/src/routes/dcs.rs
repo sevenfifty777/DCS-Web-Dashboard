@@ -157,6 +157,15 @@ pub async fn players(_user: AuthUser, State(state): State<AppState>) -> Response
 }
 
 /// `GET /api/players/banned` → banned players (HookService.GetBannedPlayers).
+#[utoipa::path(
+    get,
+    path = "/api/players/banned",
+    tags = ["dcs"],
+    security(("jwt" = [])),
+    responses(
+        (status = 200, description = "List of banned players"),
+    )
+)]
 pub async fn banned_players(_user: AuthUser, State(state): State<AppState>) -> Response {
     match grpc::get_banned_players(state.grpc.clone()).await {
         Ok(resp) => {
@@ -227,12 +236,22 @@ pub async fn chat(
 
 // --- /api/console ----------------------------------------------------------
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 pub struct ConsoleBody {
     lua: Option<String>,
 }
 
 /// `POST /api/console` → evaluate Lua in the mission (CustomService.Eval).
+#[utoipa::path(
+    post,
+    path = "/api/console",
+    tags = ["dcs"],
+    security(("jwt" = [])),
+    request_body = ConsoleBody,
+    responses(
+        (status = 200, description = "Lua evaluation result"),
+    )
+)]
 pub async fn console(
     _user: AuthUser,
     State(state): State<AppState>,
@@ -250,12 +269,22 @@ pub async fn console(
 
 // --- /api/triggers ---------------------------------------------------------
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::IntoParams)]
 pub struct FlagQuery {
     flag: Option<String>,
 }
 
 /// `GET /api/triggers?flag=...` → read user flag (TriggerService.GetUserFlag).
+#[utoipa::path(
+    get,
+    path = "/api/triggers",
+    tags = ["dcs"],
+    security(("jwt" = [])),
+    params(FlagQuery),
+    responses(
+        (status = 200, description = "Flag value"),
+    )
+)]
 pub async fn get_flag(
     _user: AuthUser,
     State(state): State<AppState>,
@@ -271,14 +300,26 @@ pub async fn get_flag(
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 pub struct SetFlagBody {
+    #[schema(value_type = Object)]
     flag: Option<serde_json::Value>,
+    #[schema(value_type = Object)]
     value: Option<serde_json::Value>,
 }
 
 /// `POST /api/triggers` → set user flag (TriggerService.SetUserFlag). The
 /// source coerced `flag` via `.toString()` and `value` via `Number(...)`.
+#[utoipa::path(
+    post,
+    path = "/api/triggers",
+    tags = ["dcs"],
+    security(("jwt" = [])),
+    request_body = SetFlagBody,
+    responses(
+        (status = 200, description = "Flag set successfully"),
+    )
+)]
 pub async fn set_flag(
     _user: AuthUser,
     State(state): State<AppState>,
@@ -322,7 +363,7 @@ fn value_to_u32(v: &serde_json::Value) -> Option<u32> {
 
 // --- /api/atmosphere -------------------------------------------------------
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::IntoParams)]
 pub struct AtmosphereQuery {
     lat: Option<f64>,
     lon: Option<f64>,
@@ -331,6 +372,16 @@ pub struct AtmosphereQuery {
 
 /// `GET /api/atmosphere?lat=&lon=&alt=` → wind + temperature/pressure
 /// (AtmosphereService). `alt` defaults to 0, matching the source.
+#[utoipa::path(
+    get,
+    path = "/api/atmosphere",
+    tags = ["dcs"],
+    security(("jwt" = [])),
+    params(AtmosphereQuery),
+    responses(
+        (status = 200, description = "Atmosphere data"),
+    )
+)]
 pub async fn atmosphere(
     _user: AuthUser,
     State(state): State<AppState>,
@@ -357,6 +408,15 @@ pub async fn atmosphere(
 // --- /api/marks ------------------------------------------------------------
 
 /// `GET /api/marks` → current mark panels (WorldService.GetMarkPanels).
+#[utoipa::path(
+    get,
+    path = "/api/marks",
+    tags = ["dcs"],
+    security(("jwt" = [])),
+    responses(
+        (status = 200, description = "List of mark panels"),
+    )
+)]
 pub async fn get_marks(_user: AuthUser, State(state): State<AppState>) -> Response {
     match grpc::get_mark_panels(state.grpc.clone()).await {
         Ok(resp) => {
@@ -387,6 +447,15 @@ pub async fn get_marks(_user: AuthUser, State(state): State<AppState>) -> Respon
 // --- /api/airbases ---------------------------------------------------------
 
 /// `GET /api/airbases` → current airbases (WorldService.GetAirbases).
+#[utoipa::path(
+    get,
+    path = "/api/airbases",
+    tags = ["dcs"],
+    security(("jwt" = [])),
+    responses(
+        (status = 200, description = "List of airbases"),
+    )
+)]
 pub async fn get_airbases(_user: AuthUser, State(state): State<AppState>) -> Response {
     match grpc::get_airbases(state.grpc.clone()).await {
         Ok(resp) => {
@@ -417,6 +486,15 @@ pub async fn get_airbases(_user: AuthUser, State(state): State<AppState>) -> Res
 // --- /api/zones ------------------------------------------------------------
 
 /// `GET /api/zones` → current mission editor zones (CustomService.Eval).
+#[utoipa::path(
+    get,
+    path = "/api/zones",
+    tags = ["dcs"],
+    security(("jwt" = [])),
+    responses(
+        (status = 200, description = "List of zones"),
+    )
+)]
 pub async fn get_zones(_user: AuthUser, State(state): State<AppState>) -> Response {
     let lua = r#"
 local res = {}
@@ -464,6 +542,15 @@ return res
 // --- /api/zones/foothold ----------------------------------------------------
 
 /// `GET /api/zones/foothold` → Foothold-specific zones (CustomService.Eval).
+#[utoipa::path(
+    get,
+    path = "/api/zones/foothold",
+    tags = ["dcs"],
+    security(("jwt" = [])),
+    responses(
+        (status = 200, description = "List of foothold zones"),
+    )
+)]
 pub async fn get_foothold_zones(_user: AuthUser, State(state): State<AppState>) -> Response {
     let lua = r#"
 local mz = {}
@@ -618,6 +705,15 @@ return {
 /// Per-call gRPC failures fall back to `"Unknown"` / `false`, matching the
 /// source's individual `.catch(...)` handling. A `serverSettings.lua` parse
 /// failure yields `serverInfo: null` and an empty queue, as in the source.
+#[utoipa::path(
+    get,
+    path = "/api/mission",
+    tags = ["dcs"],
+    security(("jwt" = [])),
+    responses(
+        (status = 200, description = "Mission status details"),
+    )
+)]
 pub async fn mission_status(_user: AuthUser, State(state): State<AppState>) -> Response {
     // Use a timeout so that if DCS is offline and the gRPC connection hangs,
     // we fail fast and still return the serverInfo from Lua.
@@ -683,13 +779,13 @@ async fn list_uploaded_missions(dir: &Path) -> Vec<String> {
     out
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 pub struct MissionBody {
     action: Option<String>,
     payload: Option<MissionPayload>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 pub struct MissionPayload {
     file_name: Option<String>,
 }
@@ -697,6 +793,16 @@ pub struct MissionPayload {
 /// `POST /api/mission` → mission control actions (HookService). Queue
 /// mutation (`add_to_queue` / `remove_from_queue`) is filesystem-backed and
 /// returns `501` until Phase 5.
+#[utoipa::path(
+    post,
+    path = "/api/mission",
+    tags = ["dcs"],
+    security(("jwt" = [])),
+    request_body = MissionBody,
+    responses(
+        (status = 200, description = "Mission action successful"),
+    )
+)]
 pub async fn mission_action(
     _user: AuthUser,
     State(state): State<AppState>,
@@ -777,6 +883,22 @@ pub async fn mission_action(
     }
 }// --- Recovered Endpoints ---
 
+#[derive(Deserialize, utoipa::ToSchema)]
+pub struct PlayerActionBody {
+    id: u32,
+    reason: Option<String>,
+    period: Option<u32>, // for ban
+    ucid: Option<String>, // for unban
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/players/kick",
+    tags = ["dcs"],
+    security(("jwt" = [])),
+    request_body = PlayerActionBody,
+    responses((status = 200, description = "Player kicked"))
+)]
 pub async fn kick_player(_user: AuthUser, State(state): State<AppState>, Json(payload): Json<serde_json::Value>) -> Response {
     let id = payload["id"].as_u64().unwrap_or(0) as u32;
     let reason = payload["reason"].as_str().unwrap_or("Kicked").to_string();
@@ -786,6 +908,14 @@ pub async fn kick_player(_user: AuthUser, State(state): State<AppState>, Json(pa
     }
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/players/ban",
+    tags = ["dcs"],
+    security(("jwt" = [])),
+    request_body = PlayerActionBody,
+    responses((status = 200, description = "Player banned"))
+)]
 pub async fn ban_player(_user: AuthUser, State(state): State<AppState>, Json(payload): Json<serde_json::Value>) -> Response {
     let id = payload["id"].as_u64().unwrap_or(0) as u32;
     let period = payload["period"].as_u64().unwrap_or(0) as u32;
@@ -796,6 +926,14 @@ pub async fn ban_player(_user: AuthUser, State(state): State<AppState>, Json(pay
     }
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/players/unban",
+    tags = ["dcs"],
+    security(("jwt" = [])),
+    request_body = PlayerActionBody,
+    responses((status = 200, description = "Player unbanned"))
+)]
 pub async fn unban_player(_user: AuthUser, State(state): State<AppState>, Json(payload): Json<serde_json::Value>) -> Response {
     let ucid = payload["ucid"].as_str().unwrap_or("").to_string();
     match grpc::unban_player(state.grpc.clone(), ucid).await {
@@ -804,6 +942,21 @@ pub async fn unban_player(_user: AuthUser, State(state): State<AppState>, Json(p
     }
 }
 
+#[derive(Deserialize, utoipa::ToSchema)]
+pub struct AnnouncementBody {
+    message: String,
+    display_time: Option<u32>,
+    coalition: Option<String>,
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/announcements",
+    tags = ["dcs"],
+    security(("jwt" = [])),
+    request_body = AnnouncementBody,
+    responses((status = 200, description = "Announcement sent"))
+)]
 pub async fn announcements(_user: AuthUser, State(state): State<AppState>, Json(payload): Json<serde_json::Value>) -> Response {
     let text = payload.get("message").or_else(|| payload.get("text")).and_then(|v| v.as_str()).unwrap_or("").to_string();
     let display_time = payload.get("display_time").and_then(|v| v.as_u64()).unwrap_or(10) as u32;
@@ -831,6 +984,14 @@ pub async fn announcements(_user: AuthUser, State(state): State<AppState>, Json(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/units/{name}",
+    tags = ["dcs"],
+    security(("jwt" = [])),
+    params(("name" = String, Path, description = "Unit name")),
+    responses((status = 200, description = "Unit details"))
+)]
 pub async fn get_unit_details(_user: AuthUser, State(state): State<AppState>, axum::extract::Path(name): axum::extract::Path<String>) -> Response {
     let (life_res, fuel_res, ammo_res, radar_res, sensors_res) = tokio::join!(
         grpc::get_unit_life(state.grpc.clone(), name.clone()),
@@ -893,11 +1054,20 @@ pub async fn get_unit_details(_user: AuthUser, State(state): State<AppState>, ax
     Json(details).into_response()
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 pub struct EmissionPayload {
     pub emitting: bool,
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/units/{name}/emission",
+    tags = ["dcs"],
+    security(("jwt" = [])),
+    params(("name" = String, Path, description = "Unit name")),
+    request_body = EmissionPayload,
+    responses((status = 200, description = "Emission set"))
+)]
 pub async fn set_unit_emission(_user: AuthUser, State(state): State<AppState>, axum::extract::Path(name): axum::extract::Path<String>, Json(payload): Json<EmissionPayload>) -> Response {
     match grpc::set_unit_emission(state.grpc.clone(), name, payload.emitting).await {
         Ok(_) => Json(json!({ "success": true })).into_response(),
@@ -905,6 +1075,14 @@ pub async fn set_unit_emission(_user: AuthUser, State(state): State<AppState>, a
     }
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/units/{name}/destroy",
+    tags = ["dcs"],
+    security(("jwt" = [])),
+    params(("name" = String, Path, description = "Unit name")),
+    responses((status = 200, description = "Unit destroyed"))
+)]
 pub async fn destroy_unit_group(_user: AuthUser, State(state): State<AppState>, axum::extract::Path(name): axum::extract::Path<String>) -> Response {
     let lua = format!(
         "local u = Unit.getByName('{}'); if u then return u:getGroup():getName() else return nil end",
@@ -926,11 +1104,20 @@ pub async fn destroy_unit_group(_user: AuthUser, State(state): State<AppState>, 
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 pub struct ROEPayload {
     pub roe: i32,
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/units/{name}/roe",
+    tags = ["dcs"],
+    security(("jwt" = [])),
+    params(("name" = String, Path, description = "Unit name")),
+    request_body = ROEPayload,
+    responses((status = 200, description = "ROE set"))
+)]
 pub async fn set_group_roe(_user: AuthUser, State(state): State<AppState>, axum::extract::Path(name): axum::extract::Path<String>, Json(payload): Json<ROEPayload>) -> Response {
     let group_resp = match grpc::get_unit_group(state.grpc.clone(), name).await {
         Ok(r) => r,
@@ -947,11 +1134,20 @@ pub async fn set_group_roe(_user: AuthUser, State(state): State<AppState>, axum:
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 pub struct AlarmStatePayload {
     pub alarm_state: i32,
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/units/{name}/alarm-state",
+    tags = ["dcs"],
+    security(("jwt" = [])),
+    params(("name" = String, Path, description = "Unit name")),
+    request_body = AlarmStatePayload,
+    responses((status = 200, description = "Alarm state set"))
+)]
 pub async fn set_group_alarm_state(_user: AuthUser, State(state): State<AppState>, axum::extract::Path(name): axum::extract::Path<String>, Json(payload): Json<AlarmStatePayload>) -> Response {
     let group_resp = match grpc::get_unit_group(state.grpc.clone(), name).await {
         Ok(r) => r,
@@ -968,13 +1164,22 @@ pub async fn set_group_alarm_state(_user: AuthUser, State(state): State<AppState
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 pub struct LasePayload {
     pub target_x: f64,
     pub target_z: f64,
     pub code: u32,
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/units/{name}/lase",
+    tags = ["dcs"],
+    security(("jwt" = [])),
+    params(("name" = String, Path, description = "Unit name")),
+    request_body = LasePayload,
+    responses((status = 200, description = "Lase target"))
+)]
 pub async fn lase(_user: AuthUser, State(state): State<AppState>, axum::extract::Path(name): axum::extract::Path<String>, Json(payload): Json<LasePayload>) -> Response {
     let lua = format!(
         "local src = Unit.getByName('{}')
@@ -1014,12 +1219,21 @@ pub async fn lase(_user: AuthUser, State(state): State<AppState>, axum::extract:
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 pub struct IrPointerPayload {
     pub target_x: f64,
     pub target_z: f64,
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/units/{name}/ir-point",
+    tags = ["dcs"],
+    security(("jwt" = [])),
+    params(("name" = String, Path, description = "Unit name")),
+    request_body = IrPointerPayload,
+    responses((status = 200, description = "Point IR"))
+)]
 pub async fn ir_pointer(_user: AuthUser, State(state): State<AppState>, axum::extract::Path(name): axum::extract::Path<String>, Json(payload): Json<IrPointerPayload>) -> Response {
     let lua = format!(
         "local src = Unit.getByName('{}')
@@ -1059,6 +1273,14 @@ pub async fn ir_pointer(_user: AuthUser, State(state): State<AppState>, axum::ex
     }
 }
 
+#[utoipa::path(
+    delete,
+    path = "/api/spots/{id}",
+    tags = ["dcs"],
+    security(("jwt" = [])),
+    params(("id" = u32, Path, description = "Spot ID")),
+    responses((status = 200, description = "Spot destroyed"))
+)]
 pub async fn destroy_spot(_user: AuthUser, State(state): State<AppState>, axum::extract::Path(id): axum::extract::Path<u32>) -> Response {
     match grpc::destroy_spot(state.grpc.clone(), id).await {
         Ok(_) => Json(json!({ "success": true })).into_response(),

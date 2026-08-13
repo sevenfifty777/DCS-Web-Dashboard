@@ -13,12 +13,20 @@ use crate::{
     state::AppState,
 };
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::IntoParams)]
 pub struct InventoryQuery {
     airbase_name: String,
 }
 
 /// `GET /api/warehouse/inventory`
+#[utoipa::path(
+    get,
+    path = "/api/warehouse/inventory",
+    tags = ["warehouse"],
+    security(("jwt" = [])),
+    params(InventoryQuery),
+    responses((status = 200, description = "Airbase inventory"))
+)]
 pub async fn get_inventory(
     _user: AuthUser,
     State(state): State<AppState>,
@@ -36,7 +44,7 @@ pub async fn get_inventory(
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 pub struct AddItemBody {
     airbase_name: String,
     item_name: String,
@@ -44,6 +52,14 @@ pub struct AddItemBody {
 }
 
 /// `POST /api/warehouse/item/add`
+#[utoipa::path(
+    post,
+    path = "/api/warehouse/item/add",
+    tags = ["warehouse"],
+    security(("jwt" = [])),
+    request_body = AddItemBody,
+    responses((status = 200, description = "Item added to inventory"))
+)]
 pub async fn add_item(
     _user: AuthUser,
     State(state): State<AppState>,
@@ -55,7 +71,7 @@ pub async fn add_item(
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 pub struct AddLiquidBody {
     airbase_name: String,
     liquid_type: i32,
@@ -63,6 +79,14 @@ pub struct AddLiquidBody {
 }
 
 /// `POST /api/warehouse/liquid/add`
+#[utoipa::path(
+    post,
+    path = "/api/warehouse/liquid/add",
+    tags = ["warehouse"],
+    security(("jwt" = [])),
+    request_body = AddLiquidBody,
+    responses((status = 200, description = "Liquid added to inventory"))
+)]
 pub async fn add_liquid(
     _user: AuthUser,
     State(state): State<AppState>,

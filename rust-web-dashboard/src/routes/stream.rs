@@ -19,6 +19,12 @@ use tokio_stream::{Stream, StreamExt};
 use crate::state::AppState;
 
 /// `GET /api/events/stream` — mission events as SSE.
+#[utoipa::path(
+    get,
+    path = "/api/events/stream",
+    tags = ["stream"],
+    responses((status = 200, description = "SSE stream of events"))
+)]
 pub async fn events_stream(
     State(state): State<AppState>,
 ) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
@@ -26,6 +32,12 @@ pub async fn events_stream(
 }
 
 /// `GET /api/radar/stream` — unit position updates as SSE.
+#[utoipa::path(
+    get,
+    path = "/api/radar/stream",
+    tags = ["stream"],
+    responses((status = 200, description = "SSE stream of radar updates"))
+)]
 pub async fn radar_stream(
     State(state): State<AppState>,
 ) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
