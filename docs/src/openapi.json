@@ -10,6 +10,218 @@
     "version": "0.1.0"
   },
   "paths": {
+    "/api/airbases": {
+      "get": {
+        "tags": [
+          "dcs"
+        ],
+        "summary": "`GET /api/airbases` → current airbases (WorldService.GetAirbases).",
+        "operationId": "get_airbases",
+        "responses": {
+          "200": {
+            "description": "List of airbases"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/airbases/{name}/coalition": {
+      "post": {
+        "tags": [
+          "world"
+        ],
+        "operationId": "set_coalition",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "description": "Airbase name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetCoalitionPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Airbase coalition set"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/airbases/{name}/parking": {
+      "get": {
+        "tags": [
+          "world"
+        ],
+        "operationId": "parking",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "description": "Airbase name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "available",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Airbase parking spots"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/airbases/{name}/runways": {
+      "get": {
+        "tags": [
+          "world"
+        ],
+        "operationId": "runways",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "description": "Airbase name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Airbase runways"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/announcements": {
+      "post": {
+        "tags": [
+          "dcs"
+        ],
+        "operationId": "announcements",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnnouncementBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Announcement sent"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/atmosphere": {
+      "get": {
+        "tags": [
+          "dcs"
+        ],
+        "summary": "`GET /api/atmosphere?lat=&lon=&alt=` → wind + temperature/pressure\n(AtmosphereService). `alt` defaults to 0, matching the source.",
+        "operationId": "atmosphere",
+        "parameters": [
+          {
+            "name": "lat",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "format": "double"
+            }
+          },
+          {
+            "name": "lon",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "format": "double"
+            }
+          },
+          {
+            "name": "alt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "format": "double"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Atmosphere data"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
     "/api/auth": {
       "post": {
         "tags": [
@@ -42,6 +254,84 @@
             "description": "Bad credentials"
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "`DELETE /api/auth` — logout. JWTs are stateless, so this is a client cue.",
+        "operationId": "logout",
+        "responses": {
+          "200": {
+            "description": "Logout successful"
+          }
+        }
+      }
+    },
+    "/api/auth/callback": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "`GET /api/auth/callback` — complete the OAuth flow and redirect to the UI\nwith a session token in the URL fragment, or an error query on failure.",
+        "operationId": "discord_callback",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "303": {
+            "description": "Redirect to UI with token or error"
+          }
+        }
+      }
+    },
+    "/api/auth/discord": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "`GET /api/auth/discord` — redirect the browser to Discord's OAuth consent.",
+        "operationId": "discord_login",
+        "responses": {
+          "307": {
+            "description": "Redirect to Discord"
+          },
+          "500": {
+            "description": "Discord OAuth not configured"
+          }
+        }
+      }
+    },
+    "/api/auth/verify": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "`GET /api/auth/verify` — confirm a bearer token is valid.",
+        "operationId": "verify",
+        "responses": {
+          "200": {
+            "description": "Token is valid"
+          },
+          "401": {
+            "description": "Token is invalid or missing"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
       }
     },
     "/api/chat": {
@@ -79,6 +369,211 @@
         ]
       }
     },
+    "/api/coalition/bullseye": {
+      "get": {
+        "tags": [
+          "coalition"
+        ],
+        "operationId": "bullseye",
+        "parameters": [
+          {
+            "name": "coalition",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Coalition bullseye"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/coalition/groups": {
+      "get": {
+        "tags": [
+          "coalition"
+        ],
+        "operationId": "groups",
+        "parameters": [
+          {
+            "name": "coalition",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Coalition groups"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/coalition/players": {
+      "get": {
+        "tags": [
+          "coalition"
+        ],
+        "operationId": "player_units",
+        "parameters": [
+          {
+            "name": "coalition",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Player units"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/coalition/statics": {
+      "get": {
+        "tags": [
+          "coalition"
+        ],
+        "operationId": "statics",
+        "parameters": [
+          {
+            "name": "coalition",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Static objects"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/console": {
+      "post": {
+        "tags": [
+          "dcs"
+        ],
+        "summary": "`POST /api/console` → evaluate Lua in the mission (CustomService.Eval).",
+        "operationId": "console",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsoleBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Lua evaluation result"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/events/stream": {
+      "get": {
+        "tags": [
+          "stream"
+        ],
+        "summary": "`GET /api/events/stream` — mission events as SSE.",
+        "operationId": "events_stream",
+        "responses": {
+          "200": {
+            "description": "SSE stream of events"
+          }
+        }
+      }
+    },
+    "/api/foothold": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "operationId": "foothold_get",
+        "responses": {
+          "200": {
+            "description": "Foothold data"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/graveyard": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "`GET /api/graveyard` -> Returns the current live graveyard JSON",
+        "operationId": "graveyard_get",
+        "responses": {
+          "200": {
+            "description": "Graveyard state"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
     "/api/health": {
       "get": {
         "tags": [
@@ -97,6 +592,153 @@
         }
       }
     },
+    "/api/logs/access": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "`GET /api/logs/access` → authentication audit log, mapped to the frontend\nshape (`timestamp` ms / `userId`).",
+        "operationId": "logs_access",
+        "responses": {
+          "200": {
+            "description": "Audit log data"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/logs/dcs/stream": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "`GET /api/logs/dcs/stream` → tail DCS log using SSE.",
+        "operationId": "dcs_log_stream",
+        "responses": {
+          "200": {
+            "description": "SSE stream of DCS log"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/marks": {
+      "get": {
+        "tags": [
+          "dcs"
+        ],
+        "summary": "`GET /api/marks` → current mark panels (WorldService.GetMarkPanels).",
+        "operationId": "get_marks",
+        "responses": {
+          "200": {
+            "description": "List of mark panels"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/mission": {
+      "get": {
+        "tags": [
+          "dcs"
+        ],
+        "summary": "`GET /api/mission` → current mission + paused state (HookService) plus\nfilesystem-derived `serverInfo`, `queue`, and `uploadedMissions`.",
+        "description": "Per-call gRPC failures fall back to `\"Unknown\"` / `false`, matching the\nsource's individual `.catch(...)` handling. A `serverSettings.lua` parse\nfailure yields `serverInfo: null` and an empty queue, as in the source.",
+        "operationId": "mission_status",
+        "responses": {
+          "200": {
+            "description": "Mission status details"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "dcs"
+        ],
+        "summary": "`POST /api/mission` → mission control actions (HookService). Queue\nmutation (`add_to_queue` / `remove_from_queue`) is filesystem-backed and\nreturns `501` until Phase 5.",
+        "operationId": "mission_action",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MissionBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Mission action successful"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/mission/browse": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "`GET /api/mission/browse` → recursively list `.miz` files under `Missions`\n(depth ≤ 3, skipping hidden folders and `Uploads`).",
+        "operationId": "mission_browse",
+        "responses": {
+          "200": {
+            "description": "List of .miz files"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/mission/upload": {
+      "post": {
+        "tags": [
+          "system"
+        ],
+        "summary": "`POST /api/mission/upload` → save a `.miz` upload into `Missions/Uploads`.",
+        "operationId": "mission_upload",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {}
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mission uploaded successfully"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
     "/api/players": {
       "get": {
         "tags": [
@@ -110,6 +752,280 @@
           },
           "500": {
             "description": "Failed to fetch players"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/players/ban": {
+      "post": {
+        "tags": [
+          "dcs"
+        ],
+        "operationId": "ban_player",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlayerActionBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Player banned"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/players/banned": {
+      "get": {
+        "tags": [
+          "dcs"
+        ],
+        "summary": "`GET /api/players/banned` → banned players (HookService.GetBannedPlayers).",
+        "operationId": "banned_players",
+        "responses": {
+          "200": {
+            "description": "List of banned players"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/players/kick": {
+      "post": {
+        "tags": [
+          "dcs"
+        ],
+        "operationId": "kick_player",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlayerActionBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Player kicked"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/players/unban": {
+      "post": {
+        "tags": [
+          "dcs"
+        ],
+        "operationId": "unban_player",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlayerActionBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Player unbanned"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/radar/stream": {
+      "get": {
+        "tags": [
+          "stream"
+        ],
+        "summary": "`GET /api/radar/stream` — unit position updates as SSE.",
+        "operationId": "radar_stream",
+        "responses": {
+          "200": {
+            "description": "SSE stream of radar updates"
+          }
+        }
+      }
+    },
+    "/api/rdp-status": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "`GET /api/rdp-status` → active Windows interactive/RDP sessions (`quser`).",
+        "operationId": "rdp_status",
+        "responses": {
+          "200": {
+            "description": "RDP session status"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/server/dcs-process": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "`GET /api/server/dcs-process` → check if DCS.exe or DCS_server.exe is running.",
+        "operationId": "dcs_process_get",
+        "responses": {
+          "200": {
+            "description": "DCS process running state"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "system"
+        ],
+        "summary": "`POST /api/server/dcs-process` → start/stop/restart DCS.exe.",
+        "operationId": "dcs_process_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DcsProcessAction"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "DCS process action executed"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/server/srs-process": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "`GET /api/server/srs-process` → check if SRS-Server.exe is running.",
+        "operationId": "srs_process_get",
+        "responses": {
+          "200": {
+            "description": "SRS process running state"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "system"
+        ],
+        "summary": "`POST /api/server/srs-process` → start/stop/restart SRS-Server.exe.",
+        "operationId": "srs_process_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SrsProcessAction"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "SRS process action executed"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/server/tasks": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "`GET /api/server/tasks` → root-folder scheduled tasks (PowerShell).",
+        "operationId": "tasks_get",
+        "responses": {
+          "200": {
+            "description": "Scheduled tasks"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "system"
+        ],
+        "summary": "`POST /api/server/tasks` → start/stop/restart a scheduled task.",
+        "operationId": "tasks_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskActionBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Task action sent"
           }
         },
         "security": [
@@ -139,11 +1055,807 @@
             "jwt": []
           }
         ]
+      },
+      "post": {
+        "tags": [
+          "system"
+        ],
+        "summary": "`POST /api/settings` → rewrite `serverSettings.lua` (byte-faithful CRLF/tabs).",
+        "operationId": "settings_post",
+        "requestBody": {
+          "description": "New server settings",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Settings saved successfully"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/spawn/ground": {
+      "post": {
+        "tags": [
+          "spawner"
+        ],
+        "operationId": "spawn_ground",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SpawnGroundPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Ground group spawned"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/spots/{id}": {
+      "delete": {
+        "tags": [
+          "dcs"
+        ],
+        "operationId": "destroy_spot",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Spot ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Spot destroyed"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/srs/clients": {
+      "get": {
+        "tags": [
+          "srs"
+        ],
+        "operationId": "get_clients",
+        "responses": {
+          "200": {
+            "description": "List of SRS clients"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/srs/settings": {
+      "get": {
+        "tags": [
+          "srs"
+        ],
+        "operationId": "get_settings",
+        "responses": {
+          "200": {
+            "description": "SRS configuration settings"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "srs"
+        ],
+        "operationId": "post_settings",
+        "requestBody": {
+          "description": "New SRS configuration settings",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "SRS configuration updated"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/trigger/effect": {
+      "post": {
+        "tags": [
+          "trigger"
+        ],
+        "operationId": "trigger_effect",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EffectPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Effect triggered"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/trigger/mark": {
+      "post": {
+        "tags": [
+          "trigger"
+        ],
+        "operationId": "create_mark",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarkPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Mark created"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/trigger/mark/{id}": {
+      "delete": {
+        "tags": [
+          "trigger"
+        ],
+        "operationId": "remove_mark",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Mark ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Mark removed"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/triggers": {
+      "get": {
+        "tags": [
+          "dcs"
+        ],
+        "summary": "`GET /api/triggers?flag=...` → read user flag (TriggerService.GetUserFlag).",
+        "operationId": "get_flag",
+        "parameters": [
+          {
+            "name": "flag",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Flag value"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "dcs"
+        ],
+        "summary": "`POST /api/triggers` → set user flag (TriggerService.SetUserFlag). The\nsource coerced `flag` via `.toString()` and `value` via `Number(...)`.",
+        "operationId": "set_flag",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetFlagBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Flag set successfully"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/units/{name}": {
+      "get": {
+        "tags": [
+          "dcs"
+        ],
+        "operationId": "get_unit_details",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "description": "Unit name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Unit details"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/units/{name}/alarm-state": {
+      "post": {
+        "tags": [
+          "dcs"
+        ],
+        "operationId": "set_group_alarm_state",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "description": "Unit name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlarmStatePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Alarm state set"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/units/{name}/destroy": {
+      "post": {
+        "tags": [
+          "dcs"
+        ],
+        "operationId": "destroy_unit_group",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "description": "Unit name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Unit destroyed"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/units/{name}/emission": {
+      "post": {
+        "tags": [
+          "dcs"
+        ],
+        "operationId": "set_unit_emission",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "description": "Unit name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmissionPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Emission set"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/units/{name}/ir-point": {
+      "post": {
+        "tags": [
+          "dcs"
+        ],
+        "operationId": "ir_pointer",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "description": "Unit name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IrPointerPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Point IR"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/units/{name}/lase": {
+      "post": {
+        "tags": [
+          "dcs"
+        ],
+        "operationId": "lase",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "description": "Unit name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LasePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Lase target"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/units/{name}/roe": {
+      "post": {
+        "tags": [
+          "dcs"
+        ],
+        "operationId": "set_group_roe",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "description": "Unit name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ROEPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "ROE set"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/warehouse/inventory": {
+      "get": {
+        "tags": [
+          "warehouse"
+        ],
+        "summary": "`GET /api/warehouse/inventory`",
+        "operationId": "get_inventory",
+        "parameters": [
+          {
+            "name": "airbase_name",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Airbase inventory"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/warehouse/item/add": {
+      "post": {
+        "tags": [
+          "warehouse"
+        ],
+        "summary": "`POST /api/warehouse/item/add`",
+        "operationId": "add_item",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddItemBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Item added to inventory"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/warehouse/liquid/add": {
+      "post": {
+        "tags": [
+          "warehouse"
+        ],
+        "summary": "`POST /api/warehouse/liquid/add`",
+        "operationId": "add_liquid",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddLiquidBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Liquid added to inventory"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/weather": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "`GET /api/weather` → presets + current applied weather state. Overrides the\nreported mission name with the live DCS mission when reachable.",
+        "operationId": "weather_get",
+        "responses": {
+          "200": {
+            "description": "Weather state and presets"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/weather/apply": {
+      "post": {
+        "tags": [
+          "system"
+        ],
+        "summary": "`POST /api/weather/apply` → run the weather generator and reload the mission.",
+        "operationId": "weather_apply",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WeatherApplyBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Weather applied"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/zones": {
+      "get": {
+        "tags": [
+          "dcs"
+        ],
+        "summary": "`GET /api/zones` → current mission editor zones (CustomService.Eval).",
+        "operationId": "get_zones",
+        "responses": {
+          "200": {
+            "description": "List of zones"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/zones/foothold": {
+      "get": {
+        "tags": [
+          "dcs"
+        ],
+        "summary": "`GET /api/zones/foothold` → Foothold-specific zones (CustomService.Eval).",
+        "operationId": "get_foothold_zones",
+        "responses": {
+          "200": {
+            "description": "List of foothold zones"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
       }
     }
   },
   "components": {
     "schemas": {
+      "AddItemBody": {
+        "type": "object",
+        "required": [
+          "airbase_name",
+          "item_name",
+          "count"
+        ],
+        "properties": {
+          "airbase_name": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "item_name": {
+            "type": "string"
+          }
+        }
+      },
+      "AddLiquidBody": {
+        "type": "object",
+        "required": [
+          "airbase_name",
+          "liquid_type",
+          "amount"
+        ],
+        "properties": {
+          "airbase_name": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number",
+            "format": "double"
+          },
+          "liquid_type": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "AlarmStatePayload": {
+        "type": "object",
+        "required": [
+          "alarm_state"
+        ],
+        "properties": {
+          "alarm_state": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "AnnouncementBody": {
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "properties": {
+          "coalition": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "display_time": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
       "ChatBody": {
         "type": "object",
         "properties": {
@@ -161,6 +1873,105 @@
           }
         }
       },
+      "ConsoleBody": {
+        "type": "object",
+        "properties": {
+          "lua": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "DcsProcessAction": {
+        "type": "object",
+        "required": [
+          "action"
+        ],
+        "properties": {
+          "action": {
+            "type": "string"
+          }
+        }
+      },
+      "EffectPayload": {
+        "type": "object",
+        "required": [
+          "effect",
+          "lat",
+          "lon",
+          "color"
+        ],
+        "properties": {
+          "color": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "effect": {
+            "type": "string"
+          },
+          "lat": {
+            "type": "number",
+            "format": "double"
+          },
+          "lon": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "EmissionPayload": {
+        "type": "object",
+        "required": [
+          "emitting"
+        ],
+        "properties": {
+          "emitting": {
+            "type": "boolean"
+          }
+        }
+      },
+      "IrPointerPayload": {
+        "type": "object",
+        "required": [
+          "target_x",
+          "target_z"
+        ],
+        "properties": {
+          "target_x": {
+            "type": "number",
+            "format": "double"
+          },
+          "target_z": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "LasePayload": {
+        "type": "object",
+        "required": [
+          "target_x",
+          "target_z",
+          "code"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "target_x": {
+            "type": "number",
+            "format": "double"
+          },
+          "target_z": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
       "LoginRequest": {
         "type": "object",
         "required": [
@@ -169,6 +1980,248 @@
         "properties": {
           "password": {
             "type": "string"
+          }
+        }
+      },
+      "MarkPayload": {
+        "type": "object",
+        "required": [
+          "shape",
+          "lat1",
+          "lon1",
+          "r",
+          "g",
+          "b",
+          "a"
+        ],
+        "properties": {
+          "a": {
+            "type": "number",
+            "format": "double"
+          },
+          "b": {
+            "type": "number",
+            "format": "double"
+          },
+          "g": {
+            "type": "number",
+            "format": "double"
+          },
+          "lat1": {
+            "type": "number",
+            "format": "double"
+          },
+          "lat2": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "lon1": {
+            "type": "number",
+            "format": "double"
+          },
+          "lon2": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "r": {
+            "type": "number",
+            "format": "double"
+          },
+          "radius": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "shape": {
+            "type": "string"
+          },
+          "text": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "MissionBody": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "payload": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MissionPayload"
+              }
+            ]
+          }
+        }
+      },
+      "MissionPayload": {
+        "type": "object",
+        "properties": {
+          "file_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "PlayerActionBody": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "period": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ucid": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "ROEPayload": {
+        "type": "object",
+        "required": [
+          "roe"
+        ],
+        "properties": {
+          "roe": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "SetCoalitionPayload": {
+        "type": "object",
+        "required": [
+          "coalition"
+        ],
+        "properties": {
+          "coalition": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "SetFlagBody": {
+        "type": "object",
+        "required": [
+          "flag",
+          "value"
+        ],
+        "properties": {
+          "flag": {
+            "type": "object"
+          },
+          "value": {
+            "type": "object"
+          }
+        }
+      },
+      "SpawnGroundPayload": {
+        "type": "object",
+        "required": [
+          "country",
+          "name",
+          "unit_type",
+          "lat",
+          "lon",
+          "heading",
+          "count"
+        ],
+        "properties": {
+          "count": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "country": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "heading": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "lat": {
+            "type": "number",
+            "format": "double"
+          },
+          "lon": {
+            "type": "number",
+            "format": "double"
+          },
+          "name": {
+            "type": "string"
+          },
+          "unit_type": {
+            "type": "string"
+          }
+        }
+      },
+      "SrsProcessAction": {
+        "type": "object",
+        "required": [
+          "action"
+        ],
+        "properties": {
+          "action": {
+            "type": "string"
+          }
+        }
+      },
+      "TaskActionBody": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "taskName": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       },
@@ -191,6 +2244,17 @@
             "type": "string"
           }
         }
+      },
+      "WeatherApplyBody": {
+        "type": "object",
+        "required": [
+          "preset_id"
+        ],
+        "properties": {
+          "preset_id": {
+            "type": "object"
+          }
+        }
       }
     }
   },
@@ -206,6 +2270,34 @@
     {
       "name": "system",
       "description": "OS and filesystem endpoints"
+    },
+    {
+      "name": "srs",
+      "description": "SRS server endpoints"
+    },
+    {
+      "name": "warehouse",
+      "description": "Airbase inventory endpoints"
+    },
+    {
+      "name": "coalition",
+      "description": "Coalition object endpoints"
+    },
+    {
+      "name": "world",
+      "description": "World and environment endpoints"
+    },
+    {
+      "name": "trigger",
+      "description": "Trigger marks and effects endpoints"
+    },
+    {
+      "name": "stream",
+      "description": "SSE streaming endpoints"
+    },
+    {
+      "name": "spawner",
+      "description": "Unit spawning endpoints"
     }
   ]
 }

@@ -13,6 +13,13 @@ fn err_500(msg: &str) -> Response {
     (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": msg }))).into_response()
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/srs/settings",
+    tags = ["srs"],
+    security(("jwt" = [])),
+    responses((status = 200, description = "SRS configuration settings"))
+)]
 pub async fn get_settings(_user: AuthUser, State(state): State<AppState>) -> Result<Json<Value>, Response> {
     let cfg_path = state.config.srs_cfg_path.clone()
         .ok_or_else(|| err_500("SRS_CFG_PATH not configured. Please set it in your .env or configure SRS_START_CMD correctly."))?;
@@ -60,6 +67,14 @@ pub async fn get_settings(_user: AuthUser, State(state): State<AppState>) -> Res
     Ok(Json(Value::Object(map)))
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/srs/settings",
+    tags = ["srs"],
+    security(("jwt" = [])),
+    request_body(content = inline(serde_json::Value), description = "New SRS configuration settings"),
+    responses((status = 200, description = "SRS configuration updated"))
+)]
 pub async fn post_settings(
     _user: AuthUser,
     State(state): State<AppState>,
@@ -117,6 +132,13 @@ pub async fn post_settings(
     Ok(Json(json!({ "success": true })))
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/srs/clients",
+    tags = ["srs"],
+    security(("jwt" = [])),
+    responses((status = 200, description = "List of SRS clients"))
+)]
 pub async fn get_clients(_user: AuthUser, State(state): State<AppState>) -> Result<Json<Value>, Response> {
     match crate::grpc::get_srs_clients(state.grpc.clone()).await {
         Ok(resp) => {

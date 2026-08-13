@@ -66,11 +66,29 @@ pub async fn login(
 }
 
 /// `DELETE /api/auth` — logout. JWTs are stateless, so this is a client cue.
+#[utoipa::path(
+    delete,
+    path = "/api/auth",
+    tags = ["auth"],
+    responses(
+        (status = 200, description = "Logout successful"),
+    )
+)]
 pub async fn logout() -> Json<Value> {
     Json(json!({ "success": true }))
 }
 
 /// `GET /api/auth/verify` — confirm a bearer token is valid.
+#[utoipa::path(
+    get,
+    path = "/api/auth/verify",
+    tags = ["auth"],
+    security(("jwt" = [])),
+    responses(
+        (status = 200, description = "Token is valid"),
+        (status = 401, description = "Token is invalid or missing"),
+    )
+)]
 pub async fn verify(user: AuthUser) -> Json<Value> {
     Json(json!({
         "authenticated": true,
@@ -80,6 +98,15 @@ pub async fn verify(user: AuthUser) -> Json<Value> {
 }
 
 /// `GET /api/auth/discord` — redirect the browser to Discord's OAuth consent.
+#[utoipa::path(
+    get,
+    path = "/api/auth/discord",
+    tags = ["auth"],
+    responses(
+        (status = 307, description = "Redirect to Discord"),
+        (status = 500, description = "Discord OAuth not configured"),
+    )
+)]
 pub async fn discord_login(State(state): State<AppState>) -> Result<Redirect, AuthError> {
     let Some(discord) = state.config.discord.as_ref() else {
         return Err(AuthError::NotConfigured);
@@ -96,13 +123,22 @@ pub async fn discord_login(State(state): State<AppState>) -> Result<Redirect, Au
     Ok(Redirect::temporary(&url))
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::IntoParams)]
 pub struct CallbackQuery {
     code: Option<String>,
 }
 
 /// `GET /api/auth/callback` — complete the OAuth flow and redirect to the UI
 /// with a session token in the URL fragment, or an error query on failure.
+#[utoipa::path(
+    get,
+    path = "/api/auth/callback",
+    tags = ["auth"],
+    params(CallbackQuery),
+    responses(
+        (status = 303, description = "Redirect to UI with token or error"),
+    )
+)]
 pub async fn discord_callback(
     State(state): State<AppState>,
     Query(query): Query<CallbackQuery>,

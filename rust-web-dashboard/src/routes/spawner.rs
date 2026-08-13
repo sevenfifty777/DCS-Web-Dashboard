@@ -4,7 +4,7 @@ use serde::Deserialize;
 use serde_json::json;
 use crate::{auth::AuthUser, grpc, state::AppState};
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 pub struct SpawnGroundPayload {
     pub country: i32,
     pub name: String,
@@ -19,6 +19,14 @@ fn err_detail(msg: &str, err: impl std::fmt::Display) -> axum::response::Respons
     (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": msg, "details": err.to_string() }))).into_response()
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/spawn/ground",
+    tags = ["spawner"],
+    security(("jwt" = [])),
+    request_body = SpawnGroundPayload,
+    responses((status = 200, description = "Ground group spawned"))
+)]
 pub async fn spawn_ground(
     _user: AuthUser,
     State(state): State<AppState>,
