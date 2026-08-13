@@ -117,9 +117,28 @@ use utoipa_swagger_ui::SwaggerUi;
         (name = "trigger", description = "Trigger marks and effects endpoints"),
         (name = "stream", description = "SSE streaming endpoints"),
         (name = "spawner", description = "Unit spawning endpoints")
-    )
+    ),
+    modifiers(&SecurityAddon)
 )]
 pub struct ApiDoc;
+
+struct SecurityAddon;
+
+impl utoipa::Modify for SecurityAddon {
+    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
+        if let Some(components) = openapi.components.as_mut() {
+            components.add_security_scheme(
+                "jwt",
+                utoipa::openapi::security::SecurityScheme::Http(
+                    utoipa::openapi::security::HttpBuilder::new()
+                        .scheme(utoipa::openapi::security::HttpAuthScheme::Bearer)
+                        .bearer_format("JWT")
+                        .build(),
+                ),
+            )
+        }
+    }
+}
 
 /// Build the `/api` router with the dashboard's HTTP endpoints. Feature routes
 /// are added here as later phases land (see `docs/PLAN.md` §8).
