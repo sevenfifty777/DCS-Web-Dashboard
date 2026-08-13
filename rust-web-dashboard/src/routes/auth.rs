@@ -21,12 +21,12 @@ const DISCORD_TOKEN_URL: &str = "https://discord.com/api/oauth2/token";
 const DISCORD_USER_URL: &str = "https://discord.com/api/users/@me";
 const DISCORD_OAUTH_SCOPE: &str = "identify guilds.members.read";
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 pub struct LoginRequest {
     password: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, utoipa::ToSchema)]
 pub struct TokenResponse {
     token: String,
     token_type: &'static str,
@@ -34,6 +34,15 @@ pub struct TokenResponse {
 }
 
 /// `POST /api/auth` — exchange the admin password for a session JWT.
+#[utoipa::path(
+    post,
+    path = "/api/auth",
+    request_body = LoginRequest,
+    responses(
+        (status = 200, description = "Login successful", body = TokenResponse),
+        (status = 401, description = "Bad credentials"),
+    )
+)]
 pub async fn login(
     State(state): State<AppState>,
     Json(body): Json<LoginRequest>,

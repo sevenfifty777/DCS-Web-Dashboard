@@ -1,0 +1,211 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "rust-web-dashboard",
+    "description": "Standalone Rust web dashboard for a DCS-gRPC server (single-binary axum + tonic)",
+    "license": {
+      "name": "AGPL-3.0-or-later",
+      "identifier": "AGPL-3.0-or-later"
+    },
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/auth": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "`POST /api/auth` — exchange the admin password for a session JWT.",
+        "operationId": "login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Bad credentials"
+          }
+        }
+      }
+    },
+    "/api/chat": {
+      "post": {
+        "tags": [
+          "dcs"
+        ],
+        "summary": "`POST /api/chat` → broadcast chat (NetService.SendChat).",
+        "operationId": "chat",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Message sent successfully"
+          },
+          "400": {
+            "description": "Message is required"
+          },
+          "500": {
+            "description": "Failed to send chat"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/health": {
+      "get": {
+        "tags": [
+          "dcs"
+        ],
+        "summary": "`GET /api/health` → DCS server health + version (MetadataService).",
+        "description": "Intentionally public so the login screen can surface server status before a\nsession exists. Process liveness lives at `GET /healthz`.",
+        "operationId": "health",
+        "responses": {
+          "200": {
+            "description": "Server health and version"
+          },
+          "500": {
+            "description": "Failed to connect to DCS server"
+          }
+        }
+      }
+    },
+    "/api/players": {
+      "get": {
+        "tags": [
+          "dcs"
+        ],
+        "summary": "`GET /api/players` → connected players (NetService.GetPlayers).",
+        "operationId": "players",
+        "responses": {
+          "200": {
+            "description": "List of connected players"
+          },
+          "500": {
+            "description": "Failed to fetch players"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/settings": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "`GET /api/settings` → parsed `serverSettings.lua` (flat object with the\n`advanced` block, `missionList` array, and primitive keys).",
+        "operationId": "settings_get",
+        "responses": {
+          "200": {
+            "description": "Server settings JSON object"
+          },
+          "500": {
+            "description": "Failed to read settings"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ChatBody": {
+        "type": "object",
+        "properties": {
+          "coalition": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "message": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": [
+          "password"
+        ],
+        "properties": {
+          "password": {
+            "type": "string"
+          }
+        }
+      },
+      "TokenResponse": {
+        "type": "object",
+        "required": [
+          "token",
+          "token_type",
+          "expires_in"
+        ],
+        "properties": {
+          "expires_in": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "token": {
+            "type": "string"
+          },
+          "token_type": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "auth",
+      "description": "Authentication endpoints"
+    },
+    {
+      "name": "dcs",
+      "description": "DCS-gRPC endpoints"
+    },
+    {
+      "name": "system",
+      "description": "OS and filesystem endpoints"
+    }
+  ]
+}

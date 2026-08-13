@@ -25,6 +25,7 @@ use axum::http::{header, Method};
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::EnvFilter;
+use utoipa::OpenApi;
 
 /// Default address the dashboard listens on (overridable via `DASHBOARD_ADDR`).
 const DEFAULT_ADDR: &str = "0.0.0.0:3001";
@@ -32,6 +33,12 @@ const DEFAULT_ADDR: &str = "0.0.0.0:3001";
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     init_tracing();
+
+    if std::env::var("EXPORT_OPENAPI").is_ok() {
+        let openapi = routes::ApiDoc::openapi();
+        println!("{}", openapi.to_pretty_json().unwrap());
+        return Ok(());
+    }
 
     let config = config::Config::from_env()?;
     let app_state = state::AppState::new(config)?;

@@ -68,6 +68,15 @@ fn coalition_name(value: i32) -> &'static str {
 ///
 /// Intentionally public so the login screen can surface server status before a
 /// session exists. Process liveness lives at `GET /healthz`.
+#[utoipa::path(
+    get,
+    path = "/api/health",
+    responses(
+        (status = 200, description = "Server health and version"),
+        (status = 500, description = "Failed to connect to DCS server")
+    ),
+    tags = ["dcs"]
+)]
 pub async fn health(State(state): State<AppState>) -> Response {
     let health = grpc::get_health(state.grpc.clone()).await;
     let version = grpc::get_version(state.grpc.clone()).await;
@@ -110,6 +119,18 @@ pub async fn performance(State(state): State<AppState>) -> Response {
 // --- /api/players ----------------------------------------------------------
 
 /// `GET /api/players` → connected players (NetService.GetPlayers).
+#[utoipa::path(
+    get,
+    path = "/api/players",
+    responses(
+        (status = 200, description = "List of connected players"),
+        (status = 500, description = "Failed to fetch players")
+    ),
+    security(
+        ("jwt" = [])
+    ),
+    tags = ["dcs"]
+)]
 pub async fn players(_user: AuthUser, State(state): State<AppState>) -> Response {
     match grpc::get_players(state.grpc.clone()).await {
         Ok(resp) => {
@@ -161,13 +182,27 @@ pub async fn banned_players(_user: AuthUser, State(state): State<AppState>) -> R
 
 // --- /api/chat -------------------------------------------------------------
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 pub struct ChatBody {
     message: Option<String>,
     coalition: Option<String>,
 }
 
 /// `POST /api/chat` → broadcast chat (NetService.SendChat).
+#[utoipa::path(
+    post,
+    path = "/api/chat",
+    request_body = ChatBody,
+    responses(
+        (status = 200, description = "Message sent successfully"),
+        (status = 400, description = "Message is required"),
+        (status = 500, description = "Failed to send chat")
+    ),
+    security(
+        ("jwt" = [])
+    ),
+    tags = ["dcs"]
+)]
 pub async fn chat(
     _user: AuthUser,
     State(state): State<AppState>,

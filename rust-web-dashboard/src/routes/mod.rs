@@ -19,10 +19,34 @@ mod world;
 mod trigger;
 mod spawner;
 
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
+
+#[derive(OpenApi)]
+#[openapi(
+    paths(
+        auth::login,
+        dcs::health,
+        dcs::players,
+        dcs::chat,
+        system::settings_get
+    ),
+    components(
+        schemas(auth::LoginRequest, auth::TokenResponse, dcs::ChatBody)
+    ),
+    tags(
+        (name = "auth", description = "Authentication endpoints"),
+        (name = "dcs", description = "DCS-gRPC endpoints"),
+        (name = "system", description = "OS and filesystem endpoints")
+    )
+)]
+pub struct ApiDoc;
+
 /// Build the `/api` router with the dashboard's HTTP endpoints. Feature routes
 /// are added here as later phases land (see `docs/PLAN.md` §8).
 pub fn router() -> Router<AppState> {
     Router::new()
+        .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
         // Process liveness (the dashboard binary itself).
         .route("/healthz", get(liveness))
         // DCS-gRPC server status — public so the login screen can show it.

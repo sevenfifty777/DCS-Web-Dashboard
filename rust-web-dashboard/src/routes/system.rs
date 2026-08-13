@@ -84,6 +84,18 @@ fn object_or_empty(value: Option<&Value>) -> Value {
 
 /// `GET /api/settings` → parsed `serverSettings.lua` (flat object with the
 /// `advanced` block, `missionList` array, and primitive keys).
+#[utoipa::path(
+    get,
+    path = "/api/settings",
+    responses(
+        (status = 200, description = "Server settings JSON object"),
+        (status = 500, description = "Failed to read settings")
+    ),
+    security(
+        ("jwt" = [])
+    ),
+    tags = ["system"]
+)]
 pub async fn settings_get(_user: AuthUser, State(state): State<AppState>) -> Response {
     match settings_lua::read_settings(&state.config.server_settings_path()).await {
         Ok(settings) => Json(settings).into_response(),

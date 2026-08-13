@@ -1,0 +1,78 @@
+name: Deploy mdBook to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            rust-web-dashboard/target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Setup mdBook
+        run: |
+          mkdir -p bin
+          curl -sSL https://github.com/rust-lang/mdBook/releases/download/v0.12.0/mdbook-v0.12.0-x86_64-unknown-linux-gnu.tar.gz | tar -xz -C bin
+          echo "$(pwd)/bin" >> $GITHUB_PATH
+
+      - name: Generate OpenAPI JSON
+        run: |
+          cd rust-web-dashboard
+          EXPORT_OPENAPI=1 cargo run --release > ../docs/src/openapi.json
+
+      - name: Generate gRPC Markdown Documentation
+        run: |
+          docker run --rm \
+            -v $(pwd)/web-dashboard/protos:/protos \
+            -v $(pwd)/docs/src:/out \
+            pseudomuto/protoc-gen-doc \
+            --doc_opt=markdown,api_grpc.md \
+            $(find web-dashboard/protos -name "*.proto" | sed 's|web-dashboard/protos/|/protos/|g')
+
+      - name: Build mdBook
+        run: |
+          cd docs
+          mdbook build
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./docs/book
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

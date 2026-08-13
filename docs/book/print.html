@@ -1,0 +1,548 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>DCS-Web-Dashboard Documentation</title>
+        <meta name="robots" content="noindex">
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-e96d0476.css">
+        <link rel="stylesheet" href="css/chrome-d279d366.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "searchindex-5a2634ae.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc-7ef7debc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">DCS-Web-Dashboard Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/sevenfifty777/DCS-Web-Dashboard" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="dcs-web-dashboard-documentation"><a class="header" href="#dcs-web-dashboard-documentation">DCS-Web-Dashboard Documentation</a></h1>
+<p>Welcome to the documentation for DCS-Web-Dashboard!</p>
+<p>This documentation provides details on both the REST API and the gRPC API used by the system. Use the sidebar to navigate to the interactive Swagger UI or the generated gRPC documentation.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="setup-and-installation"><a class="header" href="#setup-and-installation">Setup and Installation</a></h1>
+<p>This guide covers deploying the single-binary Rust web dashboard on a Windows server.</p>
+<h2 id="1-prerequisites"><a class="header" href="#1-prerequisites">1. Prerequisites</a></h2>
+<p><strong>On the server that runs the dashboard:</strong></p>
+<ul>
+<li><strong>Windows Server / Windows 10+</strong>: The OS-integration features (Task Scheduler, file parsing) target Windows.</li>
+<li><strong>DCS-gRPC mod</strong>: Installed in your DCS <code>Saved Games\...\Scripts</code> folder and running. The dashboard connects to it (default <code>http://localhost:50051</code>) for live data.</li>
+<li><strong>NSSM (Non-Sucking Service Manager)</strong>: Recommended to run the binary as a resilient Windows service. Download from <a href="https://nssm.cc/">nssm.cc</a>.</li>
+</ul>
+<p><strong>To build from source (optional):</strong></p>
+<ul>
+<li><strong>Rust 1.85+</strong>: Required to compile the backend.</li>
+<li><strong>Node.js 18+</strong>: Required to build the Next.js frontend export.</li>
+</ul>
+<h2 id="2-building-from-source"><a class="header" href="#2-building-from-source">2. Building from Source</a></h2>
+<p>If you don’t have a prebuilt binary, you must compile it. The frontend is embedded directly into the Rust executable.</p>
+<h3 id="build-the-frontend"><a class="header" href="#build-the-frontend">Build the Frontend</a></h3>
+<p>Navigate to the <code>web-dashboard</code> directory and build the static export:</p>
+<pre><code class="language-powershell">cd web-dashboard
+npm install
+npm run build
+</code></pre>
+<p>This will compile the frontend and place the static files in the <code>out/</code> directory. Copy the contents of <code>out/</code> into <code>rust-web-dashboard/static/</code>.</p>
+<h3 id="build-the-backend"><a class="header" href="#build-the-backend">Build the Backend</a></h3>
+<p>Navigate to the <code>rust-web-dashboard</code> directory and compile the binary:</p>
+<pre><code class="language-powershell">cd rust-web-dashboard
+cargo build --release
+</code></pre>
+<p>The final executable will be located in <code>rust-web-dashboard/target/release/rust-web-dashboard.exe</code>. You can move this single <code>.exe</code> file anywhere on your server (e.g., <code>C:\DCS-Dashboard\</code>).</p>
+<h2 id="3-discord-oauth2-setup-optional"><a class="header" href="#3-discord-oauth2-setup-optional">3. Discord OAuth2 Setup (Optional)</a></h2>
+<p>If you want to allow your community to log in using Discord:</p>
+<ol>
+<li>Go to the <a href="https://discord.com/developers/applications">Discord Developer Portal</a> and create an Application.</li>
+<li>Under the <strong>OAuth2</strong> tab, add your Redirect URI: <code>http://YOUR_PUBLIC_IP:3001/api/auth/callback</code> (Use <code>https://your.domain/...</code> if behind a reverse proxy).</li>
+<li>Copy the <strong>Client ID</strong> and <strong>Client Secret</strong> for use in your configuration.</li>
+</ol>
+<p>A successful login mints a <strong>7-day</strong> session token. Users must have the required Discord role to gain access.</p>
+<h2 id="4-firewall--https"><a class="header" href="#4-firewall--https">4. Firewall &amp; HTTPS</a></h2>
+<p>By default, the dashboard runs on port <code>3001</code>.</p>
+<ol>
+<li>Open <strong>Windows Defender Firewall with Advanced Security</strong> -&gt; <strong>Inbound Rules</strong> -&gt; <strong>New Rule</strong>.</li>
+<li>Select <strong>Port</strong> -&gt; <strong>TCP</strong> -&gt; <strong>Specific local port</strong>: <code>3001</code> -&gt; <strong>Allow the connection</strong>.</li>
+</ol>
+<blockquote class="blockquote-tag blockquote-tag-warning">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Warning</p>
+<p><strong>HTTP vs HTTPS</strong>
+The dashboard serves plain HTTP. For public internet access, you should set up a Reverse Proxy (Nginx, Caddy, Cloudflare Tunnel) to provide SSL encryption (HTTPS). If you use a reverse proxy, <strong>do not</strong> open port 3001 to the public internet; bind the dashboard to <code>127.0.0.1:3001</code> and only allow the proxy to access it.</p>
+</blockquote>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="configuration-nssm"><a class="header" href="#configuration-nssm">Configuration (NSSM)</a></h1>
+<p>The DCS-Web-Dashboard backend does not rely on a <code>.env</code> file. Instead, all environment variables and startup settings are read from the process environment. Empty or whitespace-only values are treated as unset.</p>
+<p>The absolute best way to run the dashboard in production is as a native Windows Service using <strong>NSSM (Non-Sucking Service Manager)</strong>. This keeps secrets out of startup scripts and ensures the dashboard survives reboots.</p>
+<h2 id="1-installing-as-a-service-nssm"><a class="header" href="#1-installing-as-a-service-nssm">1. Installing as a Service (NSSM)</a></h2>
+<ol>
+<li>Open an <strong>Administrator</strong> PowerShell/Command Prompt and go to your extracted NSSM folder:
+<pre><code class="language-cmd">cd C:\nssm\win64
+nssm install "DCS Web Dashboard"
+</code></pre>
+</li>
+<li>In the GUI, configure the <strong>Application tab</strong>:
+<ul>
+<li><strong>Path:</strong> <code>C:\DCS-Dashboard\rust-web-dashboard.exe</code> (Path to your compiled binary)</li>
+<li><strong>Startup directory:</strong> <code>C:\DCS-Dashboard</code></li>
+</ul>
+</li>
+<li>In the <strong>Details tab</strong>:
+<ul>
+<li><strong>Display name:</strong> <code>DCS Web Dashboard</code></li>
+<li><strong>Startup type:</strong> <code>Automatic</code></li>
+</ul>
+</li>
+<li>In the <strong>Environment tab</strong>, enter each variable on its own line (see the table below).</li>
+<li>Click <strong>Install service</strong>, then open <code>services.msc</code> to start it.</li>
+</ol>
+<h2 id="2-environment-variables"><a class="header" href="#2-environment-variables">2. Environment Variables</a></h2>
+<p>Enter these variables in the NSSM Environment tab, one per line (e.g., <code>JWT_SECRET=my-secret-key</code>).</p>
+<h3 id="required"><a class="header" href="#required">Required</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Variable</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td><code>JWT_SECRET</code></td><td>Signing secret for login tokens (HS256). <strong>Must be ≥ 16 characters.</strong> The binary refuses to start otherwise.</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="core-settings"><a class="header" href="#core-settings">Core Settings</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Variable</th><th>Default</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td><code>DASHBOARD_ADDR</code></td><td><code>0.0.0.0:3001</code></td><td>Address/port the dashboard listens on. Use <code>127.0.0.1:3001</code> if a proxy is in front.</td></tr>
+<tr><td><code>GRPC_ENDPOINT</code></td><td><code>http://localhost:50051</code></td><td>Where your DCS-gRPC server is listening.</td></tr>
+<tr><td><code>APP_URL</code></td><td><code>http://localhost:3001</code></td><td>Public base URL of the dashboard. <strong>Must match the real public IP/host</strong> for Discord redirects to work.</td></tr>
+<tr><td><code>ADMIN_PASSWORD</code></td><td>—</td><td>Enables master-password login when set.</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="dcs--srs-control-integration"><a class="header" href="#dcs--srs-control-integration">DCS &amp; SRS Control Integration</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Variable</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td><code>DCS_SAVED_GAMES_DIR</code></td><td>Absolute path to your DCS <em>Saved Games</em> folder (e.g., <code>C:\Users\admin\Saved Games\DCS.openbeta_server</code>). Drives <code>serverSettings.lua</code> and mission uploads.</td></tr>
+<tr><td><code>DCS_TASK_WHITELIST</code></td><td>Comma-separated allow-list of Windows scheduled tasks the <strong>Tasks</strong> tab can control. If unset, all root tasks are shown.</td></tr>
+<tr><td><code>DCS_START_CMD</code></td><td>Command to launch DCS directly via PowerShell. Example: <code>'"C:\Program Files\Eagle Dynamics\DCS World Server\bin\DCS_server.exe" --server --norender'</code> (Notice the single quotes surrounding the double quotes).</td></tr>
+<tr><td><code>SRS_START_CMD</code></td><td>Command to launch SRS. Example: <code>'Start-Process -FilePath "C:\...\SRS-Server.exe" -ArgumentList "-cfg=\"C:\...\server.cfg\"" -WindowStyle Hidden'</code></td></tr>
+<tr><td><code>SRS_CFG_PATH</code></td><td>Absolute path to your SRS <code>server.cfg</code>. Needed for the SRS settings editor and connected clients list. Example: <code>C:\Program Files\DCS-SimpleRadio-Standalone\Server\server.cfg</code></td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="dynamic-weather-integration"><a class="header" href="#dynamic-weather-integration">Dynamic Weather Integration</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Variable</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td><code>DCS_DYNAMIC_WEATHER_DIR</code></td><td>Path to the DCS-Dynamic-Weather generator folder. Required for the Weather tab. Example: <code>C:\Users\admin\Saved Games\DCS.openbeta_server\Missions\Dynamic_Weather_mission</code></td></tr>
+<tr><td><code>PYTHON_EXE</code></td><td>Python interpreter used by the weather generator. Example: <code>C:\Users\admin\AppData\Local\Programs\Python\Python312\python.exe</code></td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="discord-oauth-integration"><a class="header" href="#discord-oauth-integration">Discord OAuth Integration</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Variable</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td><code>DISCORD_CLIENT_ID</code></td><td>Discord OAuth client ID.</td></tr>
+<tr><td><code>DISCORD_CLIENT_SECRET</code></td><td>Discord OAuth app secret.</td></tr>
+<tr><td><code>DISCORD_GUILD_ID</code></td><td>Your Discord server (guild) ID. Users must be a member.</td></tr>
+<tr><td><code>DISCORD_ADMIN_ROLE_ID</code></td><td>Comma-separated list of role IDs allowed to log in.</td></tr>
+</tbody>
+</table>
+</div>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="features--admin-manual"><a class="header" href="#features--admin-manual">Features &amp; Admin Manual</a></h1>
+<p>The DCS Web Dashboard is a powerful web interface for managing your DCS Dedicated Server remotely. Here is a breakdown of all the features available across the dashboard.</p>
+<h2 id="-server-dashboard-top-panel"><a class="header" href="#-server-dashboard-top-panel">💻 Server Dashboard (Top Panel)</a></h2>
+<ul>
+<li><strong>RDP Available</strong>: Displays a live indicator showing if there are any active Windows Remote Desktop (RDP) or interactive user sessions on the server host machine.</li>
+<li><strong>Mission Environment</strong>: Quickly see the current Theatre (e.g., Caucasus, Syria) and the in-game Time of the active mission.</li>
+</ul>
+<h2 id="-server-status"><a class="header" href="#-server-status">🟢 Server Status</a></h2>
+<p>The homepage gives you a quick, beautiful overview of the server’s health, current active mission, uptime, and player count.</p>
+<h2 id="-mission"><a class="header" href="#-mission">🗺️ Mission</a></h2>
+<p>Completely control the server’s mission queue.</p>
+<ul>
+<li><strong>Active Mission</strong>: Queries the live DCS Engine via gRPC to actively highlight the true running mission in the queue.</li>
+<li><strong>Mission Queue</strong>: Displays all <code>.miz</code> files queued up in the <code>serverSettings.lua</code>.</li>
+<li><strong>Run Now</strong>: Immediately loads and runs any mission file, bypassing the queue entirely.</li>
+<li><strong>Upload</strong>: Upload a local <code>.miz</code> file from your PC directly to the server.</li>
+<li><strong>Browse Server</strong>: Browse the server’s hard drive to add existing <code>.miz</code> files into the queue.</li>
+</ul>
+<h2 id="-weather"><a class="header" href="#-weather">🌤️ Weather</a></h2>
+<p>A fully integrated GUI for the <code>DCS-Dynamic-Weather</code> python script.</p>
+<ul>
+<li><strong>Current Weather</strong>: Cross-references the running mission with the Python script’s output to show you the currently injected weather state.</li>
+<li><strong>Presets List</strong>: Displays all available weather presets (CAVOK, Stormy, etc.) including temperature, QNH, and wind speed.</li>
+<li><strong>Apply &amp; Restart</strong>: Seamlessly injects a new weather preset and restarts the mission, safely handling A/B mission swapping.</li>
+</ul>
+<h2 id="-radar--orbat"><a class="header" href="#-radar--orbat">📡 Radar &amp; ORBAT</a></h2>
+<ul>
+<li><strong>Radar</strong>: A live, dynamic radar plot of all active units in the server. Airplanes, helicopters, ships, and ground units have distinct shapes. Human players are highlighted with glowing borders.</li>
+<li><strong>ORBAT (Order of Battle)</strong>: View the hierarchical structure of all spawned groups and units on both coalitions.</li>
+</ul>
+<h2 id="-events-triggers--console"><a class="header" href="#-events-triggers--console">📅 Events, Triggers &amp; Console</a></h2>
+<ul>
+<li><strong>Events</strong>: Streams live kill-feeds, takeoffs, landings, and crashes.</li>
+<li><strong>Triggers</strong>: Read and write DCS mission flags live (e.g., to manually trigger in-game events or scripts).</li>
+<li><strong>Console</strong>: Execute raw Lua scripts directly into the DCS mission environment for advanced debugging and administration.</li>
+</ul>
+<h2 id="-srs-simpleradio-standalone"><a class="header" href="#-srs-simpleradio-standalone">📻 SRS (SimpleRadio Standalone)</a></h2>
+<p>A dedicated tab for managing SRS.</p>
+<ul>
+<li><strong>Server Process</strong>: View if the SRS process is running and cleanly Start/Stop/Restart it.</li>
+<li><strong>Connected Clients</strong>: See a live table of connected players, their coalition, and the radio frequencies they are currently tuned to.</li>
+<li><strong>Configuration</strong>: A complete, categorized visual editor for your SRS <code>server.cfg</code>.</li>
+</ul>
+<h2 id="-atmosphere"><a class="header" href="#-atmosphere">🌬️ Atmosphere</a></h2>
+<p>Live weather conditions, wind, and atmospheric data straight from the running mission.</p>
+<h2 id="-players--chat"><a class="header" href="#-players--chat">👥 Players &amp; Chat</a></h2>
+<ul>
+<li><strong>Players</strong>: See exactly who is online, their ping, coalition, and what aircraft they are flying.</li>
+<li><strong>Chat</strong>: View the live in-game multiplayer chat and send messages directly to players from your web browser!</li>
+</ul>
+<h2 id="-foothold-campaign-leaderboard--status"><a class="header" href="#-foothold-campaign-leaderboard--status">🏆 Foothold Campaign (Leaderboard &amp; Status)</a></h2>
+<p>Specific integrations for servers running the dynamic “Foothold” campaign.</p>
+<ul>
+<li><strong>Leaderboard</strong>: A persistent leaderboard tracking live player statistics from the Foothold save file.</li>
+<li><strong>Foothold</strong>: Track the status of the campaign including active zones, ongoing attacks, side ownership, and ejected pilots.</li>
+</ul>
+<h2 id="-warehouse-wip"><a class="header" href="#-warehouse-wip">📦 Warehouse (WIP)</a></h2>
+<p>View and manage the inventory of airbases across the map. You can dynamically add items or liquids to airbase warehouses mid-mission.</p>
+<h2 id="-settings"><a class="header" href="#-settings">⚙️ Settings</a></h2>
+<p>A visual UI to edit the underlying <code>serverSettings.lua</code> file safely.</p>
+<ul>
+<li>Change the server name, password, description, max players, and advanced DCS behavior.</li>
+<li><em>Note: DCS requires you to restart the current mission for changes to apply.</em></li>
+</ul>
+<h2 id="-logs--tasks"><a class="header" href="#-logs--tasks">🛡️ Logs &amp; Tasks</a></h2>
+<ul>
+<li><strong>Access Logs</strong>: A security audit trail. Every dashboard login attempt is secretly logged (SUCCESS/REJECTED).</li>
+<li><strong>DCS Logs</strong>: A live, streaming tail of the <code>dcs.log</code> file straight from the server’s hard drive to help you debug crashes or script errors.</li>
+<li><strong>Tasks</strong>: A remote control for your Windows Server’s Task Scheduler and Processes. Fetch live status of background bots and cleanly Start/Stop/Restart them with safety guardrails.</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="architecture-overview"><a class="header" href="#architecture-overview">Architecture Overview</a></h1>
+<p>DCS-Web-Dashboard is composed of two primary components, but unlike traditional web applications, they are compiled together into a <strong>single, self-contained executable</strong> (<code>rust-web-dashboard.exe</code>). There is no Node.js runtime, no separate web server, and no external static files at runtime.</p>
+<h2 id="1-the-rust-backend-rust-web-dashboard"><a class="header" href="#1-the-rust-backend-rust-web-dashboard">1. The Rust Backend (<code>rust-web-dashboard</code>)</a></h2>
+<p>This is a standalone binary that acts as the core controller.</p>
+<ul>
+<li><strong>HTTP API</strong>: It uses <strong>Axum</strong> to serve the REST API. These routes port the original Next.js API (gRPC proxy + filesystem/OS integration) and are protected by JWT bearer authentication (HS256).</li>
+<li><strong>gRPC Client</strong>: It connects to the <strong>DCS-gRPC</strong> server using <strong>Tonic</strong> (a Rust gRPC framework) to pull live telemetry (like unit positions and events) and issue commands to the game server (like sending chat or kicking players).</li>
+<li><strong>OS Integration</strong>: It executes native Windows processes via PowerShell (to control DCS, SRS, and Scheduled Tasks) and interacts directly with DCS filesystem files like <code>serverSettings.lua</code>.</li>
+</ul>
+<h2 id="2-the-nextjs-frontend-web-dashboard"><a class="header" href="#2-the-nextjs-frontend-web-dashboard">2. The Next.js Frontend (<code>web-dashboard</code>)</a></h2>
+<p>This is the user interface of the dashboard, built with React and Next.js.</p>
+<ul>
+<li><strong>Embedded SPA</strong>: During the build process, the Next.js application is statically exported (<code>output: 'export'</code>) as HTML, CSS, and JS. This output is copied into the Rust crate’s <code>static/</code> folder and baked directly into the binary using <code>rust-embed</code>.</li>
+<li><strong>Routing</strong>: Deep links (e.g., <code>/weather</code>) and hashed <code>/_next/</code> assets are served by the Rust backend with the correct MIME types. Unknown paths fall back to the SPA shell.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> The <code>web-dashboard</code> directory remains the frontend source project. The Rust crate only embeds its built output. The two folders are independent during development, but the final binary is completely portable on its own.</p>
+</blockquote>
+<h2 id="security-notes"><a class="header" href="#security-notes">Security Notes</a></h2>
+<ul>
+<li><strong>Vulnerabilities</strong>: The Rust backend dependencies are routinely audited (<code>cargo audit</code>). The frontend’s build-time Node dependencies do not execute at runtime and are not shipped in the final binary.</li>
+<li><strong>TLS &amp; HTTPS</strong>: TLS termination and websockets are intentionally out of scope for the binary. It serves plain HTTP. For secure public access, you must put a reverse proxy (like Nginx, Caddy, or Cloudflare Tunnels) in front to handle HTTPS, and the dashboard uses Server-Sent Events (SSE) instead of websockets for live data.</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="rest-api-swagger-ui"><a href="#rest-api-swagger-ui" class="header">REST API (Swagger UI)</a></h1>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Swagger UI</title>
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
+    <style>
+      html
+      {
+        box-sizing: border-box;
+        overflow: -moz-scrollbars-vertical;
+        overflow-y: scroll;
+      }
+<pre><code>  *,
+  *:before,
+  *:after
+  {
+    box-sizing: inherit;
+  }
+
+  body
+  {
+    margin:0;
+    background: #fafafa;
+  }
+&lt;/style&gt;
+</code></pre>
+
+<body>
+    
+<div id="swagger-ui"></div>
+
+<pre><code>&lt;script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"&gt;&lt;/script&gt;
+&lt;script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-standalone-preset.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+window.onload = function() {
+  const ui = SwaggerUIBundle({
+    url: "openapi.json",
+    dom_id: '#swagger-ui',
+    deepLinking: true,
+    presets: [
+      SwaggerUIBundle.presets.apis,
+      SwaggerUIStandalonePreset
+    ],
+    plugins: [
+      SwaggerUIBundle.plugins.DownloadUrl
+    ],
+    layout: "StandaloneLayout"
+  })
+  window.ui = ui
+}
+</code></pre>
+  
+</body>
+
+</style></head></html><div style="break-before: page; page-break-before: always;"></div>
+<h1 id="grpc-api-documentation"><a class="header" href="#grpc-api-documentation">gRPC API Documentation</a></h1>
+<p><em>Note: This page is automatically generated from the <code>.proto</code> files by the GitHub Action deployment pipeline. If you are viewing this locally and it’s empty, it means the <code>protoc-gen-doc</code> tool hasn’t been run locally.</em></p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-09f2665d.js"></script>
+
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-abc7f01d.js"></script>
+        <script src="book-609e4cb8.js"></script>
+
+        <!-- Custom JS scripts -->
+
+        <script>
+        window.addEventListener('load', function() {
+            window.setTimeout(window.print, 100);
+        });
+        </script>
+
+
+    </div>
+    </body>
+</html>
