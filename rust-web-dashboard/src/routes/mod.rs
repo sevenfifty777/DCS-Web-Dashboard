@@ -125,7 +125,11 @@ pub struct ApiDoc;
 /// are added here as later phases land (see `docs/PLAN.md` §8).
 pub fn router() -> Router<AppState> {
     Router::new()
-        .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
+        .merge(
+            SwaggerUi::new("/swagger-ui")
+                .url("/api-docs/openapi.json", ApiDoc::openapi())
+                .config(utoipa_swagger_ui::Config::from("/api-docs/openapi.json").with_credentials(true))
+        )
         // Process liveness (the dashboard binary itself).
         .route("/healthz", get(liveness))
         // DCS-gRPC server status — public so the login screen can show it.
