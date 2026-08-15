@@ -174,7 +174,7 @@ export default function MissionPage() {
       {/* Server Settings Banner */}
       {data?.serverInfo && (
         <div style={{ 
-          backgroundColor: 'rgba(0, 212, 255, 0.05)', 
+          backgroundColor: 'var(--panel-bg)', 
           border: '1px solid var(--primary)', 
           borderRadius: '4px',
           padding: '1.5rem',

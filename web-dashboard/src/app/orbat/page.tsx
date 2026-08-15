@@ -96,7 +96,7 @@ export default function OrbatPage() {
           style={{ 
             display: 'flex', 
             justifyContent: 'space-between', 
-            background: 'rgba(255,255,255,0.05)', 
+            background: 'var(--card-bg)', 
             padding: '8px 12px', 
             cursor: 'pointer',
             borderLeft: `3px solid ${color}`,
@@ -119,7 +119,7 @@ export default function OrbatPage() {
     );
 
     return (
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '15px' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '15px', backgroundColor: 'var(--panel-bg)', padding: '20px', borderRadius: '8px', border: '1px solid var(--panel-border)' }}>
         <h2 style={{ color, borderBottom: `1px solid ${color}`, paddingBottom: '10px' }}>
           {sideName}
           {data.bullseye && (

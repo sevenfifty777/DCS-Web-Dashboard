@@ -13,6 +13,8 @@ use rust_embed::{EmbeddedFile, RustEmbed};
 
 #[derive(RustEmbed)]
 #[folder = "static/"]
+#[exclude = "*.mp4"]
+#[exclude = "img/background.png"]
 struct Assets;
 
 /// Serve an embedded asset, falling back to `index.html` for SPA routes.

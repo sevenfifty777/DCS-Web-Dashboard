@@ -1,25 +1,66 @@
-@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&family=Manrope:wght@400;600;700&display=swap');
 @import 'leaflet/dist/leaflet.css';
 
 :root {
-  --background: #060a0f;
-  --panel-bg: #0b1118;
-  --card-bg: #111820;
+  --background: #06131f;
+  --panel-bg: rgba(6, 19, 31, 0.96);
+  --card-bg: rgba(16, 52, 77, 0.88);
   
-  --foreground: #d0e8f8;
-  --text-muted: #8aafc8;
-  --text-dim: #496070;
+  --foreground: #f4f8fc;
+  --text-muted: #bfcbd5;
+  --text-dim: #8194a3;
 
-  --panel-border: rgba(255, 255, 255, 0.07);
-  --border-highlight: rgba(0, 212, 255, 0.18);
+  --panel-border: rgba(25, 199, 255, 0.25);
+  --border-highlight: rgba(126, 249, 216, 0.18);
   
-  --primary: #00d4ff;
-  --success: #39d353;
-  --warning: #ffd600;
-  --danger: #ff3b3b;
+  --primary: #19c7ff;
+  --secondary: #7ef9d8;
+  --success: #4caf50;
+  --warning: #ffb347;
+  --danger: #d94a4a;
 
-  --font-ui: 'Rajdhani', sans-serif;
-  --font-mono: 'Share Tech Mono', monospace;
+  --font-ui: 'Manrope', sans-serif;
+  --font-mono: 'Orbitron', sans-serif;
+}
+
+/* Scrollbars */
+*, *::before, *::after {
+  scrollbar-color: rgba(48, 212, 253, .92) rgba(6, 19, 31, .78);
+  scrollbar-width: thin;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  border: 1px solid rgba(25, 199, 255, .12);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(12, 35, 56, .88), rgba(6, 19, 31, .94)), #06131f;
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, .38);
+}
+
+::-webkit-scrollbar-thumb {
+  min-width: 32px;
+  min-height: 32px;
+  border: 2px solid rgba(6, 19, 31, .9);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(126, 249, 216, .98), rgba(25, 199, 255, .96));
+  box-shadow: 0 0 10px rgba(25, 199, 255, .46);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #e7fff8, rgba(126, 249, 216, .98) 42%, rgba(25, 199, 255, .98));
+  box-shadow: 0 0 15px rgba(126, 249, 216, .72);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(180deg, #ffd34e, #19c7ff);
+}
+
+::-webkit-scrollbar-corner {
+  background: #06131f;
 }
 
 * {
@@ -36,22 +77,6 @@ body {
   min-height: 100vh;
   margin: 0;
   position: relative;
-}
-
-/* CRT scanline overlay */
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 9000;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0, 0, 0, 0.05) 2px,
-    rgba(0, 0, 0, 0.05) 4px
-  );
 }
 
 a {
@@ -114,4 +139,15 @@ h1, h2, h3, h4 {
 @keyframes pulse {
   from { transform: scale(0.8); opacity: 0.8; }
   to { transform: scale(1.2); opacity: 1; }
+}
+
+/* Animated Buttons */
+.btn, .nav-btn {
+  transition: transform 0.1s ease-out, box-shadow 0.2s, background-color 0.2s;
+  cursor: pointer;
+}
+
+.btn:active, .nav-btn:active {
+  transform: scale(0.96);
+  box-shadow: 0 0 15px rgba(25, 199, 255, 0.5);
 }

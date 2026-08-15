@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
   // the Rust backend through same-origin `/api` with a JWT Bearer token.
   output: 'export',
   images: { unoptimized: true },
-  allowedDevOrigins: ['51.75.131.6'],
+  allowedDevOrigins: ['51.75.131.6', '192.168.2.14'],
 };
 
 export default nextConfig;

@@ -55,14 +55,14 @@ export default function LeaderboardPage() {
       </div>
 
       <div style={{
-        backgroundColor: 'var(--bg-secondary)',
+        backgroundColor: 'var(--panel-bg)',
         border: '1px solid var(--panel-border)',
         borderRadius: '8px',
         overflow: 'hidden'
       }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
-            <tr style={{ backgroundColor: 'rgba(0,0,0,0.2)', borderBottom: '1px solid var(--panel-border)' }}>
+            <tr style={{ backgroundColor: 'var(--card-bg)', borderBottom: '1px solid var(--panel-border)' }}>
               <th style={{ padding: '1rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Pilot Name</th>
               <th style={{ padding: '1rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Points</th>
               <th style={{ padding: '1rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Credits</th>

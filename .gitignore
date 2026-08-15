@@ -80,6 +80,7 @@ next-env.d.ts
 # Rust
 # ==============================
 target/
+rust-web-dashboard/static/
 **/*.rs.bk
 *.pdb
 
@@ -92,4 +93,5 @@ nodejs_legacy_webdashboard/
 github_logs/
 *.pdf
 *.docx
+*.mp4
 

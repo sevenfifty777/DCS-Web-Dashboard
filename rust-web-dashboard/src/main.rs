@@ -23,6 +23,7 @@ use std::net::SocketAddr;
 
 use axum::http::{header, Method};
 use tower_http::cors::{Any, CorsLayer};
+use tower_http::services::ServeFile;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::EnvFilter;
 use utoipa::OpenApi;
@@ -67,6 +68,8 @@ async fn main() -> anyhow::Result<()> {
         .allow_origin(Any);
 
     let app = routes::router()
+        .route("/media/background.mp4", axum::routing::get_service(ServeFile::new("media/background.mp4")))
+        .route("/img/background.png", axum::routing::get_service(ServeFile::new("images/background.png")))
         .fallback(embed::static_handler)
         .layer(TraceLayer::new_for_http())
         .layer(cors)

@@ -6,8 +6,8 @@
 }
 
 .section {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
   border-radius: 8px;
   padding: 20px;
 }
@@ -17,7 +17,7 @@
   margin-bottom: 15px;
   font-size: 1.2rem;
   color: #fff;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  border-bottom: 1px solid var(--panel-border);
   padding-bottom: 10px;
 }
 
@@ -28,8 +28,8 @@
 }
 
 .card {
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--card-bg);
+  border: 1px solid var(--panel-border);
   border-radius: 6px;
   padding: 15px;
   display: flex;
@@ -40,7 +40,7 @@
 
 .card:hover {
   transform: translateY(-2px);
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: var(--primary);
 }
 
 .cardTitle {

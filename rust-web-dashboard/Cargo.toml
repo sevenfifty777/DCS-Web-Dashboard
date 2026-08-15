@@ -47,7 +47,7 @@ reqwest = { version = "0.12", default-features = false, features = [
 ] }
 
 # Embedded static frontend (Next.js `out/`)
-rust-embed = { version = "8.5", features = ["mime-guess"] }
+rust-embed = { version = "8.5", features = ["mime-guess", "include-exclude"] }
 
 # serverSettings.lua parsing
 mlua = { version = "0.10", default-features = false, features = [

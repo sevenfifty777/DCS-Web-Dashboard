@@ -75,10 +75,10 @@ export default function TasksManager() {
 
       {error && <div style={{ color: 'var(--danger)', marginBottom: '10px' }}>Error: {error}</div>}
 
-      <div style={{ backgroundColor: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border)', overflowX: 'auto' }}>
+      <div style={{ backgroundColor: 'var(--panel-bg)', borderRadius: '8px', border: '1px solid var(--panel-border)', overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
-            <tr style={{ borderBottom: '1px solid var(--border)', backgroundColor: 'rgba(0,0,0,0.2)' }}>
+            <tr style={{ borderBottom: '1px solid var(--panel-border)', backgroundColor: 'var(--card-bg)' }}>
               <th style={{ padding: '15px', fontWeight: 'bold', color: 'var(--text-dim)' }}>Task Name</th>
               <th style={{ padding: '15px', fontWeight: 'bold', color: 'var(--text-dim)' }}>Status</th>
               <th style={{ padding: '15px', fontWeight: 'bold', color: 'var(--text-dim)', textAlign: 'right' }}>Actions</th>
@@ -91,7 +91,7 @@ export default function TasksManager() {
               <tr><td colSpan={3} style={{ padding: '15px', textAlign: 'center' }}>No tasks found in the root folder.</td></tr>
             ) : (
               tasks.map((task, idx) => (
-                <tr key={idx} style={{ borderBottom: '1px solid var(--border)', transition: 'background-color 0.2s' }}>
+                <tr key={idx} style={{ borderBottom: '1px solid var(--panel-border)', transition: 'background-color 0.2s' }}>
                   <td style={{ padding: '15px', fontFamily: 'var(--font-mono)' }}>{task.name}</td>
                   <td style={{ padding: '15px' }}>
                     <span style={{
