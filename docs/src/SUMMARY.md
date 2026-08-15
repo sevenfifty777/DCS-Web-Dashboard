@@ -5,6 +5,7 @@
 - [Configuration (NSSM)](./configuration.md)
 - [Features & Admin Manual](./features.md)
 - [Architecture](./architecture.md)
+- [TODO List & Feuille de Route](./TODOLIST.md)
 
 ---
 
