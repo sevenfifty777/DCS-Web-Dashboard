@@ -1,0 +1,28 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap');
+
+/* Apply Manrope to the general body text */
+body, 
+.book, 
+html, 
+button, 
+input, 
+textarea, 
+.sidebar, 
+.chapter li a {
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+
+/* Apply Orbitron to headers, titles, and important branding elements */
+h1, h2, h3, h4, h5, h6,
+.header,
+.menu-title,
+.sidebar-title {
+    font-family: 'Orbitron', 'Manrope', sans-serif !important;
+    letter-spacing: 0.05em;
+}
+
+/* Give the active chapter link a slightly bolder look with Manrope */
+.chapter li.expanded > a, 
+.chapter li.active > a {
+    font-weight: 700;
+}
