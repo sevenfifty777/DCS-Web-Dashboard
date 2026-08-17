@@ -44,9 +44,9 @@ impl AppState {
 
         let http = reqwest::Client::builder()
             .user_agent(concat!(
-                env!("CARGO_PKG_NAME"),
-                "/",
-                env!("CARGO_PKG_VERSION")
+                "DiscordBot (https://github.com/sevenfifty777/DCS-Web-Dashboard, ",
+                env!("CARGO_PKG_VERSION"),
+                ")"
             ))
             .build()
             .context("failed to build HTTP client")?;
