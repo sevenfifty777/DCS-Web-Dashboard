@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, getToken } from '@/lib/api';
 import ServerPerformance from './ServerPerformance';
 import styles from './Sidebar.module.css';
 
@@ -14,6 +14,7 @@ export default function Sidebar() {
 
   useEffect(() => {
     const fetchRdpStatus = async () => {
+      if (!getToken()) return;
       try {
         const res = await apiFetch('/api/rdp-status');
         const data = await res.json();
@@ -24,6 +25,7 @@ export default function Sidebar() {
     };
 
     const fetchMissionStatus = async () => {
+      if (!getToken()) return;
       try {
         const res = await apiFetch('/api/mission');
         const data = await res.json();

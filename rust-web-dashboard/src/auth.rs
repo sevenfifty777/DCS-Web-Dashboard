@@ -105,7 +105,10 @@ impl FromRequestParts<AppState> for AuthUser {
             }
         }
 
-        let token = token_opt.ok_or(AuthError::Missing)?;
+        let token = token_opt.ok_or_else(|| {
+            tracing::warn!("Auth token missing from request");
+            AuthError::Missing
+        })?;
 
         // Legacy static mobile key (constant-time compare).
         if let Some(key) = state.config.mobile_api_key.as_deref() {
