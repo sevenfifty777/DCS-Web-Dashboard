@@ -43,6 +43,11 @@ impl AppState {
             .connect_lazy();
 
         let http = reqwest::Client::builder()
+            .user_agent(concat!(
+                env!("CARGO_PKG_NAME"),
+                "/",
+                env!("CARGO_PKG_VERSION")
+            ))
             .build()
             .context("failed to build HTTP client")?;
 

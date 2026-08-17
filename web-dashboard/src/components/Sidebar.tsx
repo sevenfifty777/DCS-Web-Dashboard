@@ -174,6 +174,25 @@ export default function Sidebar() {
           <Link href="/warehouse" className={`${styles.link} ${pathname === '/warehouse' ? styles.active : ''}`}>Warehouse</Link>
           <Link href="/logs/dcs" className={`${styles.link} ${pathname === '/logs/dcs' ? styles.active : ''}`}>DCS Logs</Link>
           <Link href="/tasks" className={`${styles.link} ${pathname === '/tasks' ? styles.active : ''}`}>Tasks</Link>
+          <button 
+            onClick={() => {
+              import('@/lib/api').then(({ clearToken }) => {
+                clearToken();
+                window.location.href = '/login';
+              });
+            }}
+            className={styles.link}
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              color: 'var(--danger)', 
+              textAlign: 'left', 
+              cursor: 'pointer',
+              marginTop: '10px'
+            }}
+          >
+            Logout
+          </button>
         </div>
         
         <ServerPerformance />
