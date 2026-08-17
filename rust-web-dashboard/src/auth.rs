@@ -117,7 +117,10 @@ impl FromRequestParts<AppState> for AuthUser {
             }
         }
 
-        let claims = verify_token(&state.config.jwt_secret, &token).map_err(|_| AuthError::Invalid)?;
+        let claims = verify_token(&state.config.jwt_secret, &token).map_err(|err| {
+            tracing::error!(error = %err, "JWT verification failed in AuthUser");
+            AuthError::Invalid
+        })?;
         Ok(AuthUser {
             subject: claims.sub,
             kind: claims.kind,

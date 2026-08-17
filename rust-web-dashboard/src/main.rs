@@ -72,6 +72,10 @@ async fn main() -> anyhow::Result<()> {
         .route("/img/background.png", axum::routing::get_service(ServeFile::new("images/background.png")))
         .fallback(embed::static_handler)
         .layer(TraceLayer::new_for_http())
+        .layer(tower_http::set_header::SetResponseHeaderLayer::overriding(
+            axum::http::header::CACHE_CONTROL,
+            axum::http::HeaderValue::from_static("no-store, no-cache, must-revalidate")
+        ))
         .layer(cors)
         .with_state(app_state);
 

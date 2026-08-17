@@ -145,7 +145,7 @@ pub async fn discord_callback(
 ) -> Redirect {
     let base = state.config.app_url.clone();
     match exchange_and_verify(&state, query.code).await {
-        Ok(token) => Redirect::to(&format!("{base}/login#token={token}")),
+        Ok(token) => Redirect::to(&format!("{base}/login?token={token}#token={token}")),
         Err(message) => Redirect::to(&format!("{base}/login?error={}", encode_component(&message))),
     }
 }

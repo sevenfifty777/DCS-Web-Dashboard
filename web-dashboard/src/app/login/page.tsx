@@ -11,7 +11,13 @@ function LoginContent() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    // Discord callback redirects to `/login#token=<jwt>`; capture it.
+    const queryToken = searchParams.get('token');
+    if (queryToken) {
+      setToken(queryToken);
+      router.replace('/');
+      return;
+    }
+
     if (typeof window !== 'undefined' && window.location.hash.startsWith('#token=')) {
       const token = decodeURIComponent(window.location.hash.slice('#token='.length));
       if (token) {

@@ -24,7 +24,7 @@ tokio-stream = { version = "0.1", features = ["sync"] }
 
 # HTTP server
 axum = { version = "0.8", features = ["multipart"] }
-tower-http = { version = "0.6", features = ["cors", "trace", "fs"] }
+tower-http = { version = "0.6", features = ["cors", "trace", "fs", "set-header"] }
 
 # gRPC client to the DCS-gRPC server
 tonic = "0.13"
