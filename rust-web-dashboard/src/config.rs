@@ -27,7 +27,8 @@ const DEFAULT_PYTHON_EXE: &str = "python";
 pub struct DiscordConfig {
     pub client_id: String,
     pub client_secret: String,
-    pub guild_id: String,
+    /// One or more guild IDs (comma-separated in env).
+    pub guild_ids: Vec<String>,
     /// One or more role IDs that grant admin access (comma-separated in env).
     pub admin_role_ids: Vec<String>,
 }
@@ -36,8 +37,14 @@ impl DiscordConfig {
     fn from_env() -> Option<Self> {
         let client_id = optional("DISCORD_CLIENT_ID")?;
         let client_secret = optional("DISCORD_CLIENT_SECRET")?;
-        let guild_id = optional("DISCORD_GUILD_ID")?;
+        let guilds_raw = optional("DISCORD_GUILD_ID")?;
         let roles_raw = optional("DISCORD_ADMIN_ROLE_ID")?;
+
+        let guild_ids: Vec<String> = guilds_raw
+            .split(',')
+            .map(|guild| guild.trim().to_string())
+            .filter(|guild| !guild.is_empty())
+            .collect();
 
         let admin_role_ids: Vec<String> = roles_raw
             .split(',')
@@ -45,14 +52,14 @@ impl DiscordConfig {
             .filter(|role| !role.is_empty())
             .collect();
 
-        if admin_role_ids.is_empty() {
+        if admin_role_ids.is_empty() || guild_ids.is_empty() {
             return None;
         }
 
         Some(Self {
             client_id,
             client_secret,
-            guild_id,
+            guild_ids,
             admin_role_ids,
         })
     }

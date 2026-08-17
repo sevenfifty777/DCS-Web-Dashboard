@@ -4,11 +4,64 @@ import { useState, useEffect } from 'react';
 import { apiFetch } from '@/lib/api';
 import styles from './page.module.css';
 
+function getPresetThumbnail(presetName: string, cloudsPreset: string): string {
+  const n = (presetName || '').toLowerCase();
+  const c = (cloudsPreset || '').toLowerCase();
+
+  if (c.match(/preset8[1-8]/)) return `/weather-thumbnails/${cloudsPreset}.png`;
+
+  if (n.includes('altocumulus 1')) return '/weather-thumbnails/altocumulus1.png';
+  if (n.includes('altocumulus 2')) return '/weather-thumbnails/altocumulus2.png';
+  if (n.includes('altocumulus 3')) return '/weather-thumbnails/altocumulus3.png';
+  if (n.includes('altocumulus 4')) return '/weather-thumbnails/altocumulus4.png';
+  
+  if (n.includes('altostratus 1')) return '/weather-thumbnails/altostratus1.png';
+  if (n.includes('altostratus 2')) return '/weather-thumbnails/altostratus2.png';
+  if (n.includes('altostratus 3')) return '/weather-thumbnails/altostratus3.png';
+  if (n.includes('altostratus 4')) return '/weather-thumbnails/altostratus4.png';
+  
+  if (n.includes('cirrocumulus 1')) return '/weather-thumbnails/cirrocumulus1.png';
+  if (n.includes('cirrocumulus 2')) return '/weather-thumbnails/cirrocumulus2.png';
+  if (n.includes('cirrocumulus 3')) return '/weather-thumbnails/cirrocumulus3.png';
+  
+  if (n.includes('cirrostratus 1')) return '/weather-thumbnails/cirrostratus1.png';
+  if (n.includes('cirrostratus 2')) return '/weather-thumbnails/cirrostratus2.png';
+  if (n.includes('cirrostratus 3')) return '/weather-thumbnails/cirrostratus3.png';
+  if (n.includes('cirrostratus 4')) return '/weather-thumbnails/cirrostratus4.png';
+
+  if (n.includes('broken cumulus')) return '/weather-thumbnails/cumulus3.png';
+  if (n.includes('cumulus 1') || n.includes('scattered cumulus')) return '/weather-thumbnails/cumulus1.png';
+  
+  if (n.includes('rain') || n.includes('shower')) return '/weather-thumbnails/OvercastRain1.png';
+  if (n.includes('tstorm') || n.includes('thunder')) return '/weather-thumbnails/tstorm1.png';
+  
+  if (n.includes('atx') || n.includes('atmosx')) return '/weather-thumbnails/atmosx_default_thumb.png';
+
+  if (c.startsWith('preset')) {
+    const num = c.replace('preset', '');
+    return `/weather-thumbnails/cloud_${num}.png`;
+  }
+  
+  return '/weather-thumbnails/cloudsMap01.png';
+}
+
+function getTimeOfDayIndicator(timeStr: string) {
+  if (!timeStr) return null;
+  const [hoursStr] = timeStr.split(':');
+  const h = parseInt(hoursStr, 10);
+  
+  if (h >= 4 && h < 8) return { label: 'Aube', icon: '🌅' };
+  if (h >= 8 && h < 18) return { label: 'Jour', icon: '☀️' };
+  if (h >= 18 && h < 21) return { label: 'Crépuscule', icon: '🌇' };
+  return { label: 'Nuit', icon: '🌙' };
+}
+
 export default function WeatherPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [applying, setApplying] = useState<string | null>(null);
+  const [timeOfDay, setTimeOfDay] = useState('keep');
 
   useEffect(() => {
     fetchData();
@@ -39,7 +92,10 @@ export default function WeatherPage() {
       const res = await apiFetch('/api/weather/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ preset_id: presetId })
+        body: JSON.stringify({ 
+          preset_id: presetId,
+          time_of_day: timeOfDay === 'keep' ? undefined : timeOfDay
+        })
       });
       const json = await res.json();
       if (res.ok) {
@@ -87,6 +143,14 @@ export default function WeatherPage() {
         {currentState.mission ? (
           <div>
             <p><strong>Mission :</strong> {currentState.mission}</p>
+            {currentState.mission_time && (
+              <p>
+                <strong>Heure de la mission :</strong> {currentState.mission_time} 
+                <span style={{ marginLeft: 10, color: '#00bfff' }}>
+                  {getTimeOfDayIndicator(currentState.mission_time)?.icon} {getTimeOfDayIndicator(currentState.mission_time)?.label}
+                </span>
+              </p>
+            )}
             {currentPresetInfo ? (
               <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 5 }}>
                 <p><strong>Preset :</strong> <span style={{color: '#00bfff'}}>{currentPresetInfo.name}</span></p>
@@ -112,10 +176,41 @@ export default function WeatherPage() {
       </div>
 
       <div className={styles.section}>
-        <h3 className={styles.sectionTitle}>Presets Disponibles</h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', borderBottom: '1px solid var(--panel-border)', paddingBottom: '10px' }}>
+          <h3 className={styles.sectionTitle} style={{ borderBottom: 'none', marginBottom: 0, paddingBottom: 0 }}>Presets Disponibles</h3>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <label htmlFor="timeOfDay" style={{ color: '#ccc', fontSize: '0.9rem' }}>Heure du jour :</label>
+            <select 
+              id="timeOfDay"
+              value={timeOfDay} 
+              onChange={(e) => setTimeOfDay(e.target.value)}
+              style={{
+                background: 'rgba(0,0,0,0.2)',
+                color: 'white',
+                border: '1px solid var(--panel-border)',
+                padding: '6px 10px',
+                borderRadius: '4px',
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="keep">Conserver (Défaut)</option>
+              <option value="random">Aléatoire</option>
+              <option value="dawn">Aube (04h-07h)</option>
+              <option value="day">Jour (08h-17h)</option>
+              <option value="dusk">Crépuscule (18h-20h)</option>
+              <option value="night">Nuit (21h-03h)</option>
+            </select>
+          </div>
+        </div>
+
         <div className={styles.grid}>
           {Object.entries(presets).map(([id, preset]: [string, any]) => (
             <div key={id} className={styles.card}>
+              <div className={styles.cardImageWrapper}>
+                <img src={getPresetThumbnail(preset.name, preset.clouds?.preset)} alt={preset.name} className={styles.cardImage} />
+              </div>
               <div className={styles.cardCategory}>{preset.category}</div>
               <h4 className={styles.cardTitle}>{preset.name}</h4>
               <div className={styles.cardDesc}>{preset.description}</div>

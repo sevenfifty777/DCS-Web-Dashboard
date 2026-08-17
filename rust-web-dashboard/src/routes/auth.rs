@@ -231,50 +231,59 @@ async fn exchange_and_verify(state: &AppState, code: Option<String>) -> Result<S
         })?;
     let username = user.username.clone().unwrap_or_else(|| "Unknown User".to_string());
 
-    // 3. Fetch the caller's membership in the required guild.
-    let member_res = state
-        .http
-        .get(format!(
-            "https://discord.com/api/users/@me/guilds/{}/member",
-            discord.guild_id
-        ))
-        .bearer_auth(&token.access_token)
-        .send()
-        .await
-        .map_err(|err| {
-            tracing::error!(error = %err, "discord member request failed");
-            "Authentication Failed".to_string()
-        })?;
+    // 3. Fetch the caller's membership in the required guild(s).
+    let mut authorized = false;
+    let mut is_member_of_any = false;
 
-    if member_res.status() == reqwest::StatusCode::NOT_FOUND {
+    for guild_id in &discord.guild_ids {
+        let member_res = state
+            .http
+            .get(format!(
+                "https://discord.com/api/users/@me/guilds/{}/member",
+                guild_id
+            ))
+            .bearer_auth(&token.access_token)
+            .send()
+            .await
+            .map_err(|err| {
+                tracing::error!(error = %err, "discord member request failed");
+                "Authentication Failed".to_string()
+            })?;
+
+        if member_res.status().is_success() {
+            is_member_of_any = true;
+            
+            let member: DiscordMember = member_res.json().await.map_err(|err| {
+                tracing::error!(error = %err, "failed to decode discord member response");
+                "Authentication Failed".to_string()
+            })?;
+
+            // 4. Require at least one whitelisted admin role.
+            let has_admin_role = member
+                .roles
+                .iter()
+                .any(|role| discord.admin_role_ids.iter().any(|allowed| allowed == role));
+
+            if has_admin_role {
+                authorized = true;
+                break;
+            }
+        }
+    }
+
+    if !is_member_of_any {
         audit(
             state,
             &username,
             &user.id,
             "REJECTED",
-            Some("Not a member of the required Discord server"),
+            Some("Not a member of the required Discord server(s)"),
         )
         .await;
         return Err("You are not a member of the required server".to_string());
     }
 
-    if !member_res.status().is_success() {
-        tracing::error!(status = %member_res.status(), "discord member fetch failed");
-        return Err("Authentication Failed".to_string());
-    }
-
-    let member: DiscordMember = member_res.json().await.map_err(|err| {
-        tracing::error!(error = %err, "failed to decode discord member response");
-        "Authentication Failed".to_string()
-    })?;
-
-    // 4. Require at least one whitelisted admin role.
-    let has_admin_role = member
-        .roles
-        .iter()
-        .any(|role| discord.admin_role_ids.iter().any(|allowed| allowed == role));
-
-    if !has_admin_role {
+    if !authorized {
         audit(state, &username, &user.id, "REJECTED", Some("Missing Admin Role")).await;
         return Err("Unauthorized: Missing Admin Role".to_string());
     }

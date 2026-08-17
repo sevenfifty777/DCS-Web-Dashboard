@@ -506,6 +506,18 @@ pub async fn weather_get(_user: AuthUser, State(state): State<AppState>) -> Resp
                     dto_value["mission"] = json!(format!("(Active in DCS) {active}.miz"));
                 }
             }
+
+            // Fetch current mission time
+            if let Ok(eval_res) = grpc::custom_eval(state.grpc.clone(), "return timer.getAbsTime()".into()).await {
+                if let Ok(time_seconds) = eval_res.json.trim().parse::<f64>() {
+                    let total_seconds = time_seconds as u32;
+                    let hours = (total_seconds / 3600) % 24;
+                    let minutes = (total_seconds / 60) % 60;
+                    if let Some(dto_value) = dto.as_mut() {
+                        dto_value["mission_time"] = json!(format!("{:02}:{:02}", hours, minutes));
+                    }
+                }
+            }
         }
     }
 
@@ -526,6 +538,7 @@ pub async fn weather_get(_user: AuthUser, State(state): State<AppState>) -> Resp
 pub struct WeatherApplyBody {
     #[schema(value_type = Object)]
     preset_id: Option<Value>,
+    time_of_day: Option<String>,
 }
 
 /// `POST /api/weather/apply` → run the weather generator and reload the mission.
@@ -608,6 +621,9 @@ pub async fn weather_apply(
     cmd.arg(&script_path)
         .arg(&weather_dir)
         .arg(format!("--preset={preset_id}"));
+    if let Some(tod) = body.time_of_day {
+        cmd.arg(format!("--time={tod}"));
+    }
     if !target_mission.is_empty() {
         cmd.arg(format!("--mission={target_mission}"));
     }

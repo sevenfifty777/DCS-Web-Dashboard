@@ -43,6 +43,21 @@
   border-color: var(--primary);
 }
 
+.cardImageWrapper {
+  width: calc(100% + 30px);
+  margin: -15px -15px 10px -15px;
+  height: 140px;
+  overflow: hidden;
+  border-radius: 5px 5px 0 0;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.cardImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .cardTitle {
   font-weight: bold;
   font-size: 1.1rem;
