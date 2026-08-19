@@ -73,6 +73,8 @@ use utoipa_swagger_ui::SwaggerUi;
         system::dcs_log_stream,
         system::graveyard_get,
         system::foothold_get,
+        system::foothold_config_get,
+        system::foothold_config_post,
         srs::get_settings,
         srs::post_settings,
         srs::get_clients,
@@ -200,6 +202,7 @@ pub fn router() -> Router<AppState> {
         .route("/api/logs/dcs/stream", get(system::dcs_log_stream))
         .route("/api/graveyard", get(system::graveyard_get))
         .route("/api/foothold", get(system::foothold_get))
+        .route("/api/foothold/config", get(system::foothold_config_get).post(system::foothold_config_post))
         .route("/api/rdp-status", get(system::rdp_status))
         .route(
             "/api/server/tasks",

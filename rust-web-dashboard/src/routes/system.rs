@@ -1010,3 +1010,41 @@ pub async fn foothold_get(
             (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to parse Foothold data: {}", e))
         })
 }
+
+#[utoipa::path(
+    get,
+    path = "/api/foothold/config",
+    tags = ["system"],
+    security(("jwt" = [])),
+    responses((status = 200, description = "Foothold configuration data"))
+)]
+pub async fn foothold_config_get(
+    State(app_state): State<AppState>,
+) -> Result<Json<crate::foothold::FootholdConfigResponse>, (StatusCode, String)> {
+    crate::foothold::get_foothold_config(&app_state.config.foothold_saves_dir)
+        .map(Json)
+        .map_err(|e| {
+            tracing::error!("Failed to parse Foothold config: {:#}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to parse Foothold config: {}", e))
+        })
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/foothold/config",
+    tags = ["system"],
+    security(("jwt" = [])),
+    request_body(content = std::collections::HashMap<String, serde_json::Value>, description = "Updated foothold config values"),
+    responses((status = 200, description = "Config updated successfully"))
+)]
+pub async fn foothold_config_post(
+    State(app_state): State<AppState>,
+    Json(payload): Json<std::collections::HashMap<String, serde_json::Value>>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    crate::foothold::update_foothold_config(&app_state.config.foothold_saves_dir, payload)
+        .map(|_| Json(serde_json::json!({"status": "ok"})))
+        .map_err(|e| {
+            tracing::error!("Failed to update Foothold config: {:#}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to update Foothold config: {}", e))
+        })
+}

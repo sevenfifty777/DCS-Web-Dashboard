@@ -338,3 +338,287 @@ pub fn get_foothold_data(saves_dir: &PathBuf) -> Result<FootholdData> {
         })
     }
 }
+
+fn flatten_lua_value(
+    prefix: &str,
+    val: mlua::Value,
+    config: &mut std::collections::HashMap<String, serde_json::Value>,
+) {
+    match val {
+        mlua::Value::String(s) => {
+            if let Ok(s_str) = s.to_str() {
+                config.insert(prefix.to_string(), serde_json::Value::String(s_str.to_string()));
+            }
+        }
+        mlua::Value::Boolean(b) => {
+            config.insert(prefix.to_string(), serde_json::Value::Bool(b));
+        }
+        mlua::Value::Integer(i) => {
+            config.insert(prefix.to_string(), serde_json::json!(i));
+        }
+        mlua::Value::Number(n) => {
+            config.insert(prefix.to_string(), serde_json::json!(n));
+        }
+        mlua::Value::Table(t) => {
+            for pair in t.pairs::<mlua::Value, mlua::Value>() {
+                if let Ok((k, v)) = pair {
+                    let key_str = match k {
+                        mlua::Value::String(s) => {
+                            if let Ok(s_str) = s.to_str() {
+                                s_str.to_string()
+                            } else {
+                                "".to_string()
+                            }
+                        },
+                        mlua::Value::Integer(i) => i.to_string(),
+                        _ => continue,
+                    };
+                    if key_str.is_empty() {
+                        continue;
+                    }
+                    let new_prefix = if prefix.is_empty() {
+                        key_str
+                    } else {
+                        format!("{}.{}", prefix, key_str)
+                    };
+                    flatten_lua_value(&new_prefix, v, config);
+                }
+            }
+        }
+        _ => {}
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct FootholdConfigResponse {
+    pub values: std::collections::HashMap<String, serde_json::Value>,
+    pub metadata: std::collections::HashMap<String, FootholdMetadata>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct FootholdMetadata {
+    pub help: Option<String>,
+    pub choices: Vec<String>,
+}
+
+pub fn get_foothold_config(saves_dir: &PathBuf) -> Result<FootholdConfigResponse> {
+    let config_file = saves_dir.join("Foothold Config.lua");
+    if !config_file.exists() {
+        return Err(anyhow::anyhow!("Foothold Config.lua not found at {:?}", config_file));
+    }
+    let content = std::fs::read_to_string(&config_file)?;
+    
+    let lua = Lua::new();
+    lua.load(&content).exec().map_err(|e| anyhow::anyhow!("{}", e))?;
+    let globals = lua.globals();
+    
+    let mut config = std::collections::HashMap::new();
+    for pair in globals.pairs::<String, mlua::Value>() {
+        if let Ok((key, val)) = pair {
+            if key == "_G" || key == "_VERSION" || key == "package" || key == "string" || key == "table" || key == "math" || key == "io" || key == "os" || key == "coroutine" || key == "debug" || key == "utf8" {
+                continue;
+            }
+            flatten_lua_value(&key, val, &mut config);
+        }
+    }
+    
+    let mut metadata = std::collections::HashMap::new();
+    let mut current_block_comment = Vec::new();
+    
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with("--") {
+            if !trimmed.starts_with("---") && !trimmed.starts_with("-- =") {
+                let text = trimmed.trim_start_matches("--").trim();
+                if !text.is_empty() {
+                    current_block_comment.push(text.to_string());
+                }
+            }
+        } else if trimmed.is_empty() {
+            // Keep comments across empty lines
+        } else if let Some(eq_idx) = trimmed.find('=') {
+            let lhs = trimmed[..eq_idx].trim();
+            // Validate LHS looks like a config key (e.g. StartNormal, GlobalSettings.difficultyScaling)
+            if lhs.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '.') && !lhs.is_empty() {
+                let mut trailing_comment = None;
+                if let Some(comment_idx) = trimmed.find("--") {
+                    if comment_idx > eq_idx {
+                        trailing_comment = Some(trimmed[comment_idx + 2..].trim().to_string());
+                    }
+                }
+                
+                let mut help = String::new();
+                if !current_block_comment.is_empty() {
+                    help.push_str(&current_block_comment.join("\n"));
+                }
+                if let Some(tc) = trailing_comment {
+                    if !help.is_empty() { help.push_str("\n"); }
+                    help.push_str(&tc);
+                }
+                
+                let mut choices = Vec::new();
+                let lower_help = help.to_lowercase();
+                if let Some(idx) = lower_help.find("valid values:") {
+                    // Extract choices from `Valid values: "X" | "Y"` or similar
+                    // Splitting by \n first to isolate the line
+                    if let Some(line_end) = help[idx..].find('\n') {
+                        let remaining = &help[idx + "valid values:".len()..idx + line_end];
+                        let parts: Vec<&str> = remaining.split(|c| c == '|' || c == ',').collect();
+                        for part in parts {
+                            let p = part.trim();
+                            if let Some(start) = p.find('"') {
+                                if let Some(end) = p[start+1..].find('"') {
+                                    choices.push(p[start+1..start+1+end].to_string());
+                                }
+                            } else if let Some(start) = p.find('\'') {
+                                if let Some(end) = p[start+1..].find('\'') {
+                                    choices.push(p[start+1..start+1+end].to_string());
+                                }
+                            }
+                        }
+                    } else {
+                        let remaining = &help[idx + "valid values:".len()..];
+                        let parts: Vec<&str> = remaining.split(|c| c == '|' || c == ',').collect();
+                        for part in parts {
+                            let p = part.trim();
+                            if let Some(start) = p.find('"') {
+                                if let Some(end) = p[start+1..].find('"') {
+                                    choices.push(p[start+1..start+1+end].to_string());
+                                }
+                            } else if let Some(start) = p.find('\'') {
+                                if let Some(end) = p[start+1..].find('\'') {
+                                    choices.push(p[start+1..start+1+end].to_string());
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Ensure boolean inputs like StartNormal get a boolean dropdown
+                let is_bool = trimmed[eq_idx+1..].trim().starts_with("true") || trimmed[eq_idx+1..].trim().starts_with("false");
+                if is_bool {
+                    choices = vec!["true".to_string(), "false".to_string()];
+                }
+                
+                if !help.is_empty() || !choices.is_empty() {
+                    metadata.insert(lhs.to_string(), FootholdMetadata {
+                        help: if help.is_empty() { None } else { Some(help) },
+                        choices,
+                    });
+                }
+            }
+            current_block_comment.clear();
+        } else {
+            current_block_comment.clear();
+        }
+    }
+    
+    Ok(FootholdConfigResponse {
+        values: config,
+        metadata,
+    })
+}
+
+pub fn update_foothold_config(saves_dir: &PathBuf, updates: std::collections::HashMap<String, serde_json::Value>) -> Result<()> {
+    let config_file = saves_dir.join("Foothold Config.lua");
+    if !config_file.exists() {
+        return Err(anyhow::anyhow!("Foothold Config.lua not found at {:?}", config_file));
+    }
+    let content = std::fs::read_to_string(&config_file)?;
+    
+    // Convert JSON values to Lua strings
+    let mut str_updates = std::collections::HashMap::new();
+    for (key, val) in updates {
+        let val_str = match val {
+            serde_json::Value::Null => "__DELETE__".to_string(),
+            serde_json::Value::String(s) => {
+                // Determine if it's already a literal like "{1400, 1500}" from the UI or if it's a normal string
+                if s.starts_with('{') && s.ends_with('}') {
+                    s
+                } else {
+                    format!("\"{}\"", s.replace("\"", "\\\""))
+                }
+            },
+            serde_json::Value::Bool(b) => b.to_string(),
+            serde_json::Value::Number(n) => n.to_string(),
+            _ => continue,
+        };
+        str_updates.insert(key, val_str);
+    }
+    
+    let mut lines: Vec<String> = content.lines().map(|s| s.to_string()).collect();
+    let mut current_path: Vec<String> = Vec::new();
+    
+    let re_table_start = regex::Regex::new(r#"^\s*(?:(?:\["([^"]+)"\])|([a-zA-Z_]\w*))\s*=\s*\{\s*(?:--.*)?$"#).unwrap();
+    let re_assignment = regex::Regex::new(r#"^\s*(?:(?:\["([^"]+)"\])|([a-zA-Z_]\w*))\s*=\s*(.*)$"#).unwrap();
+    let re_table_end = regex::Regex::new(r#"^\s*\}\,?\s*(?:--.*)?$"#).unwrap();
+
+    for i in 0..lines.len() {
+        let line = lines[i].clone();
+        
+        if re_table_end.is_match(&line) {
+            // Check if there are any unprocessed new keys for this path to insert
+            if !current_path.is_empty() {
+                let current_prefix = format!("{}.", current_path.join("."));
+                let mut to_insert = Vec::new();
+                for (k, v) in &str_updates {
+                    if k.starts_with(&current_prefix) && v != "__DELETE__" {
+                        let local_key = &k[current_prefix.len()..];
+                        if !local_key.contains('.') {
+                            // Determine indentation from the closing brace line
+                            let indent = line.chars().take_while(|c| c.is_whitespace()).collect::<String>();
+                            // Prefer bracket notation for table keys if they have spaces or special chars
+                            let safe_key = if local_key.chars().all(|c| c.is_alphanumeric() || c == '_') {
+                                local_key.to_string()
+                            } else {
+                                format!("[\"{}\"]", local_key)
+                            };
+                            to_insert.push(format!("{}    {} = {},", indent, safe_key, v));
+                        }
+                    }
+                }
+                if !to_insert.is_empty() {
+                    lines[i] = format!("{}\n{}", to_insert.join("\n"), line);
+                }
+            }
+            current_path.pop();
+            continue;
+        }
+
+        if let Some(caps) = re_table_start.captures(&line) {
+            let key = caps.get(1).or(caps.get(2)).unwrap().as_str();
+            current_path.push(key.to_string());
+            continue;
+        }
+
+        if let Some(caps) = re_assignment.captures(&line) {
+            let key = caps.get(1).or(caps.get(2)).unwrap().as_str();
+            let mut full_path = current_path.clone();
+            full_path.push(key.to_string());
+            let path_str = full_path.join(".");
+            
+            if let Some(new_val) = str_updates.get(&path_str) {
+                if new_val == "__DELETE__" {
+                    lines[i] = String::new(); // Mark line for deletion
+                } else {
+                    let rest = caps.get(3).unwrap().as_str();
+                    let comment = rest.find("--").map(|idx| &rest[idx..]).unwrap_or("");
+                    let comma = if rest.trim_end().ends_with(',') && !new_val.ends_with(',') { "," } else { "" };
+                    
+                    let prefix_end = caps.get(3).unwrap().start();
+                    let prefix = &line[..prefix_end];
+                    let new_line = format!("{}{}{} {}", prefix, new_val, comma, comment);
+                    lines[i] = new_line.trim_end().to_string();
+                }
+                // We've processed this update
+                str_updates.remove(&path_str);
+            }
+        }
+    }
+    
+    // Filter out deleted lines
+    let final_lines: Vec<String> = lines.into_iter().filter(|l| !l.is_empty() || content.lines().any(|orig| orig.is_empty() && orig == l)).collect();
+    
+    std::fs::write(&config_file, final_lines.join("\n") + "\n")?;
+    Ok(())
+}

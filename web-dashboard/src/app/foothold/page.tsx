@@ -160,6 +160,13 @@ export default function FootholdPage() {
                     >
                         <span>Global Economy</span>
                     </button>
+                    <a 
+                        href="/foothold/config"
+                        className={`nav-btn ${styles.navBtn}`}
+                        style={{ marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,0.1)' }}
+                    >
+                        <span>⚙️ Configuration</span>
+                    </a>
                 </nav>
             </div>
 
