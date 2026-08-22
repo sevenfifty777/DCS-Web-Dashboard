@@ -1287,3 +1287,66 @@ pub async fn destroy_spot(_user: AuthUser, State(state): State<AppState>, axum::
         Err(e) => err_detail("Failed to destroy spot", e),
     }
 }
+
+#[derive(serde::Serialize, utoipa::ToSchema)]
+pub struct AirbossDataResponse {
+    pub brc: f64,
+    pub ship_spd: f64,
+    pub tw_dir: f64,
+    pub tw_spd: f64,
+    pub target_wod: f64,
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/airboss",
+    tags = ["dcs"],
+    security(("jwt" = [])),
+    responses((status = 200, description = "Current Airboss data from DCS", body = AirbossDataResponse))
+)]
+pub async fn airboss_data(State(state): State<AppState>) -> Response {
+    let lua = r#"
+        local group = Group.getByName("CVN-72")
+        if not group or not group:isExist() or group:getSize() == 0 then return { error = "CVN-72 not found" } end
+        local lead = group:getUnit(1)
+        if not lead or not lead:isExist() then return { error = "Lead unit not found" } end
+        local point = lead:getPoint()
+        local pos = lead:getPosition()
+        local vel = lead:getVelocity()
+
+        local wind = atmosphere.getWind({ x = point.x, y = (point.y or 0) + 18, z = point.z }) or { x = 0, y = 0, z = 0 }
+        
+        local windDir = math.deg(math.atan2(-wind.z, -wind.x))
+        if windDir < 0 then windDir = windDir + 360 end
+        local windSpeedKt = math.sqrt(wind.x^2 + wind.z^2) * 1.94384449
+
+        local headingDeg = math.deg(math.atan2(pos.x.z, pos.x.x))
+        if headingDeg < 0 then headingDeg = headingDeg + 360 end
+        local speedKt = math.sqrt(vel.x^2 + vel.z^2) * 1.94384449
+
+        local targetWod = CarrierRecoveryTargetWodKt or 25.0
+
+        return net.json2lua(net.lua2json({
+            brc = headingDeg,
+            ship_spd = speedKt,
+            tw_dir = windDir,
+            tw_spd = windSpeedKt,
+            target_wod = targetWod
+        }))
+    "#;
+
+    match grpc::custom_eval(state.grpc.clone(), lua.into()).await {
+        Ok(res) => {
+            if let Ok(json) = serde_json::from_str::<serde_json::Value>(&res.json) {
+                if let Some(err) = json.get("error").and_then(|v| v.as_str()) {
+                    (axum::http::StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({ "error": err }))).into_response()
+                } else {
+                    Json(json).into_response()
+                }
+            } else {
+                (axum::http::StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({ "error": "Invalid json from airboss script" }))).into_response()
+            }
+        },
+        Err(e) => err_detail("Failed to evaluate airboss script", e),
+    }
+}

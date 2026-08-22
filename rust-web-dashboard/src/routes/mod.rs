@@ -44,6 +44,7 @@ use utoipa_swagger_ui::SwaggerUi;
         dcs::get_foothold_zones,
         dcs::mission_status,
         dcs::mission_action,
+        dcs::airboss_data,
         dcs::kick_player,
         dcs::ban_player,
         dcs::unban_player,
@@ -101,6 +102,7 @@ use utoipa_swagger_ui::SwaggerUi;
             dcs::ConsoleBody, dcs::SetFlagBody, dcs::MissionBody, dcs::MissionPayload,
             dcs::PlayerActionBody, dcs::AnnouncementBody, dcs::EmissionPayload,
             dcs::ROEPayload, dcs::AlarmStatePayload, dcs::LasePayload, dcs::IrPointerPayload,
+            dcs::AirbossDataResponse,
             system::TaskActionBody, system::WeatherApplyBody, system::DcsProcessAction, system::SrsProcessAction,
             warehouse::AddItemBody, warehouse::AddLiquidBody,
             world::SetCoalitionPayload,
@@ -183,6 +185,7 @@ pub fn router() -> Router<AppState> {
         .route("/api/airbases", get(dcs::get_airbases))
         .route("/api/zones", get(dcs::get_zones))
         .route("/api/zones/foothold", get(dcs::get_foothold_zones))
+        .route("/api/airboss", get(dcs::airboss_data))
         .route("/api/units/{name}", get(dcs::get_unit_details))
         .route("/api/units/{name}/destroy", post(dcs::destroy_unit_group))
         .route("/api/units/{name}/emission", post(dcs::set_unit_emission))
