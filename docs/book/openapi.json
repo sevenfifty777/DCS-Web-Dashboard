@@ -137,6 +137,59 @@
         ]
       }
     },
+    "/api/airboss": {
+      "get": {
+        "tags": [
+          "dcs"
+        ],
+        "operationId": "airboss_data",
+        "responses": {
+          "200": {
+            "description": "Current Airboss data from DCS",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AirbossDataResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/airboss/action": {
+      "post": {
+        "tags": [
+          "dcs"
+        ],
+        "operationId": "airboss_action",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AirbossActionPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Action executed"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
     "/api/announcements": {
       "post": {
         "tags": [
@@ -555,6 +608,55 @@
         ]
       }
     },
+    "/api/foothold/config": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "operationId": "foothold_config_get",
+        "responses": {
+          "200": {
+            "description": "Foothold configuration data"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "system"
+        ],
+        "operationId": "foothold_config_post",
+        "requestBody": {
+          "description": "Updated foothold config values",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": {},
+                "propertyNames": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Config updated successfully"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
     "/api/graveyard": {
       "get": {
         "tags": [
@@ -934,6 +1036,62 @@
         "responses": {
           "200": {
             "description": "DCS process action executed"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/server/services": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "`GET /api/server/services` -> list status of configured Windows services.",
+        "operationId": "windows_services_get",
+        "responses": {
+          "200": {
+            "description": "Status of configured Windows services",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WindowsServiceStatus"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "system"
+        ],
+        "summary": "`POST /api/server/services` -> start/stop/restart a specific Windows service.",
+        "operationId": "windows_services_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WindowsServiceAction"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Windows service action executed"
           }
         },
         "security": [
@@ -1819,6 +1977,49 @@
           }
         }
       },
+      "AirbossActionPayload": {
+        "type": "object",
+        "required": [
+          "action"
+        ],
+        "properties": {
+          "action": {
+            "type": "string"
+          }
+        }
+      },
+      "AirbossDataResponse": {
+        "type": "object",
+        "required": [
+          "brc",
+          "ship_spd",
+          "tw_dir",
+          "tw_spd",
+          "target_wod"
+        ],
+        "properties": {
+          "brc": {
+            "type": "number",
+            "format": "double"
+          },
+          "ship_spd": {
+            "type": "number",
+            "format": "double"
+          },
+          "target_wod": {
+            "type": "number",
+            "format": "double"
+          },
+          "tw_dir": {
+            "type": "number",
+            "format": "double"
+          },
+          "tw_spd": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
       "AlarmStatePayload": {
         "type": "object",
         "required": [
@@ -2253,8 +2454,55 @@
         "properties": {
           "preset_id": {
             "type": "object"
+          },
+          "time_of_day": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
+      },
+      "WindowsServiceAction": {
+        "type": "object",
+        "required": [
+          "name",
+          "action"
+        ],
+        "properties": {
+          "action": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "WindowsServiceStatus": {
+        "type": "object",
+        "required": [
+          "name",
+          "display_name",
+          "status"
+        ],
+        "properties": {
+          "display_name": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "jwt": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
       }
     }
   },

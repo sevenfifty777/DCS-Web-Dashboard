@@ -15,7 +15,7 @@
         "tags": [
           "dcs"
         ],
-        "summary": "`GET /api/airbases` ΓåÆ current airbases (WorldService.GetAirbases).",
+        "summary": "`GET /api/airbases` → current airbases (WorldService.GetAirbases).",
         "operationId": "get_airbases",
         "responses": {
           "200": {
@@ -223,7 +223,7 @@
         "tags": [
           "dcs"
         ],
-        "summary": "`GET /api/atmosphere?lat=&lon=&alt=` ΓåÆ wind + temperature/pressure\n(AtmosphereService). `alt` defaults to 0, matching the source.",
+        "summary": "`GET /api/atmosphere?lat=&lon=&alt=` → wind + temperature/pressure\n(AtmosphereService). `alt` defaults to 0, matching the source.",
         "operationId": "atmosphere",
         "parameters": [
           {
@@ -280,7 +280,7 @@
         "tags": [
           "auth"
         ],
-        "summary": "`POST /api/auth` ΓÇö exchange the admin password for a session JWT.",
+        "summary": "`POST /api/auth` — exchange the admin password for a session JWT.",
         "operationId": "login",
         "requestBody": {
           "content": {
@@ -312,7 +312,7 @@
         "tags": [
           "auth"
         ],
-        "summary": "`DELETE /api/auth` ΓÇö logout. JWTs are stateless, so this is a client cue.",
+        "summary": "`DELETE /api/auth` — logout. JWTs are stateless, so this is a client cue.",
         "operationId": "logout",
         "responses": {
           "200": {
@@ -326,7 +326,7 @@
         "tags": [
           "auth"
         ],
-        "summary": "`GET /api/auth/callback` ΓÇö complete the OAuth flow and redirect to the UI\nwith a session token in the URL fragment, or an error query on failure.",
+        "summary": "`GET /api/auth/callback` — complete the OAuth flow and redirect to the UI\nwith a session token in the URL fragment, or an error query on failure.",
         "operationId": "discord_callback",
         "parameters": [
           {
@@ -353,7 +353,7 @@
         "tags": [
           "auth"
         ],
-        "summary": "`GET /api/auth/discord` ΓÇö redirect the browser to Discord's OAuth consent.",
+        "summary": "`GET /api/auth/discord` — redirect the browser to Discord's OAuth consent.",
         "operationId": "discord_login",
         "responses": {
           "307": {
@@ -370,7 +370,7 @@
         "tags": [
           "auth"
         ],
-        "summary": "`GET /api/auth/verify` ΓÇö confirm a bearer token is valid.",
+        "summary": "`GET /api/auth/verify` — confirm a bearer token is valid.",
         "operationId": "verify",
         "responses": {
           "200": {
@@ -392,7 +392,7 @@
         "tags": [
           "dcs"
         ],
-        "summary": "`POST /api/chat` ΓåÆ broadcast chat (NetService.SendChat).",
+        "summary": "`POST /api/chat` → broadcast chat (NetService.SendChat).",
         "operationId": "chat",
         "requestBody": {
           "content": {
@@ -552,7 +552,7 @@
         "tags": [
           "dcs"
         ],
-        "summary": "`POST /api/console` ΓåÆ evaluate Lua in the mission (CustomService.Eval).",
+        "summary": "`POST /api/console` → evaluate Lua in the mission (CustomService.Eval).",
         "operationId": "console",
         "requestBody": {
           "content": {
@@ -581,7 +581,7 @@
         "tags": [
           "stream"
         ],
-        "summary": "`GET /api/events/stream` ΓÇö mission events as SSE.",
+        "summary": "`GET /api/events/stream` — mission events as SSE.",
         "operationId": "events_stream",
         "responses": {
           "200": {
@@ -681,7 +681,7 @@
         "tags": [
           "dcs"
         ],
-        "summary": "`GET /api/health` ΓåÆ DCS server health + version (MetadataService).",
+        "summary": "`GET /api/health` → DCS server health + version (MetadataService).",
         "description": "Intentionally public so the login screen can surface server status before a\nsession exists. Process liveness lives at `GET /healthz`.",
         "operationId": "health",
         "responses": {
@@ -699,7 +699,7 @@
         "tags": [
           "system"
         ],
-        "summary": "`GET /api/logs/access` ΓåÆ authentication audit log, mapped to the frontend\nshape (`timestamp` ms / `userId`).",
+        "summary": "`GET /api/logs/access` → authentication audit log, mapped to the frontend\nshape (`timestamp` ms / `userId`).",
         "operationId": "logs_access",
         "responses": {
           "200": {
@@ -718,7 +718,7 @@
         "tags": [
           "system"
         ],
-        "summary": "`GET /api/logs/dcs/stream` ΓåÆ tail DCS log using SSE.",
+        "summary": "`GET /api/logs/dcs/stream` → tail DCS log using SSE.",
         "operationId": "dcs_log_stream",
         "responses": {
           "200": {
@@ -737,7 +737,7 @@
         "tags": [
           "dcs"
         ],
-        "summary": "`GET /api/marks` ΓåÆ current mark panels (WorldService.GetMarkPanels).",
+        "summary": "`GET /api/marks` → current mark panels (WorldService.GetMarkPanels).",
         "operationId": "get_marks",
         "responses": {
           "200": {
@@ -756,7 +756,7 @@
         "tags": [
           "dcs"
         ],
-        "summary": "`GET /api/mission` ΓåÆ current mission + paused state (HookService) plus\nfilesystem-derived `serverInfo`, `queue`, and `uploadedMissions`.",
+        "summary": "`GET /api/mission` → current mission + paused state (HookService) plus\nfilesystem-derived `serverInfo`, `queue`, and `uploadedMissions`.",
         "description": "Per-call gRPC failures fall back to `\"Unknown\"` / `false`, matching the\nsource's individual `.catch(...)` handling. A `serverSettings.lua` parse\nfailure yields `serverInfo: null` and an empty queue, as in the source.",
         "operationId": "mission_status",
         "responses": {
@@ -774,7 +774,7 @@
         "tags": [
           "dcs"
         ],
-        "summary": "`POST /api/mission` ΓåÆ mission control actions (HookService). Queue\nmutation (`add_to_queue` / `remove_from_queue`) is filesystem-backed and\nreturns `501` until Phase 5.",
+        "summary": "`POST /api/mission` → mission control actions (HookService). Queue\nmutation (`add_to_queue` / `remove_from_queue`) is filesystem-backed and\nreturns `501` until Phase 5.",
         "operationId": "mission_action",
         "requestBody": {
           "content": {
@@ -803,7 +803,7 @@
         "tags": [
           "system"
         ],
-        "summary": "`GET /api/mission/browse` ΓåÆ recursively list `.miz` files under `Missions`\n(depth Γëñ 3, skipping hidden folders and `Uploads`).",
+        "summary": "`GET /api/mission/browse` → recursively list `.miz` files under `Missions`\n(depth ≤ 3, skipping hidden folders and `Uploads`).",
         "operationId": "mission_browse",
         "responses": {
           "200": {
@@ -822,7 +822,7 @@
         "tags": [
           "system"
         ],
-        "summary": "`POST /api/mission/upload` ΓåÆ save a `.miz` upload into `Missions/Uploads`.",
+        "summary": "`POST /api/mission/upload` → save a `.miz` upload into `Missions/Uploads`.",
         "operationId": "mission_upload",
         "requestBody": {
           "content": {
@@ -846,7 +846,7 @@
         "tags": [
           "dcs"
         ],
-        "summary": "`GET /api/players` ΓåÆ connected players (NetService.GetPlayers).",
+        "summary": "`GET /api/players` → connected players (NetService.GetPlayers).",
         "operationId": "players",
         "responses": {
           "200": {
@@ -896,7 +896,7 @@
         "tags": [
           "dcs"
         ],
-        "summary": "`GET /api/players/banned` ΓåÆ banned players (HookService.GetBannedPlayers).",
+        "summary": "`GET /api/players/banned` → banned players (HookService.GetBannedPlayers).",
         "operationId": "banned_players",
         "responses": {
           "200": {
@@ -971,7 +971,7 @@
         "tags": [
           "stream"
         ],
-        "summary": "`GET /api/radar/stream` ΓÇö unit position updates as SSE.",
+        "summary": "`GET /api/radar/stream` — unit position updates as SSE.",
         "operationId": "radar_stream",
         "responses": {
           "200": {
@@ -985,7 +985,7 @@
         "tags": [
           "system"
         ],
-        "summary": "`GET /api/rdp-status` ΓåÆ active Windows interactive/RDP sessions (`quser`).",
+        "summary": "`GET /api/rdp-status` → active Windows interactive/RDP sessions (`quser`).",
         "operationId": "rdp_status",
         "responses": {
           "200": {
@@ -1004,7 +1004,7 @@
         "tags": [
           "system"
         ],
-        "summary": "`GET /api/server/dcs-process` ΓåÆ check if DCS.exe or DCS_server.exe is running.",
+        "summary": "`GET /api/server/dcs-process` → check if DCS.exe or DCS_server.exe is running.",
         "operationId": "dcs_process_get",
         "responses": {
           "200": {
@@ -1021,7 +1021,7 @@
         "tags": [
           "system"
         ],
-        "summary": "`POST /api/server/dcs-process` ΓåÆ start/stop/restart DCS.exe.",
+        "summary": "`POST /api/server/dcs-process` → start/stop/restart DCS.exe.",
         "operationId": "dcs_process_post",
         "requestBody": {
           "content": {
@@ -1045,12 +1045,68 @@
         ]
       }
     },
+    "/api/server/services": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "`GET /api/server/services` -> list status of configured Windows services.",
+        "operationId": "windows_services_get",
+        "responses": {
+          "200": {
+            "description": "Status of configured Windows services",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WindowsServiceStatus"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "system"
+        ],
+        "summary": "`POST /api/server/services` -> start/stop/restart a specific Windows service.",
+        "operationId": "windows_services_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WindowsServiceAction"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Windows service action executed"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
     "/api/server/srs-process": {
       "get": {
         "tags": [
           "system"
         ],
-        "summary": "`GET /api/server/srs-process` ΓåÆ check if SRS-Server.exe is running.",
+        "summary": "`GET /api/server/srs-process` → check if SRS-Server.exe is running.",
         "operationId": "srs_process_get",
         "responses": {
           "200": {
@@ -1067,7 +1123,7 @@
         "tags": [
           "system"
         ],
-        "summary": "`POST /api/server/srs-process` ΓåÆ start/stop/restart SRS-Server.exe.",
+        "summary": "`POST /api/server/srs-process` → start/stop/restart SRS-Server.exe.",
         "operationId": "srs_process_post",
         "requestBody": {
           "content": {
@@ -1096,7 +1152,7 @@
         "tags": [
           "system"
         ],
-        "summary": "`GET /api/server/tasks` ΓåÆ root-folder scheduled tasks (PowerShell).",
+        "summary": "`GET /api/server/tasks` → root-folder scheduled tasks (PowerShell).",
         "operationId": "tasks_get",
         "responses": {
           "200": {
@@ -1113,7 +1169,7 @@
         "tags": [
           "system"
         ],
-        "summary": "`POST /api/server/tasks` ΓåÆ start/stop/restart a scheduled task.",
+        "summary": "`POST /api/server/tasks` → start/stop/restart a scheduled task.",
         "operationId": "tasks_post",
         "requestBody": {
           "content": {
@@ -1142,7 +1198,7 @@
         "tags": [
           "system"
         ],
-        "summary": "`GET /api/settings` ΓåÆ parsed `serverSettings.lua` (flat object with the\n`advanced` block, `missionList` array, and primitive keys).",
+        "summary": "`GET /api/settings` → parsed `serverSettings.lua` (flat object with the\n`advanced` block, `missionList` array, and primitive keys).",
         "operationId": "settings_get",
         "responses": {
           "200": {
@@ -1162,7 +1218,7 @@
         "tags": [
           "system"
         ],
-        "summary": "`POST /api/settings` ΓåÆ rewrite `serverSettings.lua` (byte-faithful CRLF/tabs).",
+        "summary": "`POST /api/settings` → rewrite `serverSettings.lua` (byte-faithful CRLF/tabs).",
         "operationId": "settings_post",
         "requestBody": {
           "description": "New server settings",
@@ -1397,7 +1453,7 @@
         "tags": [
           "dcs"
         ],
-        "summary": "`GET /api/triggers?flag=...` ΓåÆ read user flag (TriggerService.GetUserFlag).",
+        "summary": "`GET /api/triggers?flag=...` → read user flag (TriggerService.GetUserFlag).",
         "operationId": "get_flag",
         "parameters": [
           {
@@ -1427,7 +1483,7 @@
         "tags": [
           "dcs"
         ],
-        "summary": "`POST /api/triggers` ΓåÆ set user flag (TriggerService.SetUserFlag). The\nsource coerced `flag` via `.toString()` and `value` via `Number(...)`.",
+        "summary": "`POST /api/triggers` → set user flag (TriggerService.SetUserFlag). The\nsource coerced `flag` via `.toString()` and `value` via `Number(...)`.",
         "operationId": "set_flag",
         "requestBody": {
           "content": {
@@ -1796,7 +1852,7 @@
         "tags": [
           "system"
         ],
-        "summary": "`GET /api/weather` ΓåÆ presets + current applied weather state. Overrides the\nreported mission name with the live DCS mission when reachable.",
+        "summary": "`GET /api/weather` → presets + current applied weather state. Overrides the\nreported mission name with the live DCS mission when reachable.",
         "operationId": "weather_get",
         "responses": {
           "200": {
@@ -1815,7 +1871,7 @@
         "tags": [
           "system"
         ],
-        "summary": "`POST /api/weather/apply` ΓåÆ run the weather generator and reload the mission.",
+        "summary": "`POST /api/weather/apply` → run the weather generator and reload the mission.",
         "operationId": "weather_apply",
         "requestBody": {
           "content": {
@@ -1844,7 +1900,7 @@
         "tags": [
           "dcs"
         ],
-        "summary": "`GET /api/zones` ΓåÆ current mission editor zones (CustomService.Eval).",
+        "summary": "`GET /api/zones` → current mission editor zones (CustomService.Eval).",
         "operationId": "get_zones",
         "responses": {
           "200": {
@@ -1863,7 +1919,7 @@
         "tags": [
           "dcs"
         ],
-        "summary": "`GET /api/zones/foothold` ΓåÆ Foothold-specific zones (CustomService.Eval).",
+        "summary": "`GET /api/zones/foothold` → Foothold-specific zones (CustomService.Eval).",
         "operationId": "get_foothold_zones",
         "responses": {
           "200": {
@@ -2404,6 +2460,40 @@
               "string",
               "null"
             ]
+          }
+        }
+      },
+      "WindowsServiceAction": {
+        "type": "object",
+        "required": [
+          "name",
+          "action"
+        ],
+        "properties": {
+          "action": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "WindowsServiceStatus": {
+        "type": "object",
+        "required": [
+          "name",
+          "display_name",
+          "status"
+        ],
+        "properties": {
+          "display_name": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
           }
         }
       }

@@ -37,10 +37,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-9b4fe003.js";
+            window.path_to_searchindex_js = "searchindex-8b265ab8.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-184f33f4.js"></script>
+        <script src="toc-7ef7debc.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -381,6 +381,13 @@ nssm install "DCS Web Dashboard"
 <ul>
 <li><strong>Leaderboard</strong>: A persistent leaderboard tracking live player statistics from the Foothold save file.</li>
 <li><strong>Foothold</strong>: Track the status of the campaign including active zones, ongoing attacks, side ownership, and ejected pilots.</li>
+<li><strong>Config</strong>: View and modify Foothold gameplay variables and configuration directly from the browser.</li>
+</ul>
+<h2 id="-airboss-planner"><a class="header" href="#-airboss-planner">⚓ Airboss Planner</a></h2>
+<p>A dynamic toolkit for managing carrier operations on the server.</p>
+<ul>
+<li><strong>Auto-Sync</strong>: Automatically calculates the required Wind Over Deck (WOD) and Base Recovery Course (BRC) using live weather data and carrier speeds.</li>
+<li><strong>Carrier Actions</strong>: Remotely command the carrier to instantly turn into the wind for recovery operations, or resume its normal circuit, mirroring the in-game F10 radio menu functionality.</li>
 </ul>
 <h2 id="-warehouse-wip"><a class="header" href="#-warehouse-wip">📦 Warehouse (WIP)</a></h2>
 <p>View and manage the inventory of airbases across the map. You can dynamically add items or liquids to airbase warehouses mid-mission.</p>
@@ -420,83 +427,6 @@ nssm install "DCS Web Dashboard"
 <li><strong>Vulnerabilities</strong>: The Rust backend dependencies are routinely audited (<code>cargo audit</code>). The frontend’s build-time Node dependencies do not execute at runtime and are not shipped in the final binary.</li>
 <li><strong>TLS &amp; HTTPS</strong>: TLS termination and websockets are intentionally out of scope for the binary. It serves plain HTTP. For secure public access, you must put a reverse proxy (like Nginx, Caddy, or Cloudflare Tunnels) in front to handle HTTPS, and the dashboard uses Server-Sent Events (SSE) instead of websockets for live data.</li>
 </ul>
-<div style="break-before: page; page-break-before: always;"></div>
-<h1 id="-todo-list--feuille-de-route"><a class="header" href="#-todo-list--feuille-de-route">📋 TODO List &amp; Feuille de Route</a></h1>
-<h2 id="-infrastructure-prévue"><a class="header" href="#-infrastructure-prévue">🏗️ Infrastructure Prévue</a></h2>
-<ul>
-<li>🚀 <strong>Serveur DCS</strong></li>
-<li>📻 <strong>Serveur SRS</strong></li>
-<li>📊 <strong>DashBoard</strong></li>
-<li>🔌 <strong>DCS-gRPC</strong></li>
-<li>🛬 <strong>DCS-gRPC LSO</strong></li>
-<li>🌐 <strong>Site ESF</strong></li>
-<li>☁️ <strong>Mode ATMOS-X</strong></li>
-<li>🗺️ <strong>Mission Planner</strong> <em>(DKS, Outil CoinCoin…)</em></li>
-<li>🤖 <strong>Discord bot</strong> <em>(Amiral Benson)</em></li>
-</ul>
-<hr>
-<h2 id="-suivi-des-tâches"><a class="header" href="#-suivi-des-tâches">🎯 Suivi des Tâches</a></h2>
-<blockquote>
-<p><strong>Légende des statuts :</strong>
-⏳ À faire | 🏗️ En cours | 🧪 À tester | ✅ Validé</p>
-</blockquote>
-<h3 id="-site-esf"><a class="header" href="#-site-esf">🌐 Site ESF</a></h3>
-<div class="table-wrapper">
-<table>
-<thead>
-<tr><th style="text-align: left">Tâche</th><th style="text-align: center">Statut</th><th style="text-align: left">Notes</th></tr>
-</thead>
-<tbody>
-<tr><td style="text-align: left">Refaire le ménage sur l’indexation git pour PUSH projet fonctionnel sur GitHub</td><td style="text-align: center">⏳</td><td style="text-align: left"></td></tr>
-<tr><td style="text-align: left">Refonte module CQ</td><td style="text-align: center">⏳</td><td style="text-align: left"></td></tr>
-<tr><td style="text-align: left">CQ à interfacer en mode PROD</td><td style="text-align: center">⏳</td><td style="text-align: left"></td></tr>
-<tr><td style="text-align: left">Module Journal de bord de l’Amiral</td><td style="text-align: center">⏳</td><td style="text-align: left"></td></tr>
-<tr><td style="text-align: left">Module Modex-picker + message utilisateur si Modex pas renseigné sur le site</td><td style="text-align: center">⏳</td><td style="text-align: left"></td></tr>
-<tr><td style="text-align: left">Interfacer Dashboard sur page Administration</td><td style="text-align: center">⏳</td><td style="text-align: left"></td></tr>
-<tr><td style="text-align: left">Modifier bandeau site avec image + titre ‘ESF Albatross’</td><td style="text-align: center">⏳</td><td style="text-align: left"></td></tr>
-<tr><td style="text-align: left">Supprimer toute notion de flottille sur le site (obso)</td><td style="text-align: center">⏳</td><td style="text-align: left"></td></tr>
-</tbody>
-</table>
-</div>
-<h3 id="-dashboard"><a class="header" href="#-dashboard">📊 DashBoard</a></h3>
-<div class="table-wrapper">
-<table>
-<thead>
-<tr><th style="text-align: left">Tâche</th><th style="text-align: center">Statut</th><th style="text-align: left">Notes</th></tr>
-</thead>
-<tbody>
-<tr><td style="text-align: left">Restreindre accès menus “sensibles” aux <code>@staff NOeZ</code></td><td style="text-align: center">⏳</td><td style="text-align: left"></td></tr>
-<tr><td style="text-align: left">Permettre accès aux <code>@admin ESF</code></td><td style="text-align: center">⏳</td><td style="text-align: left"></td></tr>
-</tbody>
-</table>
-</div>
-<h3 id="-dcs-grpc-lso"><a class="header" href="#-dcs-grpc-lso">🛬 DCS-gRPC LSO</a></h3>
-<div class="table-wrapper">
-<table>
-<thead>
-<tr><th style="text-align: left">Tâche</th><th style="text-align: center">Statut</th><th style="text-align: left">Notes</th></tr>
-</thead>
-<tbody>
-<tr><td style="text-align: left">Résoudre pb Delta entre <code>pass_grade</code> (attribué par module) &amp; <code>dcs_grading</code> (DCS)</td><td style="text-align: center">⏳</td><td style="text-align: left"></td></tr>
-<tr><td style="text-align: left">Campagne pour vérifier les données récupérées + trapsheets générées</td><td style="text-align: center">⏳</td><td style="text-align: left"></td></tr>
-</tbody>
-</table>
-</div>
-<h3 id="-discord-esf"><a class="header" href="#-discord-esf">💬 Discord ESF</a></h3>
-<div class="table-wrapper">
-<table>
-<thead>
-<tr><th style="text-align: left">Tâche</th><th style="text-align: center">Statut</th><th style="text-align: left">Notes</th></tr>
-</thead>
-<tbody>
-<tr><td style="text-align: left">Créer salon textuel dédié (Amiral annonce passage de jalon CQ : UNDERGRADUATE &gt; INITIAL…)</td><td style="text-align: center">⏳</td><td style="text-align: left"></td></tr>
-<tr><td style="text-align: left">Affecter automatiquement rôle <code>UNDERGRADUATE</code> à tout nouvel arrivant</td><td style="text-align: center">⏳</td><td style="text-align: left"></td></tr>
-<tr><td style="text-align: left">Concevoir et créer le tableau des top-hookers</td><td style="text-align: center">⏳</td><td style="text-align: left"></td></tr>
-<tr><td style="text-align: left">Paramétrage des droits visu/interactions sur salons selon rôles</td><td style="text-align: center">⏳</td><td style="text-align: left"></td></tr>
-<tr><td style="text-align: left">Rédiger charte de “bonne-conduite”</td><td style="text-align: center">⏳</td><td style="text-align: left"></td></tr>
-</tbody>
-</table>
-</div>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="rest-api-swagger-ui"><a href="#rest-api-swagger-ui" class="header">REST API (Swagger UI)</a></h1>
 
