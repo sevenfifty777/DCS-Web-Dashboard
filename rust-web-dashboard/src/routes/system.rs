@@ -916,6 +916,132 @@ pub async fn srs_process_post(
     Json(json!({ "success": true })).into_response()
 }
 
+// --- /api/server/services ----------------------------------------------------
+
+#[derive(serde::Serialize, utoipa::ToSchema)]
+pub struct WindowsServiceStatus {
+    pub name: String,
+    pub display_name: String,
+    pub status: String,
+}
+
+/// `GET /api/server/services` -> list status of configured Windows services.
+#[utoipa::path(
+    get,
+    path = "/api/server/services",
+    tags = ["system"],
+    security(("jwt" = [])),
+    responses((status = 200, description = "Status of configured Windows services", body = Vec<WindowsServiceStatus>))
+)]
+pub async fn windows_services_get(_user: AuthUser, State(state): State<AppState>) -> Response {
+    if state.config.windows_services.is_empty() {
+        return Json(Vec::<WindowsServiceStatus>::new()).into_response();
+    }
+
+    let names = state.config.windows_services.iter().map(|s| format!("'{}'", s.replace("'", "''"))).collect::<Vec<_>>().join(",");
+    let ps = format!("Get-Service -Name {} -ErrorAction SilentlyContinue | Select-Object Name, DisplayName, Status | ConvertTo-Json -Compress -Depth 1", names);
+    
+    let output = match Command::new("powershell")
+        .arg("-NoProfile")
+        .arg("-Command")
+        .arg(&ps)
+        .output()
+        .await
+    {
+        Ok(out) => out,
+        Err(_) => return Json(Vec::<WindowsServiceStatus>::new()).into_response(),
+    };
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stdout = stdout.trim();
+    if stdout.is_empty() {
+        return Json(Vec::<WindowsServiceStatus>::new()).into_response();
+    }
+    
+    let mut results = Vec::new();
+    if let Ok(mut parsed) = serde_json::from_str::<serde_json::Value>(stdout) {
+        if parsed.is_object() {
+            results.push(parsed);
+        } else if let Some(arr) = parsed.as_array_mut() {
+            results.append(arr);
+        }
+    }
+
+    let mut mapped = Vec::new();
+    for r in results {
+        let name = r.get("Name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+        let display_name = r.get("DisplayName").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+        
+        let status = if let Some(num) = r.get("Status").and_then(|v| v.as_u64()) {
+            match num {
+                1 => "Stopped".to_string(),
+                2 => "StartPending".to_string(),
+                3 => "StopPending".to_string(),
+                4 => "Running".to_string(),
+                5 => "ContinuePending".to_string(),
+                6 => "PausePending".to_string(),
+                7 => "Paused".to_string(),
+                _ => "Unknown".to_string(),
+            }
+        } else if let Some(s) = r.get("Status").and_then(|v| v.as_str()) {
+            s.to_string()
+        } else {
+            "Unknown".to_string()
+        };
+
+        mapped.push(WindowsServiceStatus { name, display_name, status });
+    }
+
+    Json(mapped).into_response()
+}
+
+#[derive(Deserialize, utoipa::ToSchema)]
+pub struct WindowsServiceAction {
+    pub name: String,
+    pub action: String,
+}
+
+/// `POST /api/server/services` -> start/stop/restart a specific Windows service.
+#[utoipa::path(
+    post,
+    path = "/api/server/services",
+    tags = ["system"],
+    security(("jwt" = [])),
+    request_body = WindowsServiceAction,
+    responses((status = 200, description = "Windows service action executed"))
+)]
+pub async fn windows_services_post(
+    _user: AuthUser,
+    State(state): State<AppState>,
+    Json(payload): Json<WindowsServiceAction>,
+) -> Response {
+    if !state.config.windows_services.iter().any(|s| s.eq_ignore_ascii_case(&payload.name)) {
+        return err_500("Service not found in configured WINDOWS_SERVICES list.");
+    }
+
+    let name = payload.name.replace("'", "''");
+
+    if payload.action == "start" {
+        let cmd = format!("Start-Service -Name '{}'", name);
+        let _ = Command::new("powershell").arg("-NoProfile").arg("-Command").arg(&cmd).status().await;
+        return Json(json!({ "success": true })).into_response();
+    }
+
+    if payload.action == "stop" {
+        let cmd = format!("Stop-Service -Name '{}' -Force", name);
+        let _ = Command::new("powershell").arg("-NoProfile").arg("-Command").arg(&cmd).status().await;
+        return Json(json!({ "success": true })).into_response();
+    }
+
+    if payload.action == "restart" {
+        let cmd = format!("Restart-Service -Name '{}' -Force", name);
+        let _ = Command::new("powershell").arg("-NoProfile").arg("-Command").arg(&cmd).status().await;
+        return Json(json!({ "success": true })).into_response();
+    }
+
+    return (axum::http::StatusCode::BAD_REQUEST, Json(serde_json::json!({ "error": "Invalid action" }))).into_response();
+}
+
 // --- /api/logs/dcs/stream ---------------------------------------------------
 
 /// `GET /api/logs/dcs/stream` → tail DCS log using SSE.

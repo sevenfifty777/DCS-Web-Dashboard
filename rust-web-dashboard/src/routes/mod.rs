@@ -72,6 +72,8 @@ use utoipa_swagger_ui::SwaggerUi;
         system::dcs_process_post,
         system::srs_process_get,
         system::srs_process_post,
+        system::windows_services_get,
+        system::windows_services_post,
         system::dcs_log_stream,
         system::graveyard_get,
         system::foothold_get,
@@ -105,6 +107,7 @@ use utoipa_swagger_ui::SwaggerUi;
             dcs::ROEPayload, dcs::AlarmStatePayload, dcs::LasePayload, dcs::IrPointerPayload,
             dcs::AirbossDataResponse, dcs::AirbossActionPayload,
             system::TaskActionBody, system::WeatherApplyBody, system::DcsProcessAction, system::SrsProcessAction,
+            system::WindowsServiceStatus, system::WindowsServiceAction,
             warehouse::AddItemBody, warehouse::AddLiquidBody,
             world::SetCoalitionPayload,
             trigger::MarkPayload, trigger::EffectPayload,
@@ -220,6 +223,10 @@ pub fn router() -> Router<AppState> {
         .route(
             "/api/server/srs-process",
             get(system::srs_process_get).post(system::srs_process_post),
+        )
+        .route(
+            "/api/server/services",
+            get(system::windows_services_get).post(system::windows_services_post),
         )
         .nest(
             "/api/srs",

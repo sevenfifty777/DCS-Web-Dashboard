@@ -93,6 +93,9 @@ pub struct Config {
     /// Optional allow-list of Windows scheduled-task names (lower-cased) that
     /// the `/api/server/tasks` route may inspect or control.
     pub task_whitelist: Vec<String>,
+    /// Optional allow-list of Windows services that the `/api/server/services`
+    /// route may inspect or control.
+    pub windows_services: Vec<String>,
     /// Discord OAuth settings, when configured.
     pub discord: Option<DiscordConfig>,
     /// Optional command to start the DCS process.
@@ -138,14 +141,19 @@ impl Config {
         let python_exe =
             optional("PYTHON_EXE").unwrap_or_else(|| DEFAULT_PYTHON_EXE.to_string());
 
-        let task_whitelist = optional("DCS_TASK_WHITELIST")
-            .map(|raw| {
-                raw.split(',')
-                    .map(|task| task.trim().to_lowercase())
-                    .filter(|task| !task.is_empty())
-                    .collect()
-            })
-            .unwrap_or_default();
+        let task_whitelist: Vec<String> = optional("DCS_TASK_WHITELIST")
+            .unwrap_or_default()
+            .split(',')
+            .map(|s| s.trim().to_lowercase())
+            .filter(|s| !s.is_empty())
+            .collect();
+
+        let windows_services: Vec<String> = optional("WINDOWS_SERVICES")
+            .unwrap_or_default()
+            .split(',')
+            .map(|s| s.trim().trim_matches('"').trim_matches('\'').to_string())
+            .filter(|s| !s.is_empty())
+            .collect();
 
         let srs_start_cmd = optional("SRS_START_CMD");
         
@@ -186,6 +194,7 @@ impl Config {
             dcs_dynamic_weather_dir,
             python_exe,
             task_whitelist,
+            windows_services,
             discord: DiscordConfig::from_env(),
             dcs_start_cmd: optional("DCS_START_CMD"),
             dcs_scheduled_task: optional("DCS_SCHEDULED_TASK_NAME"),
