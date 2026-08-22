@@ -35,6 +35,11 @@ The documentation includes:
 - **Frontend**: Next.js (React) static SPA gracefully embedded into the Rust backend so you don't need a separate web server.
 - **DCS Link**: Connects directly to [DCS-gRPC (Custom Fork)](https://github.com/sevenfifty777/rust-server) running inside the DCS World engine. *Huge thanks to the original [DCS-gRPC project](https://github.com/DCS-gRPC/rust-server) by the DCS-gRPC team for the foundation!*
 
+## ⚠️ Security Warning
+
+> **HTTP vs HTTPS**
+> The dashboard serves plain HTTP. For public internet access, you should set up a Reverse Proxy (Nginx, Caddy, Cloudflare Tunnel) to provide SSL encryption (HTTPS). If you use a reverse proxy, **do not** open port 3001 to the public internet; bind the dashboard to `127.0.0.1:3001` and only allow the proxy to access it.
+
 ## 📜 License
 
 This project is licensed under the [GNU Affero General Public License v3.0 (AGPL-3.0)](LICENSE).
