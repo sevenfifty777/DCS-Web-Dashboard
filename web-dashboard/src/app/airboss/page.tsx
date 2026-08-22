@@ -25,6 +25,8 @@ export default function AirbossPlanner() {
     };
   }, []);
 
+  const [actionStatus, setActionStatus] = useState<string | null>(null);
+
   useEffect(() => {
     if (!autoSync) return;
     
@@ -48,6 +50,28 @@ export default function AirbossPlanner() {
     const intervalId = setInterval(fetchData, 2000);
     return () => clearInterval(intervalId);
   }, [autoSync]);
+
+  const handleAction = async (actionStr: string) => {
+    setActionStatus('Sending command...');
+    try {
+      const res = await apiFetch('/api/airboss/action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: actionStr }),
+      });
+      if (res.ok) {
+        setActionStatus(`Command successful: ${actionStr}`);
+        setTimeout(() => setActionStatus(null), 5000);
+      } else {
+        const err = await res.json();
+        setActionStatus(`Failed: ${err.error || 'Unknown error'}`);
+        setTimeout(() => setActionStatus(null), 8000);
+      }
+    } catch (e) {
+      setActionStatus(`Error: ${e}`);
+      setTimeout(() => setActionStatus(null), 8000);
+    }
+  };
 
   function toRad(deg: number) { return deg * Math.PI / 180; }
   function toDeg(rad: number) { return rad * 180 / Math.PI; }
@@ -291,7 +315,30 @@ export default function AirbossPlanner() {
 
       <div className="ab-main">
         <div className="ab-sidebar">
-          <div className="ab-sec-hdr">Wind Parameters</div>
+          <div className="ab-sec-hdr">Carrier Actions</div>
+          <div className="ab-ctrl-block" style={{ flexDirection: 'row', gap: '8px' }}>
+            <button 
+              className="ab-autosync-btn" 
+              style={{ flex: 1, justifyContent: 'center' }}
+              onClick={() => handleAction('start')}
+            >
+              Turn into Wind
+            </button>
+            <button 
+              className="ab-autosync-btn" 
+              style={{ flex: 1, justifyContent: 'center', background: 'rgba(255,214,0,0.1)', borderColor: 'rgba(255,214,0,0.3)', color: '#ffd600' }}
+              onClick={() => handleAction('resume')}
+            >
+              Resume Circuit
+            </button>
+          </div>
+          {actionStatus && (
+            <div style={{ fontSize: '11px', color: 'var(--yel)', marginTop: '-10px', marginBottom: '10px', textAlign: 'center', fontFamily: 'var(--mono)' }}>
+              {actionStatus}
+            </div>
+          )}
+
+          <div className="ab-sec-hdr mt">Wind Parameters</div>
 
           <div className="ab-ctrl-block">
             <div className="ab-ctrl-row">

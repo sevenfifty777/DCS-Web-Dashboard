@@ -1350,3 +1350,53 @@ pub async fn airboss_data(State(state): State<AppState>) -> Response {
         Err(e) => err_detail("Failed to evaluate airboss script", e),
     }
 }
+
+#[derive(Deserialize, utoipa::ToSchema)]
+pub struct AirbossActionPayload {
+    pub action: String,
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/airboss/action",
+    tags = ["dcs"],
+    security(("jwt" = [])),
+    request_body = AirbossActionPayload,
+    responses((status = 200, description = "Action executed"))
+)]
+pub async fn airboss_action(_user: AuthUser, State(state): State<AppState>, Json(payload): Json<AirbossActionPayload>) -> Response {
+    let lua = match payload.action.as_str() {
+        "start" => r#"
+            if bc and bc._carrierRecoveryStart then 
+                local cvn = Group.getByName('CVN-72')
+                local id = cvn and cvn:getID() or 0
+                local res = bc:_carrierRecoveryStart(id)
+                if res then return 'ok' else return 'failed to start (maybe already active or unsafe)' end
+            else 
+                return 'bc not found' 
+            end
+        "#,
+        "resume" => r#"
+            if bc and bc._carrierRecoveryRestore then 
+                local cvn = Group.getByName('CVN-72')
+                local id = cvn and cvn:getID() or 0
+                local res = bc:_carrierRecoveryRestore('manual', id)
+                if res then return 'ok' else return 'failed to resume (maybe not active)' end
+            else 
+                return 'bc not found' 
+            end
+        "#,
+        _ => return bad_request("Invalid action"),
+    };
+
+    match grpc::custom_eval(state.grpc.clone(), lua.to_string()).await {
+        Ok(res) => {
+            if res.json == "\"ok\"" {
+                Json(json!({ "success": true })).into_response()
+            } else {
+                (axum::http::StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({ "error": res.json }))).into_response()
+            }
+        },
+        Err(e) => err_detail("Failed to execute airboss action", e),
+    }
+}
