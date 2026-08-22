@@ -60,8 +60,14 @@ export default function AirbossPlanner() {
         body: JSON.stringify({ action: actionStr }),
       });
       if (res.ok) {
-        setActionStatus(`Command successful: ${actionStr}`);
-        setTimeout(() => setActionStatus(null), 5000);
+        const data = await res.json();
+        if (data.message) {
+          setActionStatus(`${data.message}`);
+          setTimeout(() => setActionStatus(null), 15000);
+        } else {
+          setActionStatus(`Command successful: ${actionStr}`);
+          setTimeout(() => setActionStatus(null), 5000);
+        }
       } else {
         const err = await res.json();
         setActionStatus(`Failed: ${err.error || 'Unknown error'}`);
@@ -332,8 +338,17 @@ export default function AirbossPlanner() {
               Resume Circuit
             </button>
           </div>
+          <div className="ab-ctrl-block" style={{ flexDirection: 'row', gap: '8px', marginTop: '-8px' }}>
+            <button 
+              className="ab-autosync-btn" 
+              style={{ flex: 1, justifyContent: 'center', background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)', color: 'var(--txt-dim)' }}
+              onClick={() => handleAction('status')}
+            >
+              Check Recovery Status
+            </button>
+          </div>
           {actionStatus && (
-            <div style={{ fontSize: '11px', color: 'var(--yel)', marginTop: '-10px', marginBottom: '10px', textAlign: 'center', fontFamily: 'var(--mono)' }}>
+            <div style={{ fontSize: '11px', color: 'var(--yel)', marginTop: '-2px', marginBottom: '10px', textAlign: 'center', fontFamily: 'var(--mono)', padding: '0 10px', whiteSpace: 'pre-wrap' }}>
               {actionStatus}
             </div>
           )}

@@ -1386,15 +1386,35 @@ pub async fn airboss_action(_user: AuthUser, State(state): State<AppState>, Json
                 return 'bc not found' 
             end
         "#,
+        "status" => r#"
+            if bc and bc._carrierRecoveryStatus then
+                local cvn = Group.getByName('CVN-72')
+                local id = cvn and cvn:getID() or 0
+                local captured = nil
+                local old = trigger.action.outTextForGroup
+                trigger.action.outTextForGroup = function(g, msg, time) 
+                    captured = msg 
+                    trigger.action.outTextForCoalition(2, msg, time)
+                end
+                bc:_carrierRecoveryStatus(id)
+                trigger.action.outTextForGroup = old
+                return captured or 'Status unavailable'
+            else
+                return 'bc not found'
+            end
+        "#,
         _ => return bad_request("Invalid action"),
     };
 
     match grpc::custom_eval(state.grpc.clone(), lua.to_string()).await {
         Ok(res) => {
-            if res.json == "\"ok\"" {
+            let msg = serde_json::from_str::<String>(&res.json).unwrap_or_else(|_| res.json.clone());
+            if msg == "ok" {
                 Json(json!({ "success": true })).into_response()
+            } else if payload.action == "status" {
+                Json(json!({ "success": true, "message": msg })).into_response()
             } else {
-                (axum::http::StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({ "error": res.json }))).into_response()
+                (axum::http::StatusCode::BAD_REQUEST, Json(serde_json::json!({ "error": msg }))).into_response()
             }
         },
         Err(e) => err_detail("Failed to execute airboss action", e),
