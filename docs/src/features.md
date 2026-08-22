@@ -63,6 +63,14 @@ Specific integrations for servers running the dynamic "Foothold" campaign.
 
 - **Leaderboard**: A persistent leaderboard tracking live player statistics from the Foothold save file.
 - **Foothold**: Track the status of the campaign including active zones, ongoing attacks, side ownership, and ejected pilots.
+- **Config**: View and modify Foothold gameplay variables and configuration directly from the browser.
+
+## ⚓ Airboss Planner
+
+A dynamic toolkit for managing carrier operations on the server.
+
+- **Auto-Sync**: Automatically calculates the required Wind Over Deck (WOD) and Base Recovery Course (BRC) using live weather data and carrier speeds.
+- **Carrier Actions**: Remotely command the carrier to instantly turn into the wind for recovery operations, or resume its normal circuit, mirroring the in-game F10 radio menu functionality.
 
 ## 📦 Warehouse (WIP)
 
