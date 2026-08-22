@@ -33,7 +33,7 @@ The documentation includes:
 
 - **Backend**: Rust (using `axum` for REST/SSE and `tonic` for gRPC) compiled into a single performant binary.
 - **Frontend**: Next.js (React) static SPA gracefully embedded into the Rust backend so you don't need a separate web server.
-- **DCS Link**: Connects directly to [DCS-gRPC](https://github.com/DCS-gRPC/rust-server) running inside the DCS World engine.
+- **DCS Link**: Connects directly to [DCS-gRPC (Custom Fork)](https://github.com/sevenfifty777/rust-server) running inside the DCS World engine. *Huge thanks to the original [DCS-gRPC project](https://github.com/DCS-gRPC/rust-server) by the DCS-gRPC team for the foundation!*
 
 ## 📜 License
 
