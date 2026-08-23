@@ -1297,24 +1297,31 @@ pub struct AirbossDataResponse {
     pub target_wod: f64,
 }
 
+#[derive(Deserialize, utoipa::IntoParams)]
+pub struct AirbossQuery {
+    name: Option<String>,
+}
+
 #[utoipa::path(
     get,
     path = "/api/airboss",
     tags = ["dcs"],
     security(("jwt" = [])),
+    params(AirbossQuery),
     responses((status = 200, description = "Current Airboss data from DCS", body = AirbossDataResponse))
 )]
-pub async fn airboss_data(State(state): State<AppState>) -> Response {
-    let lua = r#"
-        local group = Group.getByName("CVN-72")
-        if not group or not group:isExist() or group:getSize() == 0 then return { error = "CVN-72 not found" } end
+pub async fn airboss_data(State(state): State<AppState>, Query(q): Query<AirbossQuery>) -> Response {
+    let carrier_name = q.name.as_deref().unwrap_or("CVN-72");
+    let lua = format!(r#"
+        local group = Group.getByName("{}")
+        if not group or not group:isExist() or group:getSize() == 0 then return {{ error = "{} not found" }} end
         local lead = group:getUnit(1)
-        if not lead or not lead:isExist() then return { error = "Lead unit not found" } end
+        if not lead or not lead:isExist() then return {{ error = "Lead unit not found" }} end
         local point = lead:getPoint()
         local pos = lead:getPosition()
         local vel = lead:getVelocity()
 
-        local wind = atmosphere.getWind({ x = point.x, y = (point.y or 0) + 18, z = point.z }) or { x = 0, y = 0, z = 0 }
+        local wind = atmosphere.getWind({{ x = point.x, y = (point.y or 0) + 18, z = point.z }}) or {{ x = 0, y = 0, z = 0 }}
         
         local windDir = math.deg(math.atan2(-wind.z, -wind.x))
         if windDir < 0 then windDir = windDir + 360 end
@@ -1326,14 +1333,17 @@ pub async fn airboss_data(State(state): State<AppState>) -> Response {
 
         local targetWod = CarrierRecoveryTargetWodKt or 25.0
 
-        return net.json2lua(net.lua2json({
+        return net.json2lua(net.lua2json({{
+            carrier_name = "{}",
+            carrier_u = point.x,
+            carrier_v = point.z,
             brc = headingDeg,
             ship_spd = speedKt,
             tw_dir = windDir,
             tw_spd = windSpeedKt,
             target_wod = targetWod
-        }))
-    "#;
+        }}))
+    "#, carrier_name, carrier_name, carrier_name);
 
     match grpc::custom_eval(state.grpc.clone(), lua.into()).await {
         Ok(res) => {

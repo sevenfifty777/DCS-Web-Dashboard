@@ -49,7 +49,7 @@ pub async fn parking(
                     "term_type": p.term_type,
                     "distance_to_runway": p.distance_to_runway,
                     "to_ac": p.to_ac,
-                    "position": p.position.map(|pos| json!({ "lat": pos.lat, "lon": pos.lon, "alt": pos.alt })).unwrap_or(json!(null))
+                    "position": p.position.map(|pos| json!({ "lat": pos.lat, "lon": pos.lon, "alt": pos.alt, "u": pos.u, "v": pos.v })).unwrap_or(json!(null))
                 })
             }).collect();
             Json(json!({ "parking": parking_json })).into_response()

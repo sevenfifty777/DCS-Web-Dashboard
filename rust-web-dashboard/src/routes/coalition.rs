@@ -76,6 +76,7 @@ pub async fn player_units(
                     "type": u.r#type,
                     "player_name": u.player_name,
                     "coalition": u.coalition,
+                    "position": u.position.map(|p| json!({"lat": p.lat, "lon": p.lon, "alt": p.alt, "u": p.u, "v": p.v})).unwrap_or(json!(null)),
                 })
             }).collect();
             Json(json!({ "units": units_json })).into_response()

@@ -11,45 +11,164 @@ export default function AirbossPlanner() {
   const [offset, setOffset] = useState(9);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const deckCanvasRef = useRef<HTMLCanvasElement>(null);
   const [carrierImg, setCarrierImg] = useState<HTMLImageElement | null>(null);
+  const [planeIcons, setPlaneIcons] = useState<Record<string, HTMLImageElement>>({});
+
+  // Hardcoded local parking spots for Nimitz-class carriers (CVN-71, 72, 73, 74)
+  // because DCS Airbase.getParking() only works for land bases.
+  // Source: CoreMods/tech/USS_Nimitz/scripts/USS_Nimitz_RunwaysAndRoutes.lua (LCS coords: x=fwd, z=lateral)
+  const NIMITZ_SPOTS = [
+    // Routes 1-15 parking spots (verified against DCS Lua)
+    {'u': -141.15, 'v': 24.2},   // 1  - parking 1 (stern, stbd)
+    {'u': -129.2,  'v': 26.2},   // 2  - parking 2
+    {'u': -118.0,  'v': 28.0},   // 3  - parking 3
+    {'u': -103.5,  'v': 34.0},   // 4  - lift3 p1
+    {'u': -92.0,   'v': 34.0},   // 5  - lift3 p2
+    {'u': -79.0,   'v': 26.5},   // 6  - after island
+    {'u': -65.8,   'v': 18.8},   // 7  - island 1
+    {'u': -52.0,   'v': 17.0},   // 8  - island 2
+    {'u': -37.0,   'v': 16.0},   // 9  - island 3
+    {'u': -23.0,   'v': 34.0},   // 10 - lift2 p1
+    {'u': -11.0,   'v': 34.0},   // 11 - lift2 p2
+    {'u': 6.0,     'v': 32.5},   // 12 - between lift1 & lift2
+    {'u': 69.6,    'v': 33.0},   // 13 - before lift1 1
+    {'u': 53.0,    'v': 34.5},   // 14 - before lift1 2
+    {'u': 23.0,    'v': 34.0},   // 15 - lift1 p1
+    {'u': 35.0,    'v': 34.0},   // 16 - lift1 p2 (was missing)
+    // 6pack spots (commented-out in DCS taxi routes but physically valid)
+    {'u': 24.5,    'v': 9.5},    // 17 - 6pack 1 {'u': -28.0,   'v': 12.0}
+    {'u': 7.6,     'v': 10.5},   // 18 - 6pack 2 {'u': -10.0,   'v': 9.0}
+    {'u': -9.9,    'v': 10.8},   // 19 - 6pack 3 {'u': 4.0,     'v': 8.0}
+    {'u': -26.0,   'v': 12.0},   // 20 - 6pack 4 
+    {'u': -96.0,   'v': -34.0},  // 21 - Elevator 4 terminal 2 (port stern, on-deck) {'u': -80.0,   'v': -5.0}
+    {'u': -108,    'v': -34.0},  // 22 - Elevator 4 terminal 1 (port stern, on-deck) {'u': -115.0,  'v': -5.0}
+    // Catapult end-positions (aircraft waiting for launch)
+    {'u': 59.95,    'v': 18.02},  // 23 - Cat 1 (bow stbd) {'u': 55.0,    'v': 18.54}
+    {'u': 58.80,    'v': -3.75},  // 24 - Cat 2 (bow port) {'u': 55.9,    'v': -3.68}
+    {'u': -37.37,   'v': -20.16}, // 25 - Cat 3 (waist port)  {'u': -39.4,   'v': -19.92}
+    {'u': -56.17,   'v': -32.90},  // 26 - Cat 4 (waist port) {'u': -58.5,   'v': -32.8}
+  ].map((p, i) => ({ term_index: i + 1, position: p, isLocal: true }));
   
   const [autoSync, setAutoSync] = useState(false);
   const [actualBrc, setActualBrc] = useState<number | null>(null);
   const [actualShipSpd, setActualShipSpd] = useState<number | null>(null);
 
+  const [carrierNameInput, setCarrierNameInput] = useState("CVN-72");
+  const [carrierName, setCarrierName] = useState<string | null>(null);
+  const [carrierPos, setCarrierPos] = useState<{u: number, v: number} | null>(null);
+  const [parkingSpots, setParkingSpots] = useState<any[]>([]);
+  const [playerUnits, setPlayerUnits] = useState<any[]>([]);
+  const [radarUnits, setRadarUnits] = useState<Record<string, any>>({});
+  const [carrierUnitId, setCarrierUnitId] = useState<number | null>(null);
+  const smoothedPositions = useRef<Record<string, { fwd: number; right: number }>>({});
+
   useEffect(() => {
     const img = new window.Image();
+    img.onload = () => setCarrierImg(img);
     img.src = '/img/carrier-top-full-transp.png';
-    img.onload = () => {
-      setCarrierImg(img);
-    };
+  }, []);
+
+  // Preload plane icons
+  useEffect(() => {
+    const iconNames = ['f-14_icon_park.png', 'F-18_icon_park.png', 'f-14_icon_cat.png', 'F-18_icon_cat.png'];
+    iconNames.forEach(name => {
+      const img = new Image();
+      img.onload = () => {
+          setPlaneIcons(prev => ({ ...prev, [name]: img }));
+      };
+      img.src = `/icon/${name}`;
+    });
   }, []);
 
   const [actionStatus, setActionStatus] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!autoSync) return;
+    if (!autoSync || !carrierNameInput) return;
     
     const fetchData = async () => {
       try {
-        const res = await apiFetch('/api/airboss');
+        const res = await apiFetch(`/api/airboss?name=${encodeURIComponent(carrierNameInput)}&coalition=3`);
         if (res.ok) {
           const data = await res.json();
+          if (data.carrier_name) setCarrierName(data.carrier_name);
+          if (data.carrier_u !== undefined && data.carrier_v !== undefined) {
+             setCarrierPos({ u: data.carrier_u, v: data.carrier_v });
+          }
           setTwDir(data.tw_dir);
           setTwSpd(data.tw_spd);
           setTargetWod(data.target_wod);
           setActualBrc(data.brc);
           setActualShipSpd(data.ship_spd);
         }
+
       } catch (err) {
-        console.error('Failed to fetch airboss data:', err);
+        console.error("Failed to fetch airboss data", err);
       }
     };
 
     fetchData();
     const intervalId = setInterval(fetchData, 2000);
     return () => clearInterval(intervalId);
-  }, [autoSync]);
+  }, [autoSync, carrierNameInput]);
+
+  // Subscribe to live radar stream for all unit positions
+  useEffect(() => {
+    const source = new EventSource('/api/radar/stream');
+    
+    source.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.update === 'unit' && data.unit) {
+          // Track all units to ensure we catch player spawns even if category is missing
+          setRadarUnits(prev => ({
+            ...prev,
+            [data.unit.id]: data.unit
+          }));
+        } else if (data.update === 'gone' && data.gone) {
+          const goneId = data.gone.id;
+          setRadarUnits(prev => {
+            const newUnits = { ...prev };
+            delete newUnits[goneId];
+            return newUnits;
+          });
+          // Clean up smoothed position state for the departed unit
+          delete smoothedPositions.current[String(goneId)];
+          // If the carrier itself despawned, unlock so we re-search
+          setCarrierUnitId(prev => prev === goneId ? null : prev);
+        }
+      } catch (err) {
+        console.error('Radar stream parse error', err);
+      }
+    };
+    
+    return () => {
+      source.close();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!autoSync || !carrierName) return;
+    const fetchParking = async () => {
+      try {
+         const res = await apiFetch(`/api/world/airbases/${carrierName}/parking`);
+         if (res.ok) {
+             const data = await res.json();
+             if (data.parking && data.parking.length > 0) {
+                 setParkingSpots(data.parking);
+             } else {
+                 setParkingSpots(NIMITZ_SPOTS);
+             }
+         } else {
+             setParkingSpots(NIMITZ_SPOTS);
+         }
+      } catch (err) {
+         console.error('Failed to fetch parking:', err);
+         setParkingSpots(NIMITZ_SPOTS);
+      }
+    };
+    fetchParking();
+  }, [autoSync, carrierName]);
 
   const handleAction = async (actionStr: string) => {
     setActionStatus('Sending command...');
@@ -298,7 +417,240 @@ export default function AirbossPlanner() {
     }
     drawArrow(twDir,  twSpd   * vScale, '#00d4ff', 3.5);  // true wind (cyan)
     drawArrow(wodDir, wodSpd  * vScale, '#ff3b3b', 5);    // WOD (red)
-  }, [twDir, twSpd, brc, shipSpd, deckHdg, wodDir, wodSpd, carrierImg, autoSync, actualBrc, actualShipSpd]);
+
+    // --- DRAW DECK VIEW ON SECOND CANVAS ---
+    const deckCanvas = deckCanvasRef.current;
+    if (deckCanvas && carrierPos && actualBrc !== null && carrierImg && carrierImg.complete && carrierImg.naturalWidth) {
+      const dctx = deckCanvas.getContext('2d');
+      if (dctx) {
+        dctx.clearRect(0, 0, deckCanvas.width, deckCanvas.height);
+        dctx.fillStyle = '#060a0f'; // Match background
+        dctx.fillRect(0, 0, deckCanvas.width, deckCanvas.height);
+
+        const cx2 = deckCanvas.width / 2;
+        const cy2 = deckCanvas.height / 2;
+        
+        const targetW = deckCanvas.height * 0.75;
+        const scale   = targetW / carrierImg.naturalWidth;
+        const dw = carrierImg.naturalWidth  * scale;
+        const dh = carrierImg.naturalHeight * scale;
+        const pixelsPerMeter = dw / 332.0;
+
+        dctx.save();
+        dctx.translate(cx2, cy2);
+
+        // Draw Carrier static facing RIGHT
+        // The natural carrierImg faces WEST (Left). Rotating by PI (180 deg) makes it face RIGHT (East).
+        dctx.save();
+        dctx.rotate(Math.PI);
+        dctx.drawImage(carrierImg, -dw / 2, -dh / 2, dw, dh);
+        dctx.restore();
+
+        const rad = toRad(actualBrc);
+
+        // Try to get the carrier's latest position from the radar stream to eliminate sync jitter.
+        // Strategy: once we identify the carrier unit, lock its ID for direct O(1) lookup.
+        let syncCarrierPos = carrierPos;
+        let carrierUnit: any = null;
+
+        // Fast path: use the locked carrier unit ID
+        if (carrierUnitId !== null && radarUnits[carrierUnitId]?.position) {
+            carrierUnit = radarUnits[carrierUnitId];
+        } else {
+            // Fallback: find the unit closest to the airboss-reported position
+            let minCarrierDist = Infinity;
+            Object.values(radarUnits).forEach((u: any) => {
+                if (u.position) {
+                    const dist = Math.sqrt(
+                        Math.pow(u.position.v - carrierPos.u, 2) +
+                        Math.pow(u.position.u - carrierPos.v, 2)
+                    );
+                    if (dist < minCarrierDist) {
+                        minCarrierDist = dist;
+                        carrierUnit = u;
+                    }
+                }
+            });
+            // Lock the carrier ID once confirmed within 2000m
+            if (carrierUnit && minCarrierDist < 2000) {
+                setCarrierUnitId(carrierUnit.id);
+            } else {
+                carrierUnit = null;
+            }
+        }
+
+        if (carrierUnit) {
+            syncCarrierPos = { u: carrierUnit.position.v, v: carrierUnit.position.u };
+        }
+
+        // Match players to parking spots using live radar stream data
+        const occupiedSpots: any[] = [];
+        Object.values(radarUnits).forEach((u: any) => {
+          if (!u.position) return;
+          if (carrierUnit && u.id === carrierUnit.id) return; // Don't draw the carrier itself as a plane!
+          
+          const radarNorth = u.position.v;
+          const radarEast = u.position.u;
+          const carrierNorth = syncCarrierPos.u;
+          const carrierEast = syncCarrierPos.v;
+
+          const distToCarrier = Math.sqrt(Math.pow(radarNorth - carrierNorth, 2) + Math.pow(radarEast - carrierEast, 2));
+          if (distToCarrier > 600) return; 
+          
+          let closestSpot: any = null;
+          let minDst = Infinity;
+          
+          const du = radarNorth - carrierNorth;
+          const dv = radarEast - carrierEast;
+          const uLocalFwd = du * Math.cos(rad) + dv * Math.sin(rad);
+          const uLocalRight = -du * Math.sin(rad) + dv * Math.cos(rad);
+
+          parkingSpots.forEach(spot => {
+            if (!spot.position) return;
+            
+            let dx, dy;
+            if (spot.isLocal) {
+                dx = uLocalFwd - spot.position.u;
+                dy = uLocalRight - spot.position.v;
+            } else {
+                dx = u.position.u - spot.position.u;
+                dy = u.position.v - spot.position.v;
+            }
+            
+            const dst = Math.sqrt(dx*dx + dy*dy);
+            if (dst < minDst) {
+               minDst = dst;
+               closestSpot = spot;
+            }
+          });
+          
+          // Debug properties on unit
+          u._debugDistToCarrier = distToCarrier;
+          u._debugMinDst = minDst;
+          u._debugLocalFwd = uLocalFwd;
+          u._debugLocalRight = uLocalRight;
+
+          if (closestSpot && minDst < 60) {
+             // Velocity-adaptive EMA smoothing in carrier-local frame.
+             // Stationary aircraft (parked, on catapult) get near-zero alpha → frozen position.
+             // Moving aircraft ramp up for responsive tracking.
+             const uid = String(u.id);
+             const speed = u.speed ?? 0; // m/s from radar stream
+             // alpha: 0.02 when stopped → 0.5 when moving (>2 m/s ≈ 4 kts)
+             const alpha = Math.min(0.5, 0.02 + 0.24 * Math.min(speed / 2, 1)); // try to reduce const alpha = Math.min(0.4, 0.005 + 0.20 * Math.min(speed / 2, 1)); to make parked/catapult aircraft nearly rock-solid
+             const prev = smoothedPositions.current[uid];
+             let smoothFwd: number, smoothRight: number;
+             if (prev) {
+                 smoothFwd   = alpha * uLocalFwd   + (1 - alpha) * prev.fwd;
+                 smoothRight = alpha * uLocalRight + (1 - alpha) * prev.right;
+             } else {
+                 // First observation — seed with raw position (no jump)
+                 smoothFwd = uLocalFwd;
+                 smoothRight = uLocalRight;
+             }
+             smoothedPositions.current[uid] = { fwd: smoothFwd, right: smoothRight };
+
+             // Recompute minDst from smoothed positions to prevent snap flip-flopping
+             let smoothMinDst = Infinity;
+             if (closestSpot.isLocal) {
+                 const sdx = smoothFwd - closestSpot.position.u;
+                 const sdy = smoothRight - closestSpot.position.v;
+                 smoothMinDst = Math.sqrt(sdx * sdx + sdy * sdy);
+             } else {
+                 smoothMinDst = minDst; // non-local spots: keep raw distance
+             }
+             occupiedSpots.push({ player: u, spot: closestSpot, uLocalFwd: smoothFwd, uLocalRight: smoothRight, minDst: smoothMinDst });
+          }
+        });
+
+        // Draw Parking Spots
+        parkingSpots.forEach((spot, idx) => {
+          if (!spot.position) return;
+          
+          let px, py;
+          if (spot.isLocal) {
+              px = spot.position.u * pixelsPerMeter;
+              py = spot.position.v * pixelsPerMeter;
+          } else {
+              const du = spot.position.u - syncCarrierPos.u;
+              const dv = spot.position.v - syncCarrierPos.v;
+              const localFwd = du * Math.cos(rad) + dv * Math.sin(rad);
+              const localRight = -du * Math.sin(rad) + dv * Math.cos(rad);
+              px = localFwd * pixelsPerMeter;
+              py = localRight * pixelsPerMeter;
+          }
+
+          dctx.beginPath();
+          dctx.arc(px, py, 2.5, 0, 2*Math.PI);
+          dctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+          dctx.fill();
+
+          dctx.font = "10px 'Share Tech Mono', monospace";
+          dctx.fillStyle = 'rgba(255,255,255,0.7)';
+          dctx.textAlign = 'center';
+          dctx.textBaseline = 'middle';
+          dctx.fillText(`${spot.term_index || idx}`, px, py + 12);
+        });
+
+        occupiedSpots.forEach(occ => {
+          // Magnetic snap: lock planes near a parking spot to the spot's fixed coords.
+          // 15m radius is safe — parking spots are ~20m apart on Nimitz.
+          const isParked = occ.minDst < 15;
+          const px = (isParked && occ.spot.isLocal ? occ.spot.position.u : occ.uLocalFwd) * pixelsPerMeter;
+          const py = (isParked && occ.spot.isLocal ? occ.spot.position.v : occ.uLocalRight) * pixelsPerMeter;
+
+          // Aircraft Icon
+          dctx.save();
+          dctx.translate(px, py);
+          
+          let uHdg = actualBrc;
+          if (occ.player.heading) {
+              uHdg = actualBrc; // Fallback to actualBrc for now
+          }
+          
+          // Select custom icon if available
+          const pType = (occ.player.type || "").toLowerCase();
+          let iconToDraw: HTMLImageElement | null = null;
+          if (pType.includes("f-14")) {
+              iconToDraw = planeIcons['f-14_icon_park.png'];
+          } else if (pType.includes("f-18") || pType.includes("fa-18") || pType.includes("hornet")) {
+              iconToDraw = planeIcons['F-18_icon_park.png'];
+          }
+
+          if (iconToDraw) {
+              const drawLen = 18 * pixelsPerMeter;
+              const drawWid = (iconToDraw.width / iconToDraw.height) * drawLen;
+              dctx.drawImage(iconToDraw, -drawWid / 2, -drawLen / 2, drawWid, drawLen);
+          } else {
+              // The plane emoji ✈️ points UP naturally. Rotate 90 deg clockwise to face RIGHT.
+              dctx.rotate(Math.PI / 2);
+              dctx.font = "20px Arial";
+              dctx.fillStyle = "white";
+              dctx.textAlign = 'center';
+              dctx.textBaseline = 'middle';
+              dctx.fillText("✈️", 0, 0);
+          }
+          
+          dctx.restore();
+
+          // Player Name Label
+          const pName = occ.player.player_name || occ.player.type || "Unknown";
+          dctx.font = "12px 'Share Tech Mono', monospace";
+          
+          const textWidth = dctx.measureText(pName).width;
+          dctx.fillStyle = "rgba(0, 0, 0, 0.65)";
+          dctx.fillRect(px - textWidth / 2 - 4, py + 15, textWidth + 8, 16);
+
+          dctx.fillStyle = '#00ffcc';
+          dctx.textAlign = 'center';
+          dctx.textBaseline = 'top';
+          dctx.fillText(pName, px, py + 17);
+        });
+        dctx.restore();
+      }
+    }
+
+  }, [twDir, twSpd, brc, shipSpd, deckHdg, wodDir, wodSpd, carrierImg, autoSync, actualBrc, actualShipSpd, carrierPos, radarUnits, parkingSpots, carrierUnitId, planeIcons]);
 
   return (
     <div className="airboss-container">
@@ -322,7 +674,16 @@ export default function AirbossPlanner() {
       <div className="ab-main">
         <div className="ab-sidebar">
           <div className="ab-sec-hdr">Carrier Actions</div>
-          <div className="ab-ctrl-block" style={{ flexDirection: 'row', gap: '8px' }}>
+          <div className="ab-ctrl-block" style={{ flexDirection: 'row', gap: '8px', alignItems: 'center' }}>
+            <span className="ab-ctrl-label" style={{ flex: 1 }}>Carrier Name</span>
+            <input 
+              type="text" 
+              value={carrierNameInput} 
+              onChange={e => setCarrierNameInput(e.target.value)}
+              style={{ width: '100px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '2px 6px', fontFamily: 'var(--mono)', borderRadius: '3px' }}
+            />
+          </div>
+          <div className="ab-ctrl-block" style={{ flexDirection: 'row', gap: '8px', marginTop: '-8px' }}>
             <button 
               className="ab-autosync-btn" 
               style={{ flex: 1, justifyContent: 'center' }}
@@ -440,8 +801,12 @@ export default function AirbossPlanner() {
           </div>
         </div>
 
-        <div className="ab-canvas-wrap">
+        <div className="ab-canvas-wrap" style={{ flexDirection: 'column', gap: '40px', overflowY: 'auto', padding: '40px 0' }}>
           <canvas ref={canvasRef} width="660" height="660"></canvas>
+          <div style={{ textAlign: 'center', marginTop: '20px' }}>
+            <div style={{ fontFamily: 'var(--mono)', color: 'var(--acc)', fontSize: '15px', fontWeight: 'bold', marginBottom: '15px', letterSpacing: '2px' }}>CARRIER DECK VIEW</div>
+            <canvas ref={deckCanvasRef} width="660" height="800" style={{ borderRadius: '8px', boxShadow: '0 0 0 1px rgba(0,212,255,.2)' }}></canvas>
+          </div>
         </div>
       </div>
 
