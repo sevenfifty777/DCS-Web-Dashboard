@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { apiFetch } from '@/lib/api';
+import { AIRCRAFT_ICON_FILES, aircraftIconForType } from './aircraftIcons';
 import {
   RADAR_BATCH_SETTLE_MS,
   appendToRadarBatch,
@@ -135,10 +136,9 @@ export default function AirbossPlanner() {
     img2.src = '/img/tarawa-top-full-transp.png';
   }, []);
 
-  // Preload plane icons
+  // Preload all dedicated aircraft and helicopter deck icons.
   useEffect(() => {
-    const iconNames = ['f-14_icon_park.png', 'F-18_icon_park.png', 'f-14_icon_cat.png', 'F-18_icon_cat.png', 'AV88_icon.park.png'];
-    iconNames.forEach(name => {
+    AIRCRAFT_ICON_FILES.forEach(name => {
       const img = new Image();
       img.onload = () => {
           setPlaneIcons(prev => ({ ...prev, [name]: img }));
@@ -707,23 +707,13 @@ export default function AirbossPlanner() {
         dctx.save();
         dctx.translate(px, py);
 
-        const pType = (occ.player.type || "").toLowerCase();
-        let iconToDraw: HTMLImageElement | null = null;
-        let planeLengthMeters = 18; // Default F-14/F-18 size
+        const spotIndex = Number(occ.spot?.term_index);
+        const useCatapultVariant = spotIndex >= 23 && spotIndex <= 26;
+        const iconSpec = aircraftIconForType(occ.player.type, useCatapultVariant);
+        const iconToDraw = iconSpec ? planeIcons[iconSpec.fileName] : null;
 
-        if (pType.includes("f-14")) {
-          iconToDraw = planeIcons['f-14_icon_park.png'];
-          planeLengthMeters = 19;
-        } else if (pType.includes("f-18") || pType.includes("fa-18") || pType.includes("hornet")) {
-          iconToDraw = planeIcons['F-18_icon_park.png'];
-          planeLengthMeters = 17;
-        } else if (pType.includes("av8") || pType.includes("av-8") || pType.includes("harrier")) {
-          iconToDraw = planeIcons['AV88_icon.park.png'];
-          planeLengthMeters = 14; // Harrier is significantly smaller
-        }
-
-        if (iconToDraw) {
-          const drawLen = planeLengthMeters * pixelsPerMeter;
+        if (iconToDraw && iconSpec) {
+          const drawLen = iconSpec.lengthMeters * pixelsPerMeter;
           const drawWid = (iconToDraw.width / iconToDraw.height) * drawLen;
           if (facingUp) {
             dctx.rotate(-Math.PI / 2); // Icons face right natively, rotate to face up

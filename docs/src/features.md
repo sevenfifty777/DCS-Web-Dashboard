@@ -71,6 +71,7 @@ A dynamic toolkit for managing carrier operations on the server.
 
 - **Auto-Sync**: Automatically calculates the required Wind Over Deck (WOD) and Base Recovery Course (BRC) using live weather data and carrier speeds.
 - **Carrier Actions**: Remotely command the carrier to instantly turn into the wind for recovery operations, or resume its normal circuit, mirroring the in-game F10 radio menu functionality.
+- **Live Deck Views**: Track aircraft assigned to the Carrier and Tarawa decks with dedicated silhouettes for the F-14, F/A-18, AV-8B, A-4E-C, A-6E, E-2 Hawkeye, S-3B Viking, T-45C, AH-64D, CH-47F, Ka-50 III, OH-58D, SA342, and UH-1H families. Aircraft without a dedicated asset use the generic fallback marker.
 
 ## 📦 Warehouse (WIP)
 
