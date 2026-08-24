@@ -15,6 +15,7 @@ use rust_embed::{EmbeddedFile, RustEmbed};
 #[folder = "static/"]
 #[exclude = "*.mp4"]
 #[exclude = "img/background.png"]
+#[exclude = "icon/*"]
 struct Assets;
 
 /// Serve an embedded asset, falling back to `index.html` for SPA routes.
@@ -48,4 +49,15 @@ pub async fn static_handler(uri: Uri) -> Response {
 fn serve(file: EmbeddedFile) -> Response {
     let mime = file.metadata.mimetype().to_string();
     ([(header::CONTENT_TYPE, mime)], file.data).into_response()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Assets;
+
+    #[test]
+    fn aircraft_icons_are_not_embedded_in_the_executable() {
+        assert!(Assets::get("index.html").is_some());
+        assert!(Assets::iter().all(|path| !path.starts_with("icon/")));
+    }
 }

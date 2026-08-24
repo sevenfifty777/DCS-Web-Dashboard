@@ -8,10 +8,12 @@ import {
   appendToRadarBatch,
   applyRadarBatch,
   createRadarBatch,
+  deckIconRotationRadians,
   findDeckShip,
   hasParkingPosition,
   isAircraftUnit,
   nearestShipId,
+  parkingSpotSupportsUnit,
   relativeHorizontalSpeed,
   smoothingAlpha,
   synchronizedDeckPosition,
@@ -25,7 +27,108 @@ import {
   type RadarUnit,
   type RadarUnitSample,
 } from './deckTracking';
+import {
+  DECK_SPOT_LEGEND,
+  DECK_SPOT_STYLES,
+  NIMITZ_SPOTS,
+  TARAWA_SPOTS,
+} from './deckSpots';
+import {
+  NIMITZ_LAUNCH_ROUTES,
+  NIMITZ_ROUTE_BY_ID,
+  NIMITZ_ROUTE_BY_START,
+  NIMITZ_ROUTES_BY_LAUNCH,
+  TARAWA_LAUNCH_ROUTES,
+  TARAWA_ROUTE_BY_ID,
+  TARAWA_ROUTE_BY_START,
+  TARAWA_ROUTES_BY_LAUNCH,
+  deckRoutePointAtProgress,
+  deckRouteHitTargetAt,
+  hasNoAssignedLaunchRoute,
+  nearestLaunchRoute,
+  type DeckId,
+  type DeckLaunchRoute,
+  type DeckRouteHitTarget,
+} from './deckRoutes';
 import './airboss.css';
+
+const ROUTE_HIT_RADIUS_PX = 11;
+const ROUTE_AIRCRAFT_PROXIMITY_METERS = 12;
+const ROUTE_FLOW_CYCLE_MS = 2_800;
+const ROUTE_SHIMMER_SEGMENTS = 14;
+const ROUTE_SHIMMER_LENGTH = 0.075;
+const ROUTE_INSTRUCTION = 'White dashed ring: no route assigned. Click a spot or aircraft to inspect routes.';
+
+interface SelectedDeckRoutes {
+  deckId: DeckId;
+  selectionId: string;
+  routeIds: string[];
+}
+
+function drawDeckRouteFlow(
+  canvas: HTMLCanvasElement | null,
+  routes: DeckLaunchRoute[],
+  shipLengthMeters: number,
+  elapsedMilliseconds: number,
+) {
+  if (!canvas) return;
+  const context = canvas.getContext('2d');
+  if (!context) return;
+
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  if (routes.length === 0) return;
+
+  const pixelsPerMeter = canvas.height * 0.92 / shipLengthMeters;
+  const headProgress = (elapsedMilliseconds % ROUTE_FLOW_CYCLE_MS) / ROUTE_FLOW_CYCLE_MS;
+
+  context.save();
+  context.translate(canvas.width / 2, canvas.height / 2);
+  for (const route of routes) {
+    const shimmerStart = headProgress - ROUTE_SHIMMER_LENGTH / 2;
+    for (let segmentIndex = 0; segmentIndex < ROUTE_SHIMMER_SEGMENTS; segmentIndex += 1) {
+      const startProgress = shimmerStart
+        + ROUTE_SHIMMER_LENGTH * segmentIndex / ROUTE_SHIMMER_SEGMENTS;
+      const endProgress = shimmerStart
+        + ROUTE_SHIMMER_LENGTH * (segmentIndex + 1) / ROUTE_SHIMMER_SEGMENTS;
+      if (endProgress < 0 || startProgress > 1) continue;
+      const start = deckRoutePointAtProgress(route, Math.max(0, startProgress));
+      const end = deckRoutePointAtProgress(route, Math.min(1, endProgress));
+      if (!start || !end) continue;
+
+      const bandPosition = (segmentIndex + 0.5) / ROUTE_SHIMMER_SEGMENTS;
+      const strength = Math.sin(Math.PI * bandPosition);
+      context.save();
+      context.globalAlpha = 0.08 + strength * 0.48;
+      context.strokeStyle = '#fff4dc';
+      context.lineWidth = 1.5 + strength * 1.5;
+      context.lineCap = 'round';
+      context.shadowColor = '#ffe1a3';
+      context.shadowBlur = 2 + strength * 4;
+      context.beginPath();
+      context.moveTo(start.right * pixelsPerMeter, -start.fwd * pixelsPerMeter);
+      context.lineTo(end.right * pixelsPerMeter, -end.fwd * pixelsPerMeter);
+      context.stroke();
+      context.restore();
+    }
+  }
+  context.restore();
+}
+
+function DeckSpotLegend() {
+  return (
+    <div className="ab-deck-spot-legend" aria-label="Deck spot color legend">
+      {DECK_SPOT_LEGEND.map((legendItem) => (
+        <span className="ab-deck-spot-legend-item" key={legendItem.legendLabel}>
+          <span
+            className="ab-deck-spot-legend-marker"
+            style={{ backgroundColor: legendItem.color }}
+          />
+          {legendItem.legendLabel}
+        </span>
+      ))}
+    </div>
+  );
+}
 
 export default function AirbossPlanner() {
   const [twDir, setTwDir] = useState(51);
@@ -36,73 +139,16 @@ export default function AirbossPlanner() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const deckCanvasRef = useRef<HTMLCanvasElement>(null);
   const tarawaCanvasRef = useRef<HTMLCanvasElement>(null);
+  const carrierRouteEffectCanvasRef = useRef<HTMLCanvasElement>(null);
+  const tarawaRouteEffectCanvasRef = useRef<HTMLCanvasElement>(null);
+  const carrierHitTargetsRef = useRef<DeckRouteHitTarget[]>([]);
+  const tarawaHitTargetsRef = useRef<DeckRouteHitTarget[]>([]);
   const [carrierImg, setCarrierImg] = useState<HTMLImageElement | null>(null);
   const [tarawaImg, setTarawaImg] = useState<HTMLImageElement | null>(null);
   const [planeIcons, setPlaneIcons] = useState<Record<string, HTMLImageElement>>({});
+  const [selectedDeckRoutes, setSelectedDeckRoutes] = useState<SelectedDeckRoutes | null>(null);
+  const [routeMessage, setRouteMessage] = useState(ROUTE_INSTRUCTION);
 
-  // Hardcoded local parking spots for Nimitz-class carriers (CVN-71, 72, 73, 74)
-  // because DCS Airbase.getParking() only works for land bases.
-  // Source: CoreMods/tech/USS_Nimitz/scripts/USS_Nimitz_RunwaysAndRoutes.lua (LCS coords: x=fwd, z=lateral)
-  const NIMITZ_SPOTS = useMemo<ParkingSpot[]>(() => [
-    // Routes 1-15 parking spots (verified against DCS Lua)
-    {'u': -141.15, 'v': 24.2},   // 1  - parking 1 * (stern, stbd)
-    {'u': -129.2,  'v': 26.2},   // 2  - parking 2 *
-    {'u': -118.0,  'v': 28.0},   // 3  - parking 3 *
-    {'u': -103.5,  'v': 34.0},   // 4  - lift3 p1 *
-    {'u': -92.0,   'v': 34.0},   // 5  - lift3 p2 *
-    {'u': -79.0,   'v': 26.5},   // 6  - after island *
-    {'u': -65.8,   'v': 18.8},   // 7  - island 1 *
-    {'u': -52.0,   'v': 17.0},   // 8  - island 2 *
-    {'u': -37.0,   'v': 16.0},   // 9  - island 3 *
-    {'u': -23.0,   'v': 34.0},   // 10 - lift2 p1 *
-    {'u': -11.0,   'v': 34.0},   // 11 - lift2 p2 *
-    {'u': 6.0,     'v': 32.5},   // 12 - between lift1 & lift2 *
-    {'u': 69.6,    'v': 33.0},   // 13 - before lift1 1 *
-    {'u': 53.0,    'v': 34.5},   // 14 - before lift1 2 *
-    {'u': 23.0,    'v': 34.0},   // 15 - lift1 p1 *
-    {'u': 35.0,    'v': 34.0},   // 16 - lift1 p2 *
-    // 6pack spots (commented-out in DCS taxi routes but physically valid)
-    {'u': 24.5,    'v': 9.5},    // 17 - 6pack 1 {'u': -28.0,   'v': 12.0}
-    {'u': 7.6,     'v': 10.5},   // 18 - 6pack 2 {'u': -10.0,   'v': 9.0}
-    {'u': -9.9,    'v': 10.8},   // 19 - 6pack 3 {'u': 4.0,     'v': 8.0}
-    {'u': -26.0,   'v': 12.0},   // 20 - 6pack 4 
-    {'u': -96.0,   'v': -34.0},  // 21 - lift4 p1 * (port stern, on-deck) {'u': -80.0,   'v': -5.0}
-    {'u': -108,    'v': -34.0},  // 22 - lift4 p2 * (port stern, on-deck) {'u': -115.0,  'v': -5.0}
-    // Catapult end-positions (aircraft waiting for launch)
-    {'u': 55.0,    'v': 18.54},  // 23 - Cat 1 (bow stbd) {'u': 55.0,    'v': 18.54}
-    {'u': 55.9,    'v': -3.68},  // 24 - Cat 2 (bow port) {'u': 55.9,    'v': -3.68}
-    {'u': -39.4,   'v': -19.92}, // 25 - Cat 3 (waist port)  {'u': -39.4,   'v': -19.92}
-    {'u': -58.5,   'v': -32.8},  // 26 - Cat 4 (waist port) {'u': -58.5,   'v': -32.8}
-  ].map((p, i) => ({ term_index: i + 1, position: p, isLocal: true })), []);
-
-  // Tarawa LHA parking spots
-  // Source: CoreMods/aircraft/AV8BNA/TarawaRunwaysAndRoutes.lua (LCS coords: x=fwd, z=lateral)
-  const TARAWA_SPOTS = useMemo<ParkingSpot[]>(() => [
-    // GT.TaxiRoutes parking spots (last waypoint = spawn position)
-    {'u': 90.0,    'v': 14.0},    // 1  - bow stbd parking
-    {'u': 75.0,    'v': 14.0},    // 2  - bow stbd parking
-    {'u': 60.0,    'v': 14.0},    // 3  - bow stbd parking
-    {'u': 45.0,    'v': 14.0},    // 4  - bow stbd parking
-    {'u': -115.0,  'v': 14.0},    // 5  - stern stbd parking
-    {'u': -100.0,  'v': 14.0},    // 6  - stern stbd parking
-    {'u': -85.0,   'v': 14.0},    // 7  - stern stbd parking
-    {'u': -70.0,   'v': 14.0},    // 8  - mid stbd parking
-    // Helicopter spawn positions
-    {'u': 102.3,   'v': 0.5},     // 9  - helo bow center
-    {'u': 78.2,    'v': 13.65},   // 10 - helo bow stbd
-    {'u': 78.2,    'v': -14.0},   // 11 - helo bow port
-    {'u': 47.2,    'v': -14.0},   // 12 - helo mid port
-    {'u': 15.8,    'v': -14.0},   // 13 - helo mid port
-    {'u': -15.0,   'v': -14.0},   // 14 - helo mid port
-    {'u': -46.5,   'v': -14.0},   // 15 - helo mid-stern port
-    {'u': -91.0,   'v': -14.0},   // 16 - helo stern port
-    // STOVL launch positions (where aircraft wait before takeoff run)
-    {'u': -35.0,   'v': -5.5},    // 17 - STOVL launch 1
-    {'u': -60.0,   'v': -6.2},    // 18 - STOVL launch 2
-    {'u': -65.0,   'v': -6.5},    // 19 - STOVL launch 3
-    {'u': -110.0,  'v': -7.5},    // 20 - STOVL launch 4
-  ].map((p, i) => ({ term_index: i + 1, position: p, isLocal: true })), []);
-  
   const [autoSync, setAutoSync] = useState(false);
   const [actualBrc, setActualBrc] = useState<number | null>(null);
   const [actualShipSpd, setActualShipSpd] = useState<number | null>(null);
@@ -110,7 +156,7 @@ export default function AirbossPlanner() {
   const [carrierNameInput, setCarrierNameInput] = useState("CVN-72");
   const [carrierName, setCarrierName] = useState<string | null>(null);
   const [carrierPos, setCarrierPos] = useState<{u: number, v: number} | null>(null);
-  const [parkingSpots, setParkingSpots] = useState<ParkingSpot[]>([]);
+  const parkingSpots = NIMITZ_SPOTS;
   const [radarSnapshot, setRadarSnapshot] = useState<RadarSnapshot>({ samples: {} });
   const pendingRadarBatch = useRef<RadarBatch | null>(null);
   const radarFrameTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -148,6 +194,41 @@ export default function AirbossPlanner() {
   }, []);
 
   const [actionStatus, setActionStatus] = useState<string | null>(null);
+
+  function handleDeckClick(
+    event: React.MouseEvent<HTMLCanvasElement>,
+    deckId: DeckId,
+  ) {
+    const canvas = event.currentTarget;
+    const bounds = canvas.getBoundingClientRect();
+    const x = (event.clientX - bounds.left) * canvas.width / bounds.width;
+    const y = (event.clientY - bounds.top) * canvas.height / bounds.height;
+    const targets = deckId === 'carrier'
+      ? carrierHitTargetsRef.current
+      : tarawaHitTargetsRef.current;
+
+    const hitTarget = deckRouteHitTargetAt(targets, x, y);
+
+    if (!hitTarget) {
+      setSelectedDeckRoutes(null);
+      setRouteMessage(ROUTE_INSTRUCTION);
+      return;
+    }
+    if (!hitTarget.selectionId) {
+      setSelectedDeckRoutes(null);
+      setRouteMessage(hitTarget.message);
+      return;
+    }
+
+    const isAlreadySelected = selectedDeckRoutes?.deckId === deckId
+      && selectedDeckRoutes.selectionId === hitTarget.selectionId;
+    setSelectedDeckRoutes(isAlreadySelected ? null : {
+      deckId,
+      selectionId: hitTarget.selectionId,
+      routeIds: hitTarget.routeIds,
+    });
+    setRouteMessage(isAlreadySelected ? ROUTE_INSTRUCTION : hitTarget.message);
+  }
 
   useEffect(() => {
     if (!autoSync || !carrierNameInput) return;
@@ -250,29 +331,6 @@ export default function AirbossPlanner() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!autoSync || !carrierName) return;
-    const fetchParking = async () => {
-      try {
-         const res = await apiFetch(`/api/world/airbases/${carrierName}/parking`);
-         if (res.ok) {
-             const data = await res.json();
-             if (data.parking && data.parking.length > 0) {
-                 setParkingSpots(data.parking);
-             } else {
-                 setParkingSpots(NIMITZ_SPOTS);
-             }
-         } else {
-             setParkingSpots(NIMITZ_SPOTS);
-         }
-      } catch (err) {
-         console.error('Failed to fetch parking:', err);
-         setParkingSpots(NIMITZ_SPOTS);
-      }
-    };
-    fetchParking();
-  }, [autoSync, carrierName, NIMITZ_SPOTS]);
-
   const handleAction = async (actionStr: string) => {
     setActionStatus('Sending command...');
     try {
@@ -371,6 +429,7 @@ export default function AirbossPlanner() {
   const deckHdg = (brc - offset + 360) % 360;
 
   // DRAWING
+  /* eslint-disable react-hooks/immutability -- Canvas rendering intentionally mutates 2D contexts and click-target refs inside this effect. */
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -535,10 +594,18 @@ export default function AirbossPlanner() {
       smoothedRef: React.MutableRefObject<Record<string, {fwd: number, right: number}>>,
       setLockedId: (id: string | null) => void,
       shipNameStr: string,
-    ) {
-      if (!canvas) return;
+      deckId: DeckId,
+      routeByStart: Readonly<Record<string, DeckLaunchRoute>>,
+      routeById: Readonly<Record<string, DeckLaunchRoute>>,
+      routesByLaunch: Readonly<Record<string, DeckLaunchRoute[]>>,
+    ): DeckRouteHitTarget[] {
+      const hitTargets: DeckRouteHitTarget[] = [];
+      const noRouteSpotHalos: Array<{ x: number; y: number; color: string }> = [];
+      const selectedSpotHalos: Array<{ x: number; y: number; color: string }> = [];
+      const launchRoutes = deckId === 'carrier' ? NIMITZ_LAUNCH_ROUTES : TARAWA_LAUNCH_ROUTES;
+      if (!canvas) return hitTargets;
       const dctx = canvas.getContext('2d');
-      if (!dctx) return;
+      if (!dctx) return hitTargets;
 
       const fallbackShipPosition = shipPos ? { u: shipPos.v, v: shipPos.u } : null;
       const shipUnit = findDeckShip(radarUnits, shipNameStr, lockedUnitId, fallbackShipPosition);
@@ -559,7 +626,7 @@ export default function AirbossPlanner() {
         dctx.textAlign = 'center';
         dctx.textBaseline = 'middle';
         dctx.fillText(`Waiting for ${shipNameStr} data...`, canvas.width / 2, canvas.height / 2);
-        return;
+        return hitTargets;
       }
 
       dctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -588,6 +655,42 @@ export default function AirbossPlanner() {
       dctx.rotate(imgRotation);
       dctx.drawImage(shipImg, -dw / 2, -dh / 2, dw, dh);
       dctx.restore();
+
+      const activeRoutes = selectedDeckRoutes?.deckId === deckId
+        ? selectedDeckRoutes.routeIds
+          .map((routeId) => routeById[routeId])
+          .filter((item): item is DeckLaunchRoute => item !== undefined)
+        : [];
+      const activeRouteIds = new Set(activeRoutes.map((item) => item.id));
+      for (const activeRoute of activeRoutes) {
+        if (activeRoute.points.length) {
+          dctx.beginPath();
+          for (let index = 0; index < activeRoute.points.length; index += 1) {
+            const point = activeRoute.points[index];
+            const routeX = (facingUp ? point.right : point.fwd) * pixelsPerMeter;
+            const routeY = (facingUp ? -point.fwd : point.right) * pixelsPerMeter;
+            if (index === 0) dctx.moveTo(routeX, routeY);
+            else dctx.lineTo(routeX, routeY);
+          }
+          dctx.lineCap = 'round';
+          dctx.lineJoin = 'round';
+          dctx.strokeStyle = 'rgba(0, 0, 0, 0.9)';
+          dctx.lineWidth = 10;
+          dctx.stroke();
+          dctx.strokeStyle = '#ff4b32';
+          dctx.lineWidth = 5;
+          dctx.stroke();
+
+          for (const point of activeRoute.points) {
+            const routeX = (facingUp ? point.right : point.fwd) * pixelsPerMeter;
+            const routeY = (facingUp ? -point.fwd : point.right) * pixelsPerMeter;
+            dctx.beginPath();
+            dctx.arc(routeX, routeY, 3, 0, 2 * Math.PI);
+            dctx.fillStyle = '#fff';
+            dctx.fill();
+          }
+        }
+      }
 
       if (shipUnit && String(shipUnit.id) !== lockedUnitId) {
         setLockedId(String(shipUnit.id));
@@ -618,7 +721,7 @@ export default function AirbossPlanner() {
         let minDst = Infinity;
 
         for (const spot of spots) {
-          if (!hasParkingPosition(spot)) continue;
+          if (!hasParkingPosition(spot) || !parkingSpotSupportsUnit(spot, u)) continue;
           const spotDeckPosition = spot.isLocal
             ? { fwd: spot.position.u, right: spot.position.v }
             : worldToDeck(spot.position, syncShipPos, resolvedShipHeading);
@@ -676,15 +779,78 @@ export default function AirbossPlanner() {
           py = sright * pixelsPerMeter;
         }
 
+        const spotStyle = DECK_SPOT_STYLES[spot.kind ?? 'fixed-wing'];
+        const spotLabel = `${spot.term_index ?? idx}`;
+        const spotRoute = spot.term_index === undefined
+          ? undefined
+          : routeByStart[String(spot.term_index)];
+        const launchSpotRoutes = spot.term_index === undefined
+          ? []
+          : routesByLaunch[String(spot.term_index)] ?? [];
+        const spotSelectionId = spot.kind === 'catapult' || spot.kind === 'stovl'
+          ? `launch:${spotLabel}`
+          : spotRoute?.id ?? `spot:${spotLabel}`;
+        const isDirectlySelected = selectedDeckRoutes?.deckId === deckId
+          && selectedDeckRoutes.selectionId === spotSelectionId;
+        const isSelectedRouteEndpoint = Boolean(
+          isDirectlySelected
+          || (spotRoute && activeRouteIds.has(spotRoute.id))
+          || launchSpotRoutes.some((route) => activeRouteIds.has(route.id)),
+        );
         dctx.beginPath();
-        dctx.arc(px, py, 2.5, 0, 2 * Math.PI);
-        dctx.fillStyle = 'rgba(13, 163, 68, 0.9)';
+        dctx.arc(px, py, 6, 0, 2 * Math.PI);
+        dctx.fillStyle = 'rgba(0, 0, 0, 0.82)';
         dctx.fill();
-        dctx.font = "10px 'Share Tech Mono', monospace";
-        dctx.fillStyle = 'rgba(13, 163, 68, 0.9)';
+        dctx.beginPath();
+        dctx.arc(px, py, 4.25, 0, 2 * Math.PI);
+        dctx.fillStyle = spotStyle.color;
+        dctx.fill();
+        dctx.font = "bold 12px 'Share Tech Mono', monospace";
         dctx.textAlign = 'center';
         dctx.textBaseline = 'middle';
-        dctx.fillText(`${spot.term_index || idx}`, px, py + 12);
+        dctx.fillStyle = 'rgba(0, 0, 0, 0.95)';
+        dctx.fillText(spotLabel, px + 1, py + 16);
+        dctx.fillStyle = spotStyle.color;
+        dctx.fillText(spotLabel, px, py + 15);
+
+        if (isSelectedRouteEndpoint) {
+          selectedSpotHalos.push({ x: px, y: py, color: spotStyle.color });
+        }
+        if (hasNoAssignedLaunchRoute(spot, routeByStart)) {
+          noRouteSpotHalos.push({ x: px, y: py, color: spotStyle.color });
+        }
+
+        if (spot.kind === 'fixed-wing' || spot.kind === 'helicopter') {
+          const unavailableMessage = spot.kind === 'helicopter'
+            ? `Helicopter spot ${spotLabel} launches vertically; no taxi route is required.`
+            : `No DCS launch route is defined for parking spot ${spotLabel}.`;
+          hitTargets.push({
+            x: cx2 + px,
+            y: cy2 + py,
+            radius: ROUTE_HIT_RADIUS_PX,
+            selectionId: spotSelectionId,
+            routeIds: spotRoute ? [spotRoute.id] : [],
+            message: spotRoute ? `${deckId === 'carrier' ? 'Carrier' : 'Tarawa'}: ${spotRoute.label}` : unavailableMessage,
+          });
+        } else if (spot.kind === 'catapult' || spot.kind === 'stovl') {
+          const startLabels = launchSpotRoutes
+            .map((route) => route.startTermIndex)
+            .sort((first, second) => first - second)
+            .join(', ');
+          const launchName = spot.kind === 'catapult'
+            ? `CAT ${Number(spot.term_index) - 22}`
+            : `STOVL ${Number(spot.term_index) - 16}`;
+          hitTargets.push({
+            x: cx2 + px,
+            y: cy2 + py,
+            radius: ROUTE_HIT_RADIUS_PX,
+            selectionId: spotSelectionId,
+            routeIds: launchSpotRoutes.map((route) => route.id),
+            message: launchSpotRoutes.length
+              ? `${deckId === 'carrier' ? 'Carrier' : 'Tarawa'}: ${launchName} → parking spots ${startLabels} (${launchSpotRoutes.length} route${launchSpotRoutes.length === 1 ? '' : 's'})`
+              : `No DCS parking routes are defined for ${launchName}.`,
+          });
+        }
       });
 
       // Draw occupied aircraft
@@ -707,17 +873,16 @@ export default function AirbossPlanner() {
         dctx.save();
         dctx.translate(px, py);
 
-        const spotIndex = Number(occ.spot?.term_index);
-        const useCatapultVariant = spotIndex >= 23 && spotIndex <= 26;
+        const useCatapultVariant = parkedSpot?.kind === 'catapult';
         const iconSpec = aircraftIconForType(occ.player.type, useCatapultVariant);
         const iconToDraw = iconSpec ? planeIcons[iconSpec.fileName] : null;
 
         if (iconToDraw && iconSpec) {
           const drawLen = iconSpec.lengthMeters * pixelsPerMeter;
           const drawWid = (iconToDraw.width / iconToDraw.height) * drawLen;
-          if (facingUp) {
-            dctx.rotate(-Math.PI / 2); // Icons face right natively, rotate to face up
-          }
+          // Source icons point up. Parked fixed-wing aircraft face inward;
+          // helicopters always point ship-forward.
+          dctx.rotate(deckIconRotationRadians(occ.player, parkedSpot, facingUp));
           dctx.drawImage(iconToDraw, -drawWid / 2, -drawLen / 2, drawWid, drawLen);
         } else {
           if (!facingUp) dctx.rotate(Math.PI / 2);
@@ -738,32 +903,127 @@ export default function AirbossPlanner() {
         dctx.textAlign = 'center';
         dctx.textBaseline = 'top';
         dctx.fillText(pName, px, py + 17);
+
+        const aircraftRouteFromSpot = occ.spot?.term_index === undefined
+          ? undefined
+          : routeByStart[String(occ.spot.term_index)];
+        const aircraftRoute = aircraftRouteFromSpot ?? nearestLaunchRoute(
+          launchRoutes,
+          { fwd: occ.uLocalFwd, right: occ.uLocalRight },
+          ROUTE_AIRCRAFT_PROXIMITY_METERS,
+        );
+        const unavailableMessage = occ.spot?.kind === 'helicopter'
+          ? `${pName} is a helicopter and launches vertically; no taxi route is required.`
+          : `No DCS launch route is defined for ${pName} at its current deck position.`;
+        const aircraftSelectionId = aircraftRoute?.id
+          ?? (parkedSpot?.term_index === undefined ? null : `spot:${parkedSpot.term_index}`);
+        hitTargets.push({
+          x: cx2 + px,
+          y: cy2 + py,
+          radius: Math.max(14, (iconSpec?.lengthMeters ?? 0) * pixelsPerMeter / 2),
+          selectionId: aircraftSelectionId,
+          routeIds: aircraftRoute ? [aircraftRoute.id] : [],
+          message: aircraftRoute
+            ? `${deckId === 'carrier' ? 'Carrier' : 'Tarawa'}: ${aircraftRoute.label} (${pName})`
+            : unavailableMessage,
+        });
       });
 
+      // No-route terminals are highlighted by default, before any interaction.
+      for (const halo of noRouteSpotHalos) {
+        dctx.save();
+        dctx.beginPath();
+        dctx.arc(halo.x, halo.y, 9, 0, 2 * Math.PI);
+        dctx.setLineDash([3, 3]);
+        dctx.strokeStyle = '#fff';
+        dctx.lineWidth = 2;
+        dctx.shadowColor = halo.color;
+        dctx.shadowBlur = 6;
+        dctx.stroke();
+        dctx.restore();
+      }
+
+      // Keep the larger click-selection halo visible above aircraft icons.
+      for (const halo of selectedSpotHalos) {
+        dctx.save();
+        dctx.beginPath();
+        dctx.arc(halo.x, halo.y, 12, 0, 2 * Math.PI);
+        dctx.strokeStyle = '#fff';
+        dctx.lineWidth = 4;
+        dctx.shadowColor = halo.color;
+        dctx.shadowBlur = 12;
+        dctx.stroke();
+        dctx.restore();
+      }
+
       dctx.restore();
+      return hitTargets;
     }
 
     // Draw Nimitz deck view
     // Nimitz image natively faces West (Left). Rotate by PI/2 (90deg) to face UP.
-    drawDeckView(
+    carrierHitTargetsRef.current = drawDeckView(
       deckCanvasRef.current, carrierImg, 332, Math.PI / 2, true,
       carrierPos, actualBrc, parkingSpots,
       carrierUnitId, smoothedPositions,
       (id) => setCarrierUnitId(id),
       carrierName ?? carrierNameInput,
+      'carrier', NIMITZ_ROUTE_BY_START, NIMITZ_ROUTE_BY_ID, NIMITZ_ROUTES_BY_LAUNCH,
     );
 
     // Draw Tarawa deck view
     // Tarawa image natively faces North (Up). Rotation 0 to face UP.
-    drawDeckView(
+    tarawaHitTargetsRef.current = drawDeckView(
       tarawaCanvasRef.current, tarawaImg, 254, 0, true,
       tarawaPos, tarawaBrc, tarawaParkingSpots,
       tarawaUnitId, tarawaSmoothedPositions,
       (id) => setTarawaUnitId(id),
       tarawaName ?? tarawaNameInput,
+      'tarawa', TARAWA_ROUTE_BY_START, TARAWA_ROUTE_BY_ID, TARAWA_ROUTES_BY_LAUNCH,
     );
 
-  }, [twDir, twSpd, brc, shipSpd, deckHdg, wodDir, wodSpd, carrierImg, tarawaImg, autoSync, actualBrc, actualShipSpd, carrierPos, carrierName, carrierNameInput, radarSnapshot.samples, radarUnits, parkingSpots, carrierUnitId, planeIcons, tarawaPos, tarawaBrc, tarawaName, tarawaNameInput, tarawaParkingSpots, tarawaUnitId]);
+  }, [twDir, twSpd, brc, shipSpd, deckHdg, wodDir, wodSpd, carrierImg, tarawaImg, autoSync, actualBrc, actualShipSpd, carrierPos, carrierName, carrierNameInput, radarSnapshot.samples, radarUnits, parkingSpots, carrierUnitId, planeIcons, tarawaPos, tarawaBrc, tarawaName, tarawaNameInput, tarawaParkingSpots, tarawaUnitId, selectedDeckRoutes]);
+  /* eslint-enable react-hooks/immutability */
+
+  useEffect(() => {
+    const carrierRoutes = selectedDeckRoutes?.deckId === 'carrier'
+      ? selectedDeckRoutes.routeIds
+        .map((routeId) => NIMITZ_ROUTE_BY_ID[routeId])
+        .filter((route): route is DeckLaunchRoute => route !== undefined)
+      : [];
+    const tarawaRoutes = selectedDeckRoutes?.deckId === 'tarawa'
+      ? selectedDeckRoutes.routeIds
+        .map((routeId) => TARAWA_ROUTE_BY_ID[routeId])
+        .filter((route): route is DeckLaunchRoute => route !== undefined)
+      : [];
+
+    let animationFrameId: number | null = null;
+    let animationStart: number | null = null;
+    const animateRouteFlow = (timestamp: number) => {
+      animationStart ??= timestamp;
+      const elapsed = timestamp - animationStart;
+      if (elapsed >= ROUTE_FLOW_CYCLE_MS) {
+        drawDeckRouteFlow(carrierRouteEffectCanvasRef.current, [], 332, 0);
+        drawDeckRouteFlow(tarawaRouteEffectCanvasRef.current, [], 254, 0);
+        animationFrameId = null;
+        return;
+      }
+      drawDeckRouteFlow(carrierRouteEffectCanvasRef.current, carrierRoutes, 332, elapsed);
+      drawDeckRouteFlow(tarawaRouteEffectCanvasRef.current, tarawaRoutes, 254, elapsed);
+      animationFrameId = window.requestAnimationFrame(animateRouteFlow);
+    };
+
+    if (carrierRoutes.length || tarawaRoutes.length) {
+      animationFrameId = window.requestAnimationFrame(animateRouteFlow);
+    } else {
+      drawDeckRouteFlow(carrierRouteEffectCanvasRef.current, [], 332, 0);
+      drawDeckRouteFlow(tarawaRouteEffectCanvasRef.current, [], 254, 0);
+    }
+
+    return () => {
+      if (animationFrameId !== null) window.cancelAnimationFrame(animationFrameId);
+    };
+  }, [selectedDeckRoutes]);
 
   return (
     <div className="airboss-container">
@@ -925,14 +1185,52 @@ export default function AirbossPlanner() {
 
         <div className="ab-canvas-wrap" style={{ flexDirection: 'column', gap: '40px', overflowY: 'auto', padding: '40px 0' }}>
           <canvas ref={canvasRef} width="660" height="660"></canvas>
+          <div className={`ab-route-status${selectedDeckRoutes ? ' active' : ''}`}>
+            <span className="ab-route-status-line" />
+            {routeMessage}
+          </div>
           <div style={{ display: 'flex', flexDirection: 'row', gap: '40px', justifyContent: 'center' }}>
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontFamily: 'var(--mono)', color: 'var(--acc)', fontSize: '15px', fontWeight: 'bold', marginBottom: '15px', letterSpacing: '2px' }}>CARRIER DECK (CVN)</div>
-              <canvas ref={deckCanvasRef} width="500" height="1100" style={{ borderRadius: '8px', boxShadow: '0 0 0 1px rgba(0,212,255,.2)', background: '#060a0f' }}></canvas>
+              <DeckSpotLegend />
+              <div className="ab-deck-canvas-stack">
+                <canvas
+                  ref={deckCanvasRef}
+                  width="500"
+                  height="1100"
+                  onClick={(event) => handleDeckClick(event, 'carrier')}
+                  className="ab-interactive-deck"
+                  style={{ borderRadius: '8px', boxShadow: '0 0 0 1px rgba(0,212,255,.2)', background: '#060a0f' }}
+                />
+                <canvas
+                  ref={carrierRouteEffectCanvasRef}
+                  width="500"
+                  height="1100"
+                  className="ab-deck-route-effects"
+                  aria-hidden="true"
+                />
+              </div>
             </div>
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontFamily: 'var(--mono)', color: 'var(--acc)', fontSize: '15px', fontWeight: 'bold', marginBottom: '15px', letterSpacing: '2px' }}>TARAWA DECK (LHA)</div>
-              <canvas ref={tarawaCanvasRef} width="400" height="1100" style={{ borderRadius: '8px', boxShadow: '0 0 0 1px rgba(0,212,255,.2)', background: '#060a0f' }}></canvas>
+              <DeckSpotLegend />
+              <div className="ab-deck-canvas-stack">
+                <canvas
+                  ref={tarawaCanvasRef}
+                  width="400"
+                  height="1100"
+                  onClick={(event) => handleDeckClick(event, 'tarawa')}
+                  className="ab-interactive-deck"
+                  style={{ borderRadius: '8px', boxShadow: '0 0 0 1px rgba(0,212,255,.2)', background: '#060a0f' }}
+                />
+                <canvas
+                  ref={tarawaRouteEffectCanvasRef}
+                  width="400"
+                  height="1100"
+                  className="ab-deck-route-effects"
+                  aria-hidden="true"
+                />
+              </div>
             </div>
           </div>
         </div>

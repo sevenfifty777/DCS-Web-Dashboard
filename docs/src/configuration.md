@@ -12,8 +12,8 @@ The absolute best way to run the dashboard in production is as a native Windows 
    nssm install "DCS Web Dashboard"
    ```
 2. In the GUI, configure the **Application tab**:
-   - **Path:** `C:\DCS-Dashboard\rust-web-dashboard.exe` (Path to your compiled binary)
-   - **Startup directory:** `C:\DCS-Dashboard`
+   - **Path:** `<dashboard-folder>\rust-web-dashboard.exe` (Path to your compiled binary)
+   - **Startup directory:** `<dashboard-folder>` (The folder may have any name.)
 3. In the **Details tab**:
    - **Display name:** `DCS Web Dashboard`
    - **Startup type:** `Automatic`

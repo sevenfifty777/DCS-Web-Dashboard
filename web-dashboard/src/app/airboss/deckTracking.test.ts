@@ -5,8 +5,11 @@ import {
   appendToRadarBatch,
   applyRadarBatch,
   createRadarBatch,
+  deckIconRotationRadians,
   findDeckShip,
+  isHelicopterUnit,
   nearestShipId,
+  parkingSpotSupportsUnit,
   relativeHorizontalSpeed,
   smoothingAlpha,
   synchronizedDeckPosition,
@@ -126,4 +129,42 @@ test('uses velocity relative to the carrier for smoothing', () => {
   assert.equal(relativeHorizontalSpeed(taxiingAircraft, carrier), 2);
   assert.equal(smoothingAlpha(0), 0.05);
   assert.ok(smoothingAlpha(2) > smoothingAlpha(0));
+});
+
+test('recognizes helicopter units and restricts them to helicopter terminals', () => {
+  const helicopter: RadarUnit = {
+    id: 50,
+    group: { category: 'GROUP_CATEGORY_HELICOPTER' },
+  };
+  const airplane: RadarUnit = {
+    id: 51,
+    group: { category: 'GROUP_CATEGORY_AIRPLANE' },
+  };
+  const helicopterSpot = { kind: 'helicopter' as const };
+  const fixedWingSpot = { kind: 'fixed-wing' as const };
+
+  assert.equal(isHelicopterUnit(helicopter), true);
+  assert.equal(isHelicopterUnit(airplane), false);
+  assert.equal(parkingSpotSupportsUnit(helicopterSpot, helicopter), true);
+  assert.equal(parkingSpotSupportsUnit(fixedWingSpot, helicopter), false);
+  assert.equal(parkingSpotSupportsUnit(helicopterSpot, airplane), false);
+  assert.equal(parkingSpotSupportsUnit(fixedWingSpot, airplane), true);
+});
+
+test('applies parking headings to fixed-wing aircraft and keeps helicopters ship-forward', () => {
+  const airplane: RadarUnit = {
+    id: 51,
+    group: { category: 'GROUP_CATEGORY_AIRPLANE' },
+  };
+  const helicopter: RadarUnit = {
+    id: 52,
+    group: { category: 'GROUP_CATEGORY_HELICOPTER' },
+  };
+  const starboardFacingSpot = { deckHeadingDegrees: 90 };
+  const portFacingSpot = { deckHeadingDegrees: -90 };
+
+  assert.equal(deckIconRotationRadians(airplane, starboardFacingSpot, true), Math.PI / 2);
+  assert.equal(deckIconRotationRadians(airplane, portFacingSpot, true), -Math.PI / 2);
+  assert.equal(deckIconRotationRadians(helicopter, starboardFacingSpot, true), 0);
+  assert.equal(deckIconRotationRadians(helicopter, null, true), 0);
 });

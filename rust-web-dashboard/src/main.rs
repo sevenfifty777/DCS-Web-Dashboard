@@ -16,14 +16,14 @@ mod state;
 mod telemetry;
 mod win_session;
 
-mod graveyard;
 mod foothold;
+mod graveyard;
 
-use std::net::SocketAddr;
+use std::{net::SocketAddr, path::PathBuf};
 
 use axum::http::{header, Method};
 use tower_http::cors::{Any, CorsLayer};
-use tower_http::services::ServeFile;
+use tower_http::services::{ServeDir, ServeFile};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::EnvFilter;
 use utoipa::OpenApi;
@@ -43,6 +43,7 @@ async fn main() -> anyhow::Result<()> {
 
     let config = config::Config::from_env()?;
     let app_state = state::AppState::new(config)?;
+    let asset_root = executable_directory()?;
 
     // Long-lived upstream gRPC telemetry streams, fanned out to SSE clients.
     telemetry::spawn(
@@ -68,13 +69,24 @@ async fn main() -> anyhow::Result<()> {
         .allow_origin(Any);
 
     let app = routes::router()
-        .route("/media/background.mp4", axum::routing::get_service(ServeFile::new("media/background.mp4")))
-        .route("/img/background.png", axum::routing::get_service(ServeFile::new("images/background.png")))
+        .route(
+            "/media/background.mp4",
+            axum::routing::get_service(ServeFile::new(
+                asset_root.join("media").join("background.mp4"),
+            )),
+        )
+        .route(
+            "/img/background.png",
+            axum::routing::get_service(ServeFile::new(
+                asset_root.join("images").join("background.png"),
+            )),
+        )
+        .nest_service("/icon", ServeDir::new(asset_root.join("icon")))
         .fallback(embed::static_handler)
         .layer(TraceLayer::new_for_http())
         .layer(tower_http::set_header::SetResponseHeaderLayer::overriding(
             axum::http::header::CACHE_CONTROL,
-            axum::http::HeaderValue::from_static("no-store, no-cache, must-revalidate")
+            axum::http::HeaderValue::from_static("no-store, no-cache, must-revalidate"),
         ))
         .layer(cors)
         .with_state(app_state);
@@ -86,6 +98,14 @@ async fn main() -> anyhow::Result<()> {
         .await?;
 
     Ok(())
+}
+
+fn executable_directory() -> anyhow::Result<PathBuf> {
+    let executable_path = std::env::current_exe()?;
+    executable_path
+        .parent()
+        .map(|parent| parent.to_path_buf())
+        .ok_or_else(|| anyhow::anyhow!("dashboard executable has no parent directory"))
 }
 
 fn init_tracing() {

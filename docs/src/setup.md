@@ -32,7 +32,20 @@ Navigate to the `rust-web-dashboard` directory and compile the binary:
 cd rust-web-dashboard
 cargo build --release
 ```
-The final executable will be located in `rust-web-dashboard/target/release/rust-web-dashboard.exe`. You can move this single `.exe` file anywhere on your server (e.g., `C:\DCS-Dashboard\`).
+The final executable will be located in `rust-web-dashboard/target/release/rust-web-dashboard.exe`. Place it on the server with the external asset folders:
+
+```text
+<dashboard-folder>\
+├── rust-web-dashboard.exe
+├── icon\
+│   └── *.png
+├── images\
+│   └── background.png
+└── media\
+    └── background.mp4
+```
+
+The root folder can have any name and can be placed anywhere. The server resolves `/icon/*`, `/img/background.png`, and `/media/background.mp4` from folders beside the executable, regardless of the process working directory. When using NSSM, setting **Startup directory** to the executable folder remains recommended for the dashboard's other relative runtime files.
 
 ## 3. Discord OAuth2 Setup (Optional)
 

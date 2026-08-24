@@ -74,6 +74,9 @@ export interface ParkingSpot {
   term_index?: number | string;
   position?: WorldPosition | null;
   isLocal?: boolean;
+  kind?: 'fixed-wing' | 'helicopter' | 'catapult' | 'stovl';
+  /** Clockwise heading relative to the ship bow; starboard is +90 degrees. */
+  deckHeadingDegrees?: number;
 }
 
 export interface PositionedParkingSpot extends ParkingSpot {
@@ -229,6 +232,30 @@ export function nearestShipId(
 export function isAircraftUnit(unit: RadarUnit): boolean {
   const category = String(unit.group?.category ?? '').toUpperCase();
   return category.includes('AIRPLANE') || category.includes('HELICOPTER');
+}
+
+export function isHelicopterUnit(unit: RadarUnit): boolean {
+  const category = String(unit.group?.category ?? '').toUpperCase();
+  return category.includes('HELICOPTER');
+}
+
+export function parkingSpotSupportsUnit(spot: ParkingSpot, unit: RadarUnit): boolean {
+  if (!spot.kind) return true;
+  return isHelicopterUnit(unit)
+    ? spot.kind === 'helicopter'
+    : spot.kind !== 'helicopter';
+}
+
+export function deckIconRotationRadians(
+  unit: RadarUnit,
+  parkedSpot: ParkingSpot | null,
+  deckFacesUp: boolean,
+): number {
+  const canvasShipForward = deckFacesUp ? 0 : Math.PI / 2;
+  const relativeHeadingDegrees = isHelicopterUnit(unit)
+    ? 0
+    : parkedSpot?.deckHeadingDegrees ?? -90;
+  return canvasShipForward + relativeHeadingDegrees * Math.PI / 180;
 }
 
 export function relativeHorizontalSpeed(unit: RadarUnit, ship: RadarUnit): number {

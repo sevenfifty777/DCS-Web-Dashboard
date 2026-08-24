@@ -1,6 +1,6 @@
 # Architecture Overview
 
-DCS-Web-Dashboard is composed of two primary components, but unlike traditional web applications, they are compiled together into a **single, self-contained executable** (`rust-web-dashboard.exe`). There is no Node.js runtime, no separate web server, and no external static files at runtime.
+DCS-Web-Dashboard is composed of two primary components compiled into one executable (`rust-web-dashboard.exe`). There is no Node.js runtime or separate web server. Large replaceable assets are kept outside the executable in `media`, `images`, and `icon` folders beside it to keep the binary smaller.
 
 ## 1. The Rust Backend (`rust-web-dashboard`)
 This is a standalone binary that acts as the core controller. 
@@ -12,8 +12,9 @@ This is a standalone binary that acts as the core controller.
 This is the user interface of the dashboard, built with React and Next.js.
 - **Embedded SPA**: During the build process, the Next.js application is statically exported (`output: 'export'`) as HTML, CSS, and JS. This output is copied into the Rust crate's `static/` folder and baked directly into the binary using `rust-embed`.
 - **Routing**: Deep links (e.g., `/weather`) and hashed `/_next/` assets are served by the Rust backend with the correct MIME types. Unknown paths fall back to the SPA shell.
+- **External Assets**: `/media/background.mp4`, `/img/background.png`, and `/icon/*` are served from the `media`, `images`, and `icon` folders beside `rust-web-dashboard.exe`. Paths are resolved from the executable itself, so the parent folder can have any name and the process working directory does not affect asset loading.
 
-> **Note:** The `web-dashboard` directory remains the frontend source project. The Rust crate only embeds its built output. The two folders are independent during development, but the final binary is completely portable on its own.
+> **Note:** The `web-dashboard` directory remains the frontend source project. The Rust crate embeds its built application output but excludes the external media, background, and aircraft-icon assets.
 
 ## Security Notes
 - **Vulnerabilities**: The Rust backend dependencies are routinely audited (`cargo audit`). The frontend's build-time Node dependencies do not execute at runtime and are not shipped in the final binary.
