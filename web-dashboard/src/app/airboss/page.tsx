@@ -12,7 +12,9 @@ export default function AirbossPlanner() {
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const deckCanvasRef = useRef<HTMLCanvasElement>(null);
+  const tarawaCanvasRef = useRef<HTMLCanvasElement>(null);
   const [carrierImg, setCarrierImg] = useState<HTMLImageElement | null>(null);
+  const [tarawaImg, setTarawaImg] = useState<HTMLImageElement | null>(null);
   const [planeIcons, setPlaneIcons] = useState<Record<string, HTMLImageElement>>({});
 
   // Hardcoded local parking spots for Nimitz-class carriers (CVN-71, 72, 73, 74)
@@ -20,34 +22,62 @@ export default function AirbossPlanner() {
   // Source: CoreMods/tech/USS_Nimitz/scripts/USS_Nimitz_RunwaysAndRoutes.lua (LCS coords: x=fwd, z=lateral)
   const NIMITZ_SPOTS = [
     // Routes 1-15 parking spots (verified against DCS Lua)
-    {'u': -141.15, 'v': 24.2},   // 1  - parking 1 (stern, stbd)
-    {'u': -129.2,  'v': 26.2},   // 2  - parking 2
-    {'u': -118.0,  'v': 28.0},   // 3  - parking 3
-    {'u': -103.5,  'v': 34.0},   // 4  - lift3 p1
-    {'u': -92.0,   'v': 34.0},   // 5  - lift3 p2
-    {'u': -79.0,   'v': 26.5},   // 6  - after island
-    {'u': -65.8,   'v': 18.8},   // 7  - island 1
-    {'u': -52.0,   'v': 17.0},   // 8  - island 2
-    {'u': -37.0,   'v': 16.0},   // 9  - island 3
-    {'u': -23.0,   'v': 34.0},   // 10 - lift2 p1
-    {'u': -11.0,   'v': 34.0},   // 11 - lift2 p2
-    {'u': 6.0,     'v': 32.5},   // 12 - between lift1 & lift2
-    {'u': 69.6,    'v': 33.0},   // 13 - before lift1 1
-    {'u': 53.0,    'v': 34.5},   // 14 - before lift1 2
-    {'u': 23.0,    'v': 34.0},   // 15 - lift1 p1
-    {'u': 35.0,    'v': 34.0},   // 16 - lift1 p2 (was missing)
+    {'u': -141.15, 'v': 24.2},   // 1  - parking 1 * (stern, stbd)
+    {'u': -129.2,  'v': 26.2},   // 2  - parking 2 *
+    {'u': -118.0,  'v': 28.0},   // 3  - parking 3 *
+    {'u': -103.5,  'v': 34.0},   // 4  - lift3 p1 *
+    {'u': -92.0,   'v': 34.0},   // 5  - lift3 p2 *
+    {'u': -79.0,   'v': 26.5},   // 6  - after island *
+    {'u': -65.8,   'v': 18.8},   // 7  - island 1 *
+    {'u': -52.0,   'v': 17.0},   // 8  - island 2 *
+    {'u': -37.0,   'v': 16.0},   // 9  - island 3 *
+    {'u': -23.0,   'v': 34.0},   // 10 - lift2 p1 *
+    {'u': -11.0,   'v': 34.0},   // 11 - lift2 p2 *
+    {'u': 6.0,     'v': 32.5},   // 12 - between lift1 & lift2 *
+    {'u': 69.6,    'v': 33.0},   // 13 - before lift1 1 *
+    {'u': 53.0,    'v': 34.5},   // 14 - before lift1 2 *
+    {'u': 23.0,    'v': 34.0},   // 15 - lift1 p1 *
+    {'u': 35.0,    'v': 34.0},   // 16 - lift1 p2 *
     // 6pack spots (commented-out in DCS taxi routes but physically valid)
     {'u': 24.5,    'v': 9.5},    // 17 - 6pack 1 {'u': -28.0,   'v': 12.0}
     {'u': 7.6,     'v': 10.5},   // 18 - 6pack 2 {'u': -10.0,   'v': 9.0}
     {'u': -9.9,    'v': 10.8},   // 19 - 6pack 3 {'u': 4.0,     'v': 8.0}
     {'u': -26.0,   'v': 12.0},   // 20 - 6pack 4 
-    {'u': -96.0,   'v': -34.0},  // 21 - Elevator 4 terminal 2 (port stern, on-deck) {'u': -80.0,   'v': -5.0}
-    {'u': -108,    'v': -34.0},  // 22 - Elevator 4 terminal 1 (port stern, on-deck) {'u': -115.0,  'v': -5.0}
+    {'u': -96.0,   'v': -34.0},  // 21 - lift4 p1 * (port stern, on-deck) {'u': -80.0,   'v': -5.0}
+    {'u': -108,    'v': -34.0},  // 22 - lift4 p2 * (port stern, on-deck) {'u': -115.0,  'v': -5.0}
     // Catapult end-positions (aircraft waiting for launch)
-    {'u': 59.95,    'v': 18.02},  // 23 - Cat 1 (bow stbd) {'u': 55.0,    'v': 18.54}
-    {'u': 58.80,    'v': -3.75},  // 24 - Cat 2 (bow port) {'u': 55.9,    'v': -3.68}
-    {'u': -37.37,   'v': -20.16}, // 25 - Cat 3 (waist port)  {'u': -39.4,   'v': -19.92}
-    {'u': -56.17,   'v': -32.90},  // 26 - Cat 4 (waist port) {'u': -58.5,   'v': -32.8}
+    {'u': 55.0,    'v': 18.54},  // 23 - Cat 1 (bow stbd) {'u': 55.0,    'v': 18.54}
+    {'u': 55.9,    'v': -3.68},  // 24 - Cat 2 (bow port) {'u': 55.9,    'v': -3.68}
+    {'u': -39.4,   'v': -19.92}, // 25 - Cat 3 (waist port)  {'u': -39.4,   'v': -19.92}
+    {'u': -58.5,   'v': -32.8},  // 26 - Cat 4 (waist port) {'u': -58.5,   'v': -32.8}
+  ].map((p, i) => ({ term_index: i + 1, position: p, isLocal: true }));
+
+  // Tarawa LHA parking spots
+  // Source: CoreMods/aircraft/AV8BNA/TarawaRunwaysAndRoutes.lua (LCS coords: x=fwd, z=lateral)
+  const TARAWA_SPOTS = [
+    // GT.TaxiRoutes parking spots (last waypoint = spawn position)
+    {'u': 90.0,    'v': 14.0},    // 1  - bow stbd parking
+    {'u': 75.0,    'v': 14.0},    // 2  - bow stbd parking
+    {'u': 60.0,    'v': 14.0},    // 3  - bow stbd parking
+    {'u': 45.0,    'v': 14.0},    // 4  - bow stbd parking
+    {'u': -115.0,  'v': 14.0},    // 5  - stern stbd parking
+    {'u': -100.0,  'v': 14.0},    // 6  - stern stbd parking
+    {'u': -85.0,   'v': 14.0},    // 7  - stern stbd parking
+    {'u': -70.0,   'v': 14.0},    // 8  - mid stbd parking
+    // Helicopter spawn positions
+    {'u': 102.3,   'v': 0.5},     // 9  - helo bow center
+    {'u': 78.2,    'v': 13.65},   // 10 - helo bow stbd
+    {'u': 78.2,    'v': -14.0},   // 11 - helo bow port
+    {'u': 47.2,    'v': -14.0},   // 12 - helo mid port
+    {'u': 15.8,    'v': -14.0},   // 13 - helo mid port
+    {'u': -15.0,   'v': -14.0},   // 14 - helo mid port
+    {'u': -46.5,   'v': -14.0},   // 15 - helo mid-stern port
+    {'u': -91.0,   'v': -14.0},   // 16 - helo stern port
+    // STOVL launch positions (where aircraft wait before takeoff run)
+    {'u': -35.0,   'v': -5.5},    // 17 - STOVL launch 1
+    {'u': -60.0,   'v': -6.2},    // 18 - STOVL launch 2
+    {'u': -65.0,   'v': -6.5},    // 19 - STOVL launch 3
+    {'u': -110.0,  'v': -7.5},    // 20 - STOVL launch 4
   ].map((p, i) => ({ term_index: i + 1, position: p, isLocal: true }));
   
   const [autoSync, setAutoSync] = useState(false);
@@ -63,15 +93,28 @@ export default function AirbossPlanner() {
   const [carrierUnitId, setCarrierUnitId] = useState<number | null>(null);
   const smoothedPositions = useRef<Record<string, { fwd: number; right: number }>>({});
 
+  // Tarawa state
+  const [tarawaNameInput, setTarawaNameInput] = useState("Tarawa");
+  const [tarawaName, setTarawaName] = useState<string | null>(null);
+  const [tarawaPos, setTarawaPos] = useState<{u: number, v: number} | null>(null);
+  const [tarawaBrc, setTarawaBrc] = useState<number | null>(null);
+  const [tarawaShipSpd, setTarawaShipSpd] = useState<number | null>(null);
+  const [tarawaParkingSpots, setTarawaParkingSpots] = useState<any[]>([]);
+  const [tarawaUnitId, setTarawaUnitId] = useState<number | null>(null);
+  const tarawaSmoothedPositions = useRef<Record<string, { fwd: number; right: number }>>({});
+
   useEffect(() => {
     const img = new window.Image();
     img.onload = () => setCarrierImg(img);
     img.src = '/img/carrier-top-full-transp.png';
+    const img2 = new window.Image();
+    img2.onload = () => setTarawaImg(img2);
+    img2.src = '/img/tarawa-top-full-transp.png';
   }, []);
 
   // Preload plane icons
   useEffect(() => {
-    const iconNames = ['f-14_icon_park.png', 'F-18_icon_park.png', 'f-14_icon_cat.png', 'F-18_icon_cat.png'];
+    const iconNames = ['f-14_icon_park.png', 'F-18_icon_park.png', 'f-14_icon_cat.png', 'F-18_icon_cat.png', 'AV88_icon.park.png'];
     iconNames.forEach(name => {
       const img = new Image();
       img.onload = () => {
@@ -112,6 +155,30 @@ export default function AirbossPlanner() {
     return () => clearInterval(intervalId);
   }, [autoSync, carrierNameInput]);
 
+  // Tarawa data fetching (deck view only — no recovery scripts)
+  useEffect(() => {
+    if (!autoSync || !tarawaNameInput) return;
+    const fetchData = async () => {
+      try {
+        const res = await apiFetch(`/api/airboss?name=${encodeURIComponent(tarawaNameInput)}&coalition=3`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.carrier_name) setTarawaName(data.carrier_name);
+          if (data.carrier_u !== undefined && data.carrier_v !== undefined) {
+             setTarawaPos({ u: data.carrier_u, v: data.carrier_v });
+          }
+          setTarawaBrc(data.brc);
+          setTarawaShipSpd(data.ship_spd);
+        }
+      } catch (err) {
+        console.error("Failed to fetch tarawa data", err);
+      }
+    };
+    fetchData();
+    const intervalId = setInterval(fetchData, 2000);
+    return () => clearInterval(intervalId);
+  }, [autoSync, tarawaNameInput]);
+
   // Subscribe to live radar stream for all unit positions
   useEffect(() => {
     const source = new EventSource('/api/radar/stream');
@@ -134,8 +201,10 @@ export default function AirbossPlanner() {
           });
           // Clean up smoothed position state for the departed unit
           delete smoothedPositions.current[String(goneId)];
-          // If the carrier itself despawned, unlock so we re-search
+          delete tarawaSmoothedPositions.current[String(goneId)];
+          // If either ship despawned, unlock so we re-search
           setCarrierUnitId(prev => prev === goneId ? null : prev);
+          setTarawaUnitId(prev => prev === goneId ? null : prev);
         }
       } catch (err) {
         console.error('Radar stream parse error', err);
@@ -169,6 +238,12 @@ export default function AirbossPlanner() {
     };
     fetchParking();
   }, [autoSync, carrierName]);
+
+  // Tarawa parking: always use hardcoded spots (no API for LHA parking)
+  useEffect(() => {
+    if (!autoSync) return;
+    setTarawaParkingSpots(TARAWA_SPOTS);
+  }, [autoSync]);
 
   const handleAction = async (actionStr: string) => {
     setActionStatus('Sending command...');
@@ -418,239 +493,283 @@ export default function AirbossPlanner() {
     drawArrow(twDir,  twSpd   * vScale, '#00d4ff', 3.5);  // true wind (cyan)
     drawArrow(wodDir, wodSpd  * vScale, '#ff3b3b', 5);    // WOD (red)
 
-    // --- DRAW DECK VIEW ON SECOND CANVAS ---
-    const deckCanvas = deckCanvasRef.current;
-    if (deckCanvas && carrierPos && actualBrc !== null && carrierImg && carrierImg.complete && carrierImg.naturalWidth) {
-      const dctx = deckCanvas.getContext('2d');
-      if (dctx) {
-        dctx.clearRect(0, 0, deckCanvas.width, deckCanvas.height);
-        dctx.fillStyle = '#060a0f'; // Match background
-        dctx.fillRect(0, 0, deckCanvas.width, deckCanvas.height);
+    // --- REUSABLE DECK VIEW DRAWING FUNCTION ---
+    function drawDeckView(
+      canvas: HTMLCanvasElement | null,
+      shipImg: HTMLImageElement | null,
+      shipLengthM: number,
+      imgRotation: number, // radians to rotate natural image
+      facingUp: boolean,
+      shipPos: {u: number, v: number} | null,
+      shipBrc: number | null,
+      spots: any[],
+      lockedUnitId: number | null,
+      smoothedRef: React.MutableRefObject<Record<string, {fwd: number, right: number}>>,
+      setLockedId: (id: number | null) => void,
+      shipNameStr: string,
+    ) {
+      if (!canvas) return;
+      const dctx = canvas.getContext('2d');
+      if (!dctx) return;
 
-        const cx2 = deckCanvas.width / 2;
-        const cy2 = deckCanvas.height / 2;
-        
-        const targetW = deckCanvas.height * 0.75;
-        const scale   = targetW / carrierImg.naturalWidth;
-        const dw = carrierImg.naturalWidth  * scale;
-        const dh = carrierImg.naturalHeight * scale;
-        const pixelsPerMeter = dw / 332.0;
+      if (!shipPos || shipBrc === null || !shipImg || !shipImg.complete || !shipImg.naturalWidth) {
+        dctx.clearRect(0, 0, canvas.width, canvas.height);
+        dctx.fillStyle = '#060a0f';
+        dctx.fillRect(0, 0, canvas.width, canvas.height);
+        dctx.font = "14px 'Share Tech Mono', monospace";
+        dctx.fillStyle = 'rgba(255,255,255,0.4)';
+        dctx.textAlign = 'center';
+        dctx.textBaseline = 'middle';
+        dctx.fillText(`Waiting for ${shipNameStr} data...`, canvas.width / 2, canvas.height / 2);
+        return;
+      }
 
-        dctx.save();
-        dctx.translate(cx2, cy2);
+      dctx.clearRect(0, 0, canvas.width, canvas.height);
+      dctx.fillStyle = '#060a0f';
+      dctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Draw Carrier static facing RIGHT
-        // The natural carrierImg faces WEST (Left). Rotating by PI (180 deg) makes it face RIGHT (East).
-        dctx.save();
-        dctx.rotate(Math.PI);
-        dctx.drawImage(carrierImg, -dw / 2, -dh / 2, dw, dh);
-        dctx.restore();
+      const cx2 = canvas.width / 2;
+      const cy2 = canvas.height / 2;
 
-        const rad = toRad(actualBrc);
+      const targetLen = facingUp ? canvas.height * 0.92 : canvas.width * 0.90;
+      
+      // If the natural image is tall (Tarawa), length is naturalHeight. If wide (Nimitz), naturalWidth.
+      const isNaturallyTall = shipImg.naturalHeight > shipImg.naturalWidth;
+      const shipImgLength = isNaturallyTall ? shipImg.naturalHeight : shipImg.naturalWidth;
+      const scale = targetLen / shipImgLength;
+      
+      const dw = shipImg.naturalWidth * scale;
+      const dh = shipImg.naturalHeight * scale;
+      const pixelsPerMeter = targetLen / shipLengthM;
 
-        // Try to get the carrier's latest position from the radar stream to eliminate sync jitter.
-        // Strategy: once we identify the carrier unit, lock its ID for direct O(1) lookup.
-        let syncCarrierPos = carrierPos;
-        let carrierUnit: any = null;
+      dctx.save();
+      dctx.translate(cx2, cy2);
 
-        // Fast path: use the locked carrier unit ID
-        if (carrierUnitId !== null && radarUnits[carrierUnitId]?.position) {
-            carrierUnit = radarUnits[carrierUnitId];
-        } else {
-            // Fallback: find the unit closest to the airboss-reported position
-            let minCarrierDist = Infinity;
-            Object.values(radarUnits).forEach((u: any) => {
-                if (u.position) {
-                    const dist = Math.sqrt(
-                        Math.pow(u.position.v - carrierPos.u, 2) +
-                        Math.pow(u.position.u - carrierPos.v, 2)
-                    );
-                    if (dist < minCarrierDist) {
-                        minCarrierDist = dist;
-                        carrierUnit = u;
-                    }
-                }
-            });
-            // Lock the carrier ID once confirmed within 2000m
-            if (carrierUnit && minCarrierDist < 2000) {
-                setCarrierUnitId(carrierUnit.id);
-            } else {
-                carrierUnit = null;
-            }
-        }
+      // Draw ship image facing RIGHT
+      dctx.save();
+      dctx.rotate(imgRotation);
+      dctx.drawImage(shipImg, -dw / 2, -dh / 2, dw, dh);
+      dctx.restore();
 
-        if (carrierUnit) {
-            syncCarrierPos = { u: carrierUnit.position.v, v: carrierUnit.position.u };
-        }
+      const rad = toRad(shipBrc);
 
-        // Match players to parking spots using live radar stream data
-        const occupiedSpots: any[] = [];
+      // Find ship in radar stream using ID-locking
+      let syncShipPos = shipPos;
+      let shipUnit: any = null;
+
+      if (lockedUnitId !== null && radarUnits[lockedUnitId]?.position) {
+        shipUnit = radarUnits[lockedUnitId];
+      } else {
+        let minDist = Infinity;
         Object.values(radarUnits).forEach((u: any) => {
-          if (!u.position) return;
-          if (carrierUnit && u.id === carrierUnit.id) return; // Don't draw the carrier itself as a plane!
-          
-          const radarNorth = u.position.v;
-          const radarEast = u.position.u;
-          const carrierNorth = syncCarrierPos.u;
-          const carrierEast = syncCarrierPos.v;
-
-          const distToCarrier = Math.sqrt(Math.pow(radarNorth - carrierNorth, 2) + Math.pow(radarEast - carrierEast, 2));
-          if (distToCarrier > 600) return; 
-          
-          let closestSpot: any = null;
-          let minDst = Infinity;
-          
-          const du = radarNorth - carrierNorth;
-          const dv = radarEast - carrierEast;
-          const uLocalFwd = du * Math.cos(rad) + dv * Math.sin(rad);
-          const uLocalRight = -du * Math.sin(rad) + dv * Math.cos(rad);
-
-          parkingSpots.forEach(spot => {
-            if (!spot.position) return;
-            
-            let dx, dy;
-            if (spot.isLocal) {
-                dx = uLocalFwd - spot.position.u;
-                dy = uLocalRight - spot.position.v;
-            } else {
-                dx = u.position.u - spot.position.u;
-                dy = u.position.v - spot.position.v;
+          if (u.position) {
+            const dist = Math.sqrt(
+              Math.pow(u.position.v - shipPos.u, 2) +
+              Math.pow(u.position.u - shipPos.v, 2)
+            );
+            if (dist < minDist) {
+              minDist = dist;
+              shipUnit = u;
             }
-            
-            const dst = Math.sqrt(dx*dx + dy*dy);
-            if (dst < minDst) {
-               minDst = dst;
-               closestSpot = spot;
-            }
-          });
-          
-          // Debug properties on unit
-          u._debugDistToCarrier = distToCarrier;
-          u._debugMinDst = minDst;
-          u._debugLocalFwd = uLocalFwd;
-          u._debugLocalRight = uLocalRight;
+          }
+        });
+        if (shipUnit && minDist < 2000) {
+          setLockedId(shipUnit.id);
+        } else {
+          shipUnit = null;
+        }
+      }
 
-          if (closestSpot && minDst < 60) {
-             // Velocity-adaptive EMA smoothing in carrier-local frame.
-             // Stationary aircraft (parked, on catapult) get near-zero alpha → frozen position.
-             // Moving aircraft ramp up for responsive tracking.
-             const uid = String(u.id);
-             const speed = u.speed ?? 0; // m/s from radar stream
-             // alpha: 0.02 when stopped → 0.5 when moving (>2 m/s ≈ 4 kts)
-             const alpha = Math.min(0.5, 0.02 + 0.24 * Math.min(speed / 2, 1)); // try to reduce const alpha = Math.min(0.4, 0.005 + 0.20 * Math.min(speed / 2, 1)); to make parked/catapult aircraft nearly rock-solid
-             const prev = smoothedPositions.current[uid];
-             let smoothFwd: number, smoothRight: number;
-             if (prev) {
-                 smoothFwd   = alpha * uLocalFwd   + (1 - alpha) * prev.fwd;
-                 smoothRight = alpha * uLocalRight + (1 - alpha) * prev.right;
-             } else {
-                 // First observation — seed with raw position (no jump)
-                 smoothFwd = uLocalFwd;
-                 smoothRight = uLocalRight;
-             }
-             smoothedPositions.current[uid] = { fwd: smoothFwd, right: smoothRight };
+      if (shipUnit) {
+        syncShipPos = { u: shipUnit.position.v, v: shipUnit.position.u };
+      }
 
-             // Recompute minDst from smoothed positions to prevent snap flip-flopping
-             let smoothMinDst = Infinity;
-             if (closestSpot.isLocal) {
-                 const sdx = smoothFwd - closestSpot.position.u;
-                 const sdy = smoothRight - closestSpot.position.v;
-                 smoothMinDst = Math.sqrt(sdx * sdx + sdy * sdy);
-             } else {
-                 smoothMinDst = minDst; // non-local spots: keep raw distance
-             }
-             occupiedSpots.push({ player: u, spot: closestSpot, uLocalFwd: smoothFwd, uLocalRight: smoothRight, minDst: smoothMinDst });
+      // Match players to parking spots
+      const occupiedSpots: any[] = [];
+      Object.values(radarUnits).forEach((u: any) => {
+        if (!u.position) return;
+        if (shipUnit && u.id === shipUnit.id) return;
+
+        const radarNorth = u.position.v;
+        const radarEast = u.position.u;
+        const shipNorth = syncShipPos.u;
+        const shipEast = syncShipPos.v;
+
+        const distToShip = Math.sqrt(Math.pow(radarNorth - shipNorth, 2) + Math.pow(radarEast - shipEast, 2));
+        if (distToShip > 600) return;
+
+        let closestSpot: any = null;
+        let minDst = Infinity;
+
+        const du = radarNorth - shipNorth;
+        const dv = radarEast - shipEast;
+        const uLocalFwd = du * Math.cos(rad) + dv * Math.sin(rad);
+        const uLocalRight = -du * Math.sin(rad) + dv * Math.cos(rad);
+
+        spots.forEach(spot => {
+          if (!spot.position) return;
+          let dx, dy;
+          if (spot.isLocal) {
+            dx = uLocalFwd - spot.position.u;
+            dy = uLocalRight - spot.position.v;
+          } else {
+            dx = u.position.u - spot.position.u;
+            dy = u.position.v - spot.position.v;
+          }
+          const dst = Math.sqrt(dx * dx + dy * dy);
+          if (dst < minDst) {
+            minDst = dst;
+            closestSpot = spot;
           }
         });
 
-        // Draw Parking Spots
-        parkingSpots.forEach((spot, idx) => {
-          if (!spot.position) return;
-          
-          let px, py;
-          if (spot.isLocal) {
-              px = spot.position.u * pixelsPerMeter;
-              py = spot.position.v * pixelsPerMeter;
+        if (closestSpot && minDst < 60) {
+          const uid = String(u.id);
+          const speed = u.speed ?? 0;
+          // alpha bounds: 0.005 when stopped (heavy smoothing) -> 0.4 when moving
+          const alpha = Math.min(0.4, 0.005 + 0.20 * Math.min(speed / 2, 1)); //jitering
+          const prev = smoothedRef.current[uid];
+          let smoothFwd: number, smoothRight: number;
+          if (prev) {
+            smoothFwd = alpha * uLocalFwd + (1 - alpha) * prev.fwd;
+            smoothRight = alpha * uLocalRight + (1 - alpha) * prev.right;
           } else {
-              const du = spot.position.u - syncCarrierPos.u;
-              const dv = spot.position.v - syncCarrierPos.v;
-              const localFwd = du * Math.cos(rad) + dv * Math.sin(rad);
-              const localRight = -du * Math.sin(rad) + dv * Math.cos(rad);
-              px = localFwd * pixelsPerMeter;
-              py = localRight * pixelsPerMeter;
+            smoothFwd = uLocalFwd;
+            smoothRight = uLocalRight;
           }
+          smoothedRef.current[uid] = { fwd: smoothFwd, right: smoothRight };
 
-          dctx.beginPath();
-          dctx.arc(px, py, 2.5, 0, 2*Math.PI);
-          dctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-          dctx.fill();
+          let smoothMinDst = Infinity;
+          if (closestSpot.isLocal) {
+            const sdx = smoothFwd - closestSpot.position.u;
+            const sdy = smoothRight - closestSpot.position.v;
+            smoothMinDst = Math.sqrt(sdx * sdx + sdy * sdy);
+          } else {
+            smoothMinDst = minDst;
+          }
+          occupiedSpots.push({ player: u, spot: closestSpot, uLocalFwd: smoothFwd, uLocalRight: smoothRight, minDst: smoothMinDst });
+        }
+      });
 
-          dctx.font = "10px 'Share Tech Mono', monospace";
-          dctx.fillStyle = 'rgba(255,255,255,0.7)';
+      // Draw Parking Spots
+      spots.forEach((spot, idx) => {
+        if (!spot.position) return;
+        let sfwd, sright;
+        if (spot.isLocal) {
+          sfwd = spot.position.u;
+          sright = spot.position.v;
+        } else {
+          const du = spot.position.u - syncShipPos.u;
+          const dv = spot.position.v - syncShipPos.v;
+          sfwd = du * Math.cos(rad) + dv * Math.sin(rad);
+          sright = -du * Math.sin(rad) + dv * Math.cos(rad);
+        }
+
+        let px, py;
+        if (facingUp) {
+          px = sright * pixelsPerMeter;
+          py = -sfwd * pixelsPerMeter;
+        } else {
+          px = sfwd * pixelsPerMeter;
+          py = sright * pixelsPerMeter;
+        }
+
+        dctx.beginPath();
+        dctx.arc(px, py, 2.5, 0, 2 * Math.PI);
+        dctx.fillStyle = 'rgba(13, 163, 68, 0.9)';
+        dctx.fill();
+        dctx.font = "10px 'Share Tech Mono', monospace";
+        dctx.fillStyle = 'rgba(13, 163, 68, 0.9)';
+        dctx.textAlign = 'center';
+        dctx.textBaseline = 'middle';
+        dctx.fillText(`${spot.term_index || idx}`, px, py + 12);
+      });
+
+      // Draw occupied aircraft
+      occupiedSpots.forEach(occ => {
+        const isParked = occ.minDst < 15;
+        const sfwd = isParked && occ.spot.isLocal ? occ.spot.position.u : occ.uLocalFwd;
+        const sright = isParked && occ.spot.isLocal ? occ.spot.position.v : occ.uLocalRight;
+
+        let px, py;
+        if (facingUp) {
+          px = sright * pixelsPerMeter;
+          py = -sfwd * pixelsPerMeter;
+        } else {
+          px = sfwd * pixelsPerMeter;
+          py = sright * pixelsPerMeter;
+        }
+
+        dctx.save();
+        dctx.translate(px, py);
+
+        const pType = (occ.player.type || "").toLowerCase();
+        let iconToDraw: HTMLImageElement | null = null;
+        let planeLengthMeters = 18; // Default F-14/F-18 size
+
+        if (pType.includes("f-14")) {
+          iconToDraw = planeIcons['f-14_icon_park.png'];
+          planeLengthMeters = 19;
+        } else if (pType.includes("f-18") || pType.includes("fa-18") || pType.includes("hornet")) {
+          iconToDraw = planeIcons['F-18_icon_park.png'];
+          planeLengthMeters = 17;
+        } else if (pType.includes("av8") || pType.includes("av-8") || pType.includes("harrier")) {
+          iconToDraw = planeIcons['AV88_icon.park.png'];
+          planeLengthMeters = 14; // Harrier is significantly smaller
+        }
+
+        if (iconToDraw) {
+          const drawLen = planeLengthMeters * pixelsPerMeter;
+          const drawWid = (iconToDraw.width / iconToDraw.height) * drawLen;
+          if (facingUp) {
+            dctx.rotate(-Math.PI / 2); // Icons face right natively, rotate to face up
+          }
+          dctx.drawImage(iconToDraw, -drawWid / 2, -drawLen / 2, drawWid, drawLen);
+        } else {
+          if (!facingUp) dctx.rotate(Math.PI / 2);
+          dctx.font = "20px Arial";
+          dctx.fillStyle = "white";
           dctx.textAlign = 'center';
           dctx.textBaseline = 'middle';
-          dctx.fillText(`${spot.term_index || idx}`, px, py + 12);
-        });
-
-        occupiedSpots.forEach(occ => {
-          // Magnetic snap: lock planes near a parking spot to the spot's fixed coords.
-          // 15m radius is safe — parking spots are ~20m apart on Nimitz.
-          const isParked = occ.minDst < 15;
-          const px = (isParked && occ.spot.isLocal ? occ.spot.position.u : occ.uLocalFwd) * pixelsPerMeter;
-          const py = (isParked && occ.spot.isLocal ? occ.spot.position.v : occ.uLocalRight) * pixelsPerMeter;
-
-          // Aircraft Icon
-          dctx.save();
-          dctx.translate(px, py);
-          
-          let uHdg = actualBrc;
-          if (occ.player.heading) {
-              uHdg = actualBrc; // Fallback to actualBrc for now
-          }
-          
-          // Select custom icon if available
-          const pType = (occ.player.type || "").toLowerCase();
-          let iconToDraw: HTMLImageElement | null = null;
-          if (pType.includes("f-14")) {
-              iconToDraw = planeIcons['f-14_icon_park.png'];
-          } else if (pType.includes("f-18") || pType.includes("fa-18") || pType.includes("hornet")) {
-              iconToDraw = planeIcons['F-18_icon_park.png'];
-          }
-
-          if (iconToDraw) {
-              const drawLen = 18 * pixelsPerMeter;
-              const drawWid = (iconToDraw.width / iconToDraw.height) * drawLen;
-              dctx.drawImage(iconToDraw, -drawWid / 2, -drawLen / 2, drawWid, drawLen);
-          } else {
-              // The plane emoji ✈️ points UP naturally. Rotate 90 deg clockwise to face RIGHT.
-              dctx.rotate(Math.PI / 2);
-              dctx.font = "20px Arial";
-              dctx.fillStyle = "white";
-              dctx.textAlign = 'center';
-              dctx.textBaseline = 'middle';
-              dctx.fillText("✈️", 0, 0);
-          }
-          
-          dctx.restore();
-
-          // Player Name Label
-          const pName = occ.player.player_name || occ.player.type || "Unknown";
-          dctx.font = "12px 'Share Tech Mono', monospace";
-          
-          const textWidth = dctx.measureText(pName).width;
-          dctx.fillStyle = "rgba(0, 0, 0, 0.65)";
-          dctx.fillRect(px - textWidth / 2 - 4, py + 15, textWidth + 8, 16);
-
-          dctx.fillStyle = '#00ffcc';
-          dctx.textAlign = 'center';
-          dctx.textBaseline = 'top';
-          dctx.fillText(pName, px, py + 17);
-        });
+          dctx.fillText("✈️", 0, 0);
+        }
         dctx.restore();
-      }
+
+        const pName = occ.player.player_name || occ.player.type || "Unknown";
+        dctx.font = "12px 'Share Tech Mono', monospace";
+        const textWidth = dctx.measureText(pName).width;
+        dctx.fillStyle = "rgba(0, 0, 0, 0.65)";
+        dctx.fillRect(px - textWidth / 2 - 4, py + 15, textWidth + 8, 16);
+        dctx.fillStyle = '#00ffcc';
+        dctx.textAlign = 'center';
+        dctx.textBaseline = 'top';
+        dctx.fillText(pName, px, py + 17);
+      });
+
+      dctx.restore();
     }
 
-  }, [twDir, twSpd, brc, shipSpd, deckHdg, wodDir, wodSpd, carrierImg, autoSync, actualBrc, actualShipSpd, carrierPos, radarUnits, parkingSpots, carrierUnitId, planeIcons]);
+    // Draw Nimitz deck view
+    // Nimitz image natively faces West (Left). Rotate by PI/2 (90deg) to face UP.
+    drawDeckView(
+      deckCanvasRef.current, carrierImg, 332, Math.PI / 2, true,
+      carrierPos, actualBrc, parkingSpots,
+      carrierUnitId, smoothedPositions,
+      (id) => setCarrierUnitId(id),
+      carrierNameInput,
+    );
+
+    // Draw Tarawa deck view
+    // Tarawa image natively faces North (Up). Rotation 0 to face UP.
+    drawDeckView(
+      tarawaCanvasRef.current, tarawaImg, 254, 0, true,
+      tarawaPos, tarawaBrc, tarawaParkingSpots,
+      tarawaUnitId, tarawaSmoothedPositions,
+      (id) => setTarawaUnitId(id),
+      tarawaNameInput,
+    );
+
+  }, [twDir, twSpd, brc, shipSpd, deckHdg, wodDir, wodSpd, carrierImg, tarawaImg, autoSync, actualBrc, actualShipSpd, carrierPos, radarUnits, parkingSpots, carrierUnitId, planeIcons, tarawaPos, tarawaBrc, tarawaParkingSpots, tarawaUnitId]);
 
   return (
     <div className="airboss-container">
@@ -675,12 +794,21 @@ export default function AirbossPlanner() {
         <div className="ab-sidebar">
           <div className="ab-sec-hdr">Carrier Actions</div>
           <div className="ab-ctrl-block" style={{ flexDirection: 'row', gap: '8px', alignItems: 'center' }}>
-            <span className="ab-ctrl-label" style={{ flex: 1 }}>Carrier Name</span>
+            <span className="ab-ctrl-label" style={{ flex: 1 }}>Nimitz Name</span>
             <input 
               type="text" 
               value={carrierNameInput} 
               onChange={e => setCarrierNameInput(e.target.value)}
-              style={{ width: '100px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '2px 6px', fontFamily: 'var(--mono)', borderRadius: '3px' }}
+              style={{ width: '80px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '2px 6px', fontFamily: 'var(--mono)', borderRadius: '3px' }}
+            />
+          </div>
+          <div className="ab-ctrl-block" style={{ flexDirection: 'row', gap: '8px', alignItems: 'center', marginTop: '-8px' }}>
+            <span className="ab-ctrl-label" style={{ flex: 1 }}>Tarawa Name</span>
+            <input 
+              type="text" 
+              value={tarawaNameInput} 
+              onChange={e => setTarawaNameInput(e.target.value)}
+              style={{ width: '80px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '2px 6px', fontFamily: 'var(--mono)', borderRadius: '3px' }}
             />
           </div>
           <div className="ab-ctrl-block" style={{ flexDirection: 'row', gap: '8px', marginTop: '-8px' }}>
@@ -803,9 +931,15 @@ export default function AirbossPlanner() {
 
         <div className="ab-canvas-wrap" style={{ flexDirection: 'column', gap: '40px', overflowY: 'auto', padding: '40px 0' }}>
           <canvas ref={canvasRef} width="660" height="660"></canvas>
-          <div style={{ textAlign: 'center', marginTop: '20px' }}>
-            <div style={{ fontFamily: 'var(--mono)', color: 'var(--acc)', fontSize: '15px', fontWeight: 'bold', marginBottom: '15px', letterSpacing: '2px' }}>CARRIER DECK VIEW</div>
-            <canvas ref={deckCanvasRef} width="660" height="800" style={{ borderRadius: '8px', boxShadow: '0 0 0 1px rgba(0,212,255,.2)' }}></canvas>
+          <div style={{ display: 'flex', flexDirection: 'row', gap: '40px', justifyContent: 'center' }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontFamily: 'var(--mono)', color: 'var(--acc)', fontSize: '15px', fontWeight: 'bold', marginBottom: '15px', letterSpacing: '2px' }}>CARRIER DECK (CVN)</div>
+              <canvas ref={deckCanvasRef} width="500" height="1100" style={{ borderRadius: '8px', boxShadow: '0 0 0 1px rgba(0,212,255,.2)', background: '#060a0f' }}></canvas>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontFamily: 'var(--mono)', color: 'var(--acc)', fontSize: '15px', fontWeight: 'bold', marginBottom: '15px', letterSpacing: '2px' }}>TARAWA DECK (LHA)</div>
+              <canvas ref={tarawaCanvasRef} width="400" height="1100" style={{ borderRadius: '8px', boxShadow: '0 0 0 1px rgba(0,212,255,.2)', background: '#060a0f' }}></canvas>
+            </div>
           </div>
         </div>
       </div>
