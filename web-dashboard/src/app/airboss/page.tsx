@@ -1,7 +1,29 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { apiFetch } from '@/lib/api';
+import {
+  RADAR_BATCH_SETTLE_MS,
+  appendToRadarBatch,
+  applyRadarBatch,
+  createRadarBatch,
+  findDeckShip,
+  hasParkingPosition,
+  isAircraftUnit,
+  nearestShipId,
+  relativeHorizontalSpeed,
+  smoothingAlpha,
+  synchronizedDeckPosition,
+  unitsFromRadarSnapshot,
+  worldToDeck,
+  type RadarBatch,
+  type ParkingSpot,
+  type PositionedParkingSpot,
+  type RadarSnapshot,
+  type RadarStreamMessage,
+  type RadarUnit,
+  type RadarUnitSample,
+} from './deckTracking';
 import './airboss.css';
 
 export default function AirbossPlanner() {
@@ -20,7 +42,7 @@ export default function AirbossPlanner() {
   // Hardcoded local parking spots for Nimitz-class carriers (CVN-71, 72, 73, 74)
   // because DCS Airbase.getParking() only works for land bases.
   // Source: CoreMods/tech/USS_Nimitz/scripts/USS_Nimitz_RunwaysAndRoutes.lua (LCS coords: x=fwd, z=lateral)
-  const NIMITZ_SPOTS = [
+  const NIMITZ_SPOTS = useMemo<ParkingSpot[]>(() => [
     // Routes 1-15 parking spots (verified against DCS Lua)
     {'u': -141.15, 'v': 24.2},   // 1  - parking 1 * (stern, stbd)
     {'u': -129.2,  'v': 26.2},   // 2  - parking 2 *
@@ -50,11 +72,11 @@ export default function AirbossPlanner() {
     {'u': 55.9,    'v': -3.68},  // 24 - Cat 2 (bow port) {'u': 55.9,    'v': -3.68}
     {'u': -39.4,   'v': -19.92}, // 25 - Cat 3 (waist port)  {'u': -39.4,   'v': -19.92}
     {'u': -58.5,   'v': -32.8},  // 26 - Cat 4 (waist port) {'u': -58.5,   'v': -32.8}
-  ].map((p, i) => ({ term_index: i + 1, position: p, isLocal: true }));
+  ].map((p, i) => ({ term_index: i + 1, position: p, isLocal: true })), []);
 
   // Tarawa LHA parking spots
   // Source: CoreMods/aircraft/AV8BNA/TarawaRunwaysAndRoutes.lua (LCS coords: x=fwd, z=lateral)
-  const TARAWA_SPOTS = [
+  const TARAWA_SPOTS = useMemo<ParkingSpot[]>(() => [
     // GT.TaxiRoutes parking spots (last waypoint = spawn position)
     {'u': 90.0,    'v': 14.0},    // 1  - bow stbd parking
     {'u': 75.0,    'v': 14.0},    // 2  - bow stbd parking
@@ -78,7 +100,7 @@ export default function AirbossPlanner() {
     {'u': -60.0,   'v': -6.2},    // 18 - STOVL launch 2
     {'u': -65.0,   'v': -6.5},    // 19 - STOVL launch 3
     {'u': -110.0,  'v': -7.5},    // 20 - STOVL launch 4
-  ].map((p, i) => ({ term_index: i + 1, position: p, isLocal: true }));
+  ].map((p, i) => ({ term_index: i + 1, position: p, isLocal: true })), []);
   
   const [autoSync, setAutoSync] = useState(false);
   const [actualBrc, setActualBrc] = useState<number | null>(null);
@@ -87,10 +109,12 @@ export default function AirbossPlanner() {
   const [carrierNameInput, setCarrierNameInput] = useState("CVN-72");
   const [carrierName, setCarrierName] = useState<string | null>(null);
   const [carrierPos, setCarrierPos] = useState<{u: number, v: number} | null>(null);
-  const [parkingSpots, setParkingSpots] = useState<any[]>([]);
-  const [playerUnits, setPlayerUnits] = useState<any[]>([]);
-  const [radarUnits, setRadarUnits] = useState<Record<string, any>>({});
-  const [carrierUnitId, setCarrierUnitId] = useState<number | null>(null);
+  const [parkingSpots, setParkingSpots] = useState<ParkingSpot[]>([]);
+  const [radarSnapshot, setRadarSnapshot] = useState<RadarSnapshot>({ samples: {} });
+  const pendingRadarBatch = useRef<RadarBatch | null>(null);
+  const radarFrameTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const radarUnits = useMemo(() => unitsFromRadarSnapshot(radarSnapshot), [radarSnapshot]);
+  const [carrierUnitId, setCarrierUnitId] = useState<string | null>(null);
   const smoothedPositions = useRef<Record<string, { fwd: number; right: number }>>({});
 
   // Tarawa state
@@ -98,9 +122,8 @@ export default function AirbossPlanner() {
   const [tarawaName, setTarawaName] = useState<string | null>(null);
   const [tarawaPos, setTarawaPos] = useState<{u: number, v: number} | null>(null);
   const [tarawaBrc, setTarawaBrc] = useState<number | null>(null);
-  const [tarawaShipSpd, setTarawaShipSpd] = useState<number | null>(null);
-  const [tarawaParkingSpots, setTarawaParkingSpots] = useState<any[]>([]);
-  const [tarawaUnitId, setTarawaUnitId] = useState<number | null>(null);
+  const tarawaParkingSpots = TARAWA_SPOTS;
+  const [tarawaUnitId, setTarawaUnitId] = useState<string | null>(null);
   const tarawaSmoothedPositions = useRef<Record<string, { fwd: number; right: number }>>({});
 
   useEffect(() => {
@@ -168,7 +191,6 @@ export default function AirbossPlanner() {
              setTarawaPos({ u: data.carrier_u, v: data.carrier_v });
           }
           setTarawaBrc(data.brc);
-          setTarawaShipSpd(data.ship_spd);
         }
       } catch (err) {
         console.error("Failed to fetch tarawa data", err);
@@ -182,36 +204,48 @@ export default function AirbossPlanner() {
   // Subscribe to live radar stream for all unit positions
   useEffect(() => {
     const source = new EventSource('/api/radar/stream');
-    
+
+    const commitPendingBatch = () => {
+      const batch = pendingRadarBatch.current;
+      if (!batch) return;
+      pendingRadarBatch.current = null;
+      setRadarSnapshot((previous) => applyRadarBatch(previous, batch));
+      for (const goneId of batch.goneIds) {
+        delete smoothedPositions.current[goneId];
+        delete tarawaSmoothedPositions.current[goneId];
+      }
+      if (batch.goneIds.length > 0) {
+        setCarrierUnitId((previous) => previous && batch.goneIds.includes(previous) ? null : previous);
+        setTarawaUnitId((previous) => previous && batch.goneIds.includes(previous) ? null : previous);
+      }
+    };
+
+    const scheduleFrameCommit = () => {
+      if (radarFrameTimer.current) clearTimeout(radarFrameTimer.current);
+      radarFrameTimer.current = setTimeout(commitPendingBatch, RADAR_BATCH_SETTLE_MS);
+    };
+
     source.onmessage = (event) => {
       try {
-        const data = JSON.parse(event.data);
-        if (data.update === 'unit' && data.unit) {
-          // Track all units to ensure we catch player spawns even if category is missing
-          setRadarUnits(prev => ({
-            ...prev,
-            [data.unit.id]: data.unit
-          }));
-        } else if (data.update === 'gone' && data.gone) {
-          const goneId = data.gone.id;
-          setRadarUnits(prev => {
-            const newUnits = { ...prev };
-            delete newUnits[goneId];
-            return newUnits;
-          });
-          // Clean up smoothed position state for the departed unit
-          delete smoothedPositions.current[String(goneId)];
-          delete tarawaSmoothedPositions.current[String(goneId)];
-          // If either ship despawned, unlock so we re-search
-          setCarrierUnitId(prev => prev === goneId ? null : prev);
-          setTarawaUnitId(prev => prev === goneId ? null : prev);
+        const data = JSON.parse(event.data) as RadarStreamMessage;
+        const nextBatch = createRadarBatch(data);
+        if (!nextBatch) return;
+
+        if (!pendingRadarBatch.current) {
+          pendingRadarBatch.current = nextBatch;
+        } else {
+          appendToRadarBatch(pendingRadarBatch.current, data);
         }
+
+        scheduleFrameCommit();
       } catch (err) {
         console.error('Radar stream parse error', err);
       }
     };
     
     return () => {
+      if (radarFrameTimer.current) clearTimeout(radarFrameTimer.current);
+      pendingRadarBatch.current = null;
       source.close();
     };
   }, []);
@@ -237,13 +271,7 @@ export default function AirbossPlanner() {
       }
     };
     fetchParking();
-  }, [autoSync, carrierName]);
-
-  // Tarawa parking: always use hardcoded spots (no API for LHA parking)
-  useEffect(() => {
-    if (!autoSync) return;
-    setTarawaParkingSpots(TARAWA_SPOTS);
-  }, [autoSync]);
+  }, [autoSync, carrierName, NIMITZ_SPOTS]);
 
   const handleAction = async (actionStr: string) => {
     setActionStatus('Sending command...');
@@ -502,17 +530,27 @@ export default function AirbossPlanner() {
       facingUp: boolean,
       shipPos: {u: number, v: number} | null,
       shipBrc: number | null,
-      spots: any[],
-      lockedUnitId: number | null,
+      spots: ParkingSpot[],
+      lockedUnitId: string | null,
       smoothedRef: React.MutableRefObject<Record<string, {fwd: number, right: number}>>,
-      setLockedId: (id: number | null) => void,
+      setLockedId: (id: string | null) => void,
       shipNameStr: string,
     ) {
       if (!canvas) return;
       const dctx = canvas.getContext('2d');
       if (!dctx) return;
 
-      if (!shipPos || shipBrc === null || !shipImg || !shipImg.complete || !shipImg.naturalWidth) {
+      const fallbackShipPosition = shipPos ? { u: shipPos.v, v: shipPos.u } : null;
+      const shipUnit = findDeckShip(radarUnits, shipNameStr, lockedUnitId, fallbackShipPosition);
+      const shipUnitId = shipUnit ? String(shipUnit.id) : null;
+      const shipSample = shipUnitId ? radarSnapshot.samples[shipUnitId] : null;
+      const syncShipPos = shipUnit?.position ?? fallbackShipPosition;
+      const streamHeading = shipUnit?.orientation?.heading;
+      const resolvedShipHeading = typeof streamHeading === 'number' && Number.isFinite(streamHeading)
+        ? streamHeading
+        : shipBrc;
+
+      if (!syncShipPos || resolvedShipHeading === null || !shipImg || !shipImg.complete || !shipImg.naturalWidth) {
         dctx.clearRect(0, 0, canvas.width, canvas.height);
         dctx.fillStyle = '#060a0f';
         dctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -551,104 +589,69 @@ export default function AirbossPlanner() {
       dctx.drawImage(shipImg, -dw / 2, -dh / 2, dw, dh);
       dctx.restore();
 
-      const rad = toRad(shipBrc);
-
-      // Find ship in radar stream using ID-locking
-      let syncShipPos = shipPos;
-      let shipUnit: any = null;
-
-      if (lockedUnitId !== null && radarUnits[lockedUnitId]?.position) {
-        shipUnit = radarUnits[lockedUnitId];
-      } else {
-        let minDist = Infinity;
-        Object.values(radarUnits).forEach((u: any) => {
-          if (u.position) {
-            const dist = Math.sqrt(
-              Math.pow(u.position.v - shipPos.u, 2) +
-              Math.pow(u.position.u - shipPos.v, 2)
-            );
-            if (dist < minDist) {
-              minDist = dist;
-              shipUnit = u;
-            }
-          }
-        });
-        if (shipUnit && minDist < 2000) {
-          setLockedId(shipUnit.id);
-        } else {
-          shipUnit = null;
-        }
-      }
-
-      if (shipUnit) {
-        syncShipPos = { u: shipUnit.position.v, v: shipUnit.position.u };
+      if (shipUnit && String(shipUnit.id) !== lockedUnitId) {
+        setLockedId(String(shipUnit.id));
       }
 
       // Match players to parking spots
-      const occupiedSpots: any[] = [];
-      Object.values(radarUnits).forEach((u: any) => {
-        if (!u.position) return;
-        if (shipUnit && u.id === shipUnit.id) return;
+      const occupiedSpots: Array<{
+        player: RadarUnit;
+        spot: PositionedParkingSpot | null;
+        uLocalFwd: number;
+        uLocalRight: number;
+        minDst: number;
+        relativeSpeed: number;
+      }> = [];
+      Object.values(radarUnits).forEach((u: RadarUnit) => {
+        if (!shipUnit || !shipSample || !isAircraftUnit(u)) return;
+        const unitId = String(u.id);
+        const unitSample: RadarUnitSample | undefined = radarSnapshot.samples[unitId];
+        if (!unitSample || nearestShipId(unitSample, radarSnapshot.samples) !== shipUnitId) return;
 
-        const radarNorth = u.position.v;
-        const radarEast = u.position.u;
-        const shipNorth = syncShipPos.u;
-        const shipEast = syncShipPos.v;
+        const deckPosition = synchronizedDeckPosition(unitSample, shipSample, resolvedShipHeading);
+        if (!deckPosition) return;
+        const uLocalFwd = deckPosition.fwd;
+        const uLocalRight = deckPosition.right;
+        if (Math.abs(uLocalFwd) > shipLengthM / 2 + 20 || Math.abs(uLocalRight) > 50) return;
 
-        const distToShip = Math.sqrt(Math.pow(radarNorth - shipNorth, 2) + Math.pow(radarEast - shipEast, 2));
-        if (distToShip > 600) return;
-
-        let closestSpot: any = null;
+        let closestSpot: PositionedParkingSpot | null = null;
         let minDst = Infinity;
 
-        const du = radarNorth - shipNorth;
-        const dv = radarEast - shipEast;
-        const uLocalFwd = du * Math.cos(rad) + dv * Math.sin(rad);
-        const uLocalRight = -du * Math.sin(rad) + dv * Math.cos(rad);
-
-        spots.forEach(spot => {
-          if (!spot.position) return;
-          let dx, dy;
-          if (spot.isLocal) {
-            dx = uLocalFwd - spot.position.u;
-            dy = uLocalRight - spot.position.v;
-          } else {
-            dx = u.position.u - spot.position.u;
-            dy = u.position.v - spot.position.v;
-          }
+        for (const spot of spots) {
+          if (!hasParkingPosition(spot)) continue;
+          const spotDeckPosition = spot.isLocal
+            ? { fwd: spot.position.u, right: spot.position.v }
+            : worldToDeck(spot.position, syncShipPos, resolvedShipHeading);
+          const dx = uLocalFwd - spotDeckPosition.fwd;
+          const dy = uLocalRight - spotDeckPosition.right;
           const dst = Math.sqrt(dx * dx + dy * dy);
           if (dst < minDst) {
             minDst = dst;
             closestSpot = spot;
           }
-        });
-
-        if (closestSpot && minDst < 60) {
-          const uid = String(u.id);
-          const speed = u.speed ?? 0;
-          // alpha bounds: 0.005 when stopped (heavy smoothing) -> 0.4 when moving
-          const alpha = Math.min(0.4, 0.005 + 0.20 * Math.min(speed / 2, 1)); //jitering
-          const prev = smoothedRef.current[uid];
-          let smoothFwd: number, smoothRight: number;
-          if (prev) {
-            smoothFwd = alpha * uLocalFwd + (1 - alpha) * prev.fwd;
-            smoothRight = alpha * uLocalRight + (1 - alpha) * prev.right;
-          } else {
-            smoothFwd = uLocalFwd;
-            smoothRight = uLocalRight;
-          }
-          smoothedRef.current[uid] = { fwd: smoothFwd, right: smoothRight };
-
-          let smoothMinDst = Infinity;
-          if (closestSpot.isLocal) {
-            const sdx = smoothFwd - closestSpot.position.u;
-            const sdy = smoothRight - closestSpot.position.v;
-            smoothMinDst = Math.sqrt(sdx * sdx + sdy * sdy);
-          } else {
-            smoothMinDst = minDst;
-          }
-          occupiedSpots.push({ player: u, spot: closestSpot, uLocalFwd: smoothFwd, uLocalRight: smoothRight, minDst: smoothMinDst });
         }
+
+        const relativeSpeed = relativeHorizontalSpeed(u, shipUnit);
+        const alpha = smoothingAlpha(relativeSpeed);
+        const prev = smoothedRef.current[unitId];
+        const smoothFwd = prev ? alpha * uLocalFwd + (1 - alpha) * prev.fwd : uLocalFwd;
+        const smoothRight = prev ? alpha * uLocalRight + (1 - alpha) * prev.right : uLocalRight;
+        smoothedRef.current[unitId] = { fwd: smoothFwd, right: smoothRight };
+
+        let smoothMinDst = minDst;
+        if (closestSpot?.isLocal) {
+          const sdx = smoothFwd - closestSpot.position.u;
+          const sdy = smoothRight - closestSpot.position.v;
+          smoothMinDst = Math.sqrt(sdx * sdx + sdy * sdy);
+        }
+        occupiedSpots.push({
+          player: u,
+          spot: closestSpot,
+          uLocalFwd: smoothFwd,
+          uLocalRight: smoothRight,
+          minDst: smoothMinDst,
+          relativeSpeed,
+        });
       });
 
       // Draw Parking Spots
@@ -659,10 +662,9 @@ export default function AirbossPlanner() {
           sfwd = spot.position.u;
           sright = spot.position.v;
         } else {
-          const du = spot.position.u - syncShipPos.u;
-          const dv = spot.position.v - syncShipPos.v;
-          sfwd = du * Math.cos(rad) + dv * Math.sin(rad);
-          sright = -du * Math.sin(rad) + dv * Math.cos(rad);
+          const deckPosition = worldToDeck(spot.position, syncShipPos, resolvedShipHeading);
+          sfwd = deckPosition.fwd;
+          sright = deckPosition.right;
         }
 
         let px, py;
@@ -687,9 +689,11 @@ export default function AirbossPlanner() {
 
       // Draw occupied aircraft
       occupiedSpots.forEach(occ => {
-        const isParked = occ.minDst < 15;
-        const sfwd = isParked && occ.spot.isLocal ? occ.spot.position.u : occ.uLocalFwd;
-        const sright = isParked && occ.spot.isLocal ? occ.spot.position.v : occ.uLocalRight;
+        const parkedSpot = occ.spot?.isLocal && occ.minDst < 15 && occ.relativeSpeed < 1
+          ? occ.spot
+          : null;
+        const sfwd = parkedSpot ? parkedSpot.position.u : occ.uLocalFwd;
+        const sright = parkedSpot ? parkedSpot.position.v : occ.uLocalRight;
 
         let px, py;
         if (facingUp) {
@@ -756,7 +760,7 @@ export default function AirbossPlanner() {
       carrierPos, actualBrc, parkingSpots,
       carrierUnitId, smoothedPositions,
       (id) => setCarrierUnitId(id),
-      carrierNameInput,
+      carrierName ?? carrierNameInput,
     );
 
     // Draw Tarawa deck view
@@ -766,10 +770,10 @@ export default function AirbossPlanner() {
       tarawaPos, tarawaBrc, tarawaParkingSpots,
       tarawaUnitId, tarawaSmoothedPositions,
       (id) => setTarawaUnitId(id),
-      tarawaNameInput,
+      tarawaName ?? tarawaNameInput,
     );
 
-  }, [twDir, twSpd, brc, shipSpd, deckHdg, wodDir, wodSpd, carrierImg, tarawaImg, autoSync, actualBrc, actualShipSpd, carrierPos, radarUnits, parkingSpots, carrierUnitId, planeIcons, tarawaPos, tarawaBrc, tarawaParkingSpots, tarawaUnitId]);
+  }, [twDir, twSpd, brc, shipSpd, deckHdg, wodDir, wodSpd, carrierImg, tarawaImg, autoSync, actualBrc, actualShipSpd, carrierPos, carrierName, carrierNameInput, radarSnapshot.samples, radarUnits, parkingSpots, carrierUnitId, planeIcons, tarawaPos, tarawaBrc, tarawaName, tarawaNameInput, tarawaParkingSpots, tarawaUnitId]);
 
   return (
     <div className="airboss-container">

@@ -1,5 +1,6 @@
 use axum::{
     extract::{Path, Query, State},
+    http::StatusCode,
     response::{IntoResponse, Response},
     Json,
 };
@@ -11,7 +12,8 @@ use crate::grpc;
 use crate::state::AppState;
 
 fn err_resp(msg: &str) -> Response {
-    Json(json!({ "error": msg })).into_response()
+    tracing::warn!(error = msg, "DCS-gRPC world request failed");
+    (StatusCode::BAD_GATEWAY, Json(json!({ "error": msg }))).into_response()
 }
 
 #[derive(Deserialize, utoipa::IntoParams)]
@@ -33,7 +35,10 @@ pub struct SetCoalitionPayload {
         ("name" = String, Path, description = "Airbase name"),
         ParkingQuery
     ),
-    responses((status = 200, description = "Airbase parking spots"))
+    responses(
+        (status = 200, description = "Airbase parking spots"),
+        (status = 502, description = "DCS-gRPC request failed")
+    )
 )]
 pub async fn parking(
     _user: AuthUser,
@@ -64,7 +69,10 @@ pub async fn parking(
     tags = ["world"],
     security(("jwt" = [])),
     params(("name" = String, Path, description = "Airbase name")),
-    responses((status = 200, description = "Airbase runways"))
+    responses(
+        (status = 200, description = "Airbase runways"),
+        (status = 502, description = "DCS-gRPC request failed")
+    )
 )]
 pub async fn runways(
     _user: AuthUser,
@@ -95,7 +103,10 @@ pub async fn runways(
     security(("jwt" = [])),
     params(("name" = String, Path, description = "Airbase name")),
     request_body = SetCoalitionPayload,
-    responses((status = 200, description = "Airbase coalition set"))
+    responses(
+        (status = 200, description = "Airbase coalition set"),
+        (status = 502, description = "DCS-gRPC request failed")
+    )
 )]
 pub async fn set_coalition(
     _user: AuthUser,
@@ -106,5 +117,16 @@ pub async fn set_coalition(
     match grpc::set_airbase_coalition(state.grpc.clone(), name, payload.coalition).await {
         Ok(_) => Json(json!({ "success": true })).into_response(),
         Err(e) => err_resp(e.message()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn grpc_error_returns_bad_gateway() {
+        let response = err_resp("test failure");
+        assert_eq!(response.status(), StatusCode::BAD_GATEWAY);
     }
 }
