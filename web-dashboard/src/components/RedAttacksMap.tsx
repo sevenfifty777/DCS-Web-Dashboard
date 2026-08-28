@@ -5,7 +5,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 // Fix for default Leaflet icons in Next.js
-delete (L.Icon.Default.prototype as any)._getIconUrl;
+delete (L.Icon.Default.prototype as L.Icon.Default & { _getIconUrl?: unknown })._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
@@ -28,8 +28,17 @@ interface FootholdAttack {
     unit_types: string[];
 }
 
+interface TrackedUnit {
+    id: string | number;
+    name?: string;
+    type?: string;
+    group?: { name?: string };
+    position?: { lat?: number; lon?: number; alt: number };
+    velocity?: { speed?: number };
+}
+
 export default function RedAttacksMap({ attacks, zones }: { attacks: FootholdAttack[], zones: FootholdZone[] }) {
-    const [units, setUnits] = useState<Record<string, any>>({});
+    const [units, setUnits] = useState<Record<string, TrackedUnit>>({});
 
     useEffect(() => {
         const source = new EventSource('/api/radar/stream');

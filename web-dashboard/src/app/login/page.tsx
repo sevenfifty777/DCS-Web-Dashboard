@@ -6,7 +6,7 @@ import { setToken } from '@/lib/api';
 
 function LoginContent() {
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [formError, setFormError] = useState('');
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -27,15 +27,13 @@ function LoginContent() {
         return;
       }
     }
-    const urlError = searchParams.get('error');
-    if (urlError) {
-      setError(urlError.replace(/\+/g, ' '));
-    }
   }, [searchParams, router]);
+
+  const error = formError || searchParams.get('error')?.replace(/\+/g, ' ') || '';
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setFormError('');
 
     try {
       const res = await fetch('/api/auth', {
@@ -49,10 +47,10 @@ function LoginContent() {
         setToken(data.token);
         router.replace('/');
       } else {
-        setError(data.error || 'Login failed');
+        setFormError(data.error || 'Login failed');
       }
-    } catch (err) {
-      setError('An error occurred during login');
+    } catch {
+      setFormError('An error occurred during login');
     }
   };
 

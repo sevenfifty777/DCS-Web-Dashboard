@@ -601,12 +601,6 @@ pub async fn get_unit_group(channel: Channel, name: String) -> Result<dcs::unit:
     Ok(resp.into_inner())
 }
 
-pub async fn get_unit_position(channel: Channel, name: String) -> Result<dcs::unit::v0::GetPositionResponse, Status> {
-    let mut client = UnitServiceClient::new(channel);
-    let resp = client.get_position(Request::new(dcs::unit::v0::GetPositionRequest { name })).await?;
-    Ok(resp.into_inner())
-}
-
 // --- ControllerService -----------------------------------------------------
 
 pub async fn set_group_roe(channel: Channel, group_name: String, roe_value: i32) -> Result<(), Status> {

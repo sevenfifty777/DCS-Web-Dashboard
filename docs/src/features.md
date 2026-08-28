@@ -45,7 +45,7 @@ A fully integrated GUI for the `DCS-Dynamic-Weather` python script.
 A dedicated tab for managing SRS.
 
 - **Server Process**: View if the SRS process is running and cleanly Start/Stop/Restart it.
-- **Connected Clients**: See a live table of connected players, their coalition, and the radio frequencies they are currently tuned to.
+- **Connected Clients**: See a live table of connected players, their coalition, and the radio frequencies they are currently tuned to. The table refreshes every five seconds, preserves the last successful result during a temporary DCS-gRPC outage, and clears its warning automatically after recovery.
 - **Configuration**: A complete, categorized visual editor for your SRS `server.cfg`.
 
 ## 🌬️ Atmosphere

@@ -1309,6 +1309,9 @@
         "responses": {
           "200": {
             "description": "List of SRS clients"
+          },
+          "503": {
+            "description": "Connected-client data temporarily unavailable"
           }
         },
         "security": [

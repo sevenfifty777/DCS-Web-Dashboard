@@ -1,6 +1,7 @@
 "use client";
 import { useState } from 'react';
 import { apiFetch } from '@/lib/api';
+import { errorMessage } from '@/lib/errors';
 
 export default function TriggersPage() {
   const [flag, setFlag] = useState('');
@@ -18,8 +19,8 @@ export default function TriggersPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setResult(`Flag ${data.flag} is currently set to: ${data.value}`);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(errorMessage(err));
     }
   };
 
@@ -37,8 +38,8 @@ export default function TriggersPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setResult(`Successfully set Flag ${data.flag} to ${data.value}`);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(errorMessage(err));
     }
   };
 

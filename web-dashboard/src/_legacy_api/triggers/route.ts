@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getUserFlag, setUserFlag } from '@/lib/grpc';
+import { errorMessage } from '@/lib/errors';
 
 export async function GET(req: Request) {
   try {
@@ -8,11 +9,11 @@ export async function GET(req: Request) {
     if (!flag) {
       return NextResponse.json({ error: 'Flag parameter is required' }, { status: 400 });
     }
-    const res: any = await getUserFlag(flag);
+    const res = await getUserFlag(flag);
     return NextResponse.json({ flag, value: res.value });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Failed to get flag:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: errorMessage(err) }, { status: 500 });
   }
 }
 
@@ -24,8 +25,8 @@ export async function POST(req: Request) {
     }
     await setUserFlag(flag.toString(), Number(value));
     return NextResponse.json({ success: true, flag, value: Number(value) });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Failed to set flag:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: errorMessage(err) }, { status: 500 });
   }
 }

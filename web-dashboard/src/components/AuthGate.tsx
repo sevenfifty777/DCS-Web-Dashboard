@@ -5,26 +5,24 @@
 // a stored JWT, otherwise we redirect to the login page.
 
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 import { getToken } from '@/lib/api';
 
 export default function AuthGate({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [ready, setReady] = useState(false);
+  const hasToken = useSyncExternalStore(
+    () => () => undefined,
+    () => Boolean(getToken()),
+    () => false,
+  );
 
   useEffect(() => {
-    if (pathname === '/login') {
-      setReady(true);
-      return;
-    }
-    if (!getToken()) {
+    if (pathname !== '/login' && !hasToken) {
       router.replace('/login');
-      return;
     }
-    setReady(true);
-  }, [pathname, router]);
+  }, [hasToken, pathname, router]);
 
-  if (!ready) return null;
+  if (pathname !== '/login' && !hasToken) return null;
   return <>{children}</>;
 }

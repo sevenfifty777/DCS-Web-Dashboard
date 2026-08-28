@@ -39,6 +39,8 @@ eggs/
 .eggs/
 lib/
 lib64/
+!/web-dashboard/src/lib/
+!/web-dashboard/src/lib/**
 parts/
 sdist/
 var/

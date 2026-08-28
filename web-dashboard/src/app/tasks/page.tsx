@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { apiFetch } from '@/lib/api';
 import styles from '../page.module.css';
+import { errorMessage } from '@/lib/errors';
 
 interface Task {
   name: string;
@@ -37,8 +38,8 @@ export default function TasksManager() {
       }
 
       setError(null);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(errorMessage(err));
     } finally {
       setLoading(false);
       setServicesLoading(false);
@@ -46,9 +47,12 @@ export default function TasksManager() {
   };
 
   useEffect(() => {
-    fetchTasks();
+    const initial = setTimeout(fetchTasks, 0);
     const interval = setInterval(fetchTasks, 5000); // Poll every 5s
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(initial);
+      clearInterval(interval);
+    };
   }, []);
 
   const handleAction = async (taskName: string, action: 'start' | 'stop' | 'restart') => {
@@ -78,8 +82,8 @@ export default function TasksManager() {
       
       // Refresh immediately
       fetchTasks();
-    } catch (err: any) {
-      alert(`Error: ${err.message}`);
+    } catch (err: unknown) {
+      alert(`Error: ${errorMessage(err)}`);
     }
   };
 
@@ -100,8 +104,8 @@ export default function TasksManager() {
       if (!res.ok) throw new Error(data.error || 'Failed to execute service action');
       
       fetchTasks();
-    } catch (err: any) {
-      alert(`Error: ${err.message}`);
+    } catch (err: unknown) {
+      alert(`Error: ${errorMessage(err)}`);
     }
   };
 

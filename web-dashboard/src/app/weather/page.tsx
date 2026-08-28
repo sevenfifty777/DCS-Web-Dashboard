@@ -1,8 +1,32 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import Image from 'next/image';
+import { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '@/lib/api';
+import { errorMessage } from '@/lib/errors';
 import styles from './page.module.css';
+
+interface WeatherPreset {
+  name: string;
+  category?: string;
+  description?: string;
+  source?: string;
+  temperature?: number;
+  qnh?: number;
+  visibility?: number;
+  clouds?: { preset?: string; base?: number };
+  wind?: { ground?: { speed?: number; direction?: number } };
+}
+
+interface WeatherPageData {
+  not_configured?: boolean;
+  presets?: Record<string, WeatherPreset>;
+  current_state?: {
+    applied_preset?: string;
+    mission?: string;
+    mission_time?: string;
+  };
+}
 
 function getPresetThumbnail(presetName: string, cloudsPreset: string, source: string = ''): string {
   const n = (presetName || '').toLowerCase();
@@ -102,7 +126,7 @@ function getTimeOfDayIndicator(timeStr: string) {
 }
 
 export default function WeatherPage() {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<WeatherPageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [applying, setApplying] = useState<string | null>(null);
@@ -110,11 +134,7 @@ export default function WeatherPage() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedSource, setSelectedSource] = useState('all');
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const res = await apiFetch('/api/weather');
       const json = await res.json();
@@ -123,12 +143,17 @@ export default function WeatherPage() {
       } else {
         setError(json.error || 'Failed to fetch weather data');
       }
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(errorMessage(err));
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const initial = setTimeout(fetchData, 0);
+    return () => clearTimeout(initial);
+  }, [fetchData]);
 
   const applyPreset = async (presetId: string) => {
     if (!confirm(`Voulez-vous vraiment appliquer le preset ${presetId} ?\n\nCela va redémarrer la mission en cours immédiatement !`)) {
@@ -151,8 +176,8 @@ export default function WeatherPage() {
       } else {
         alert('Erreur : ' + (json.error || 'Erreur inconnue'));
       }
-    } catch (err: any) {
-      alert('Erreur : ' + err.message);
+    } catch (err: unknown) {
+      alert('Erreur : ' + errorMessage(err));
     } finally {
       setApplying(null);
     }
@@ -167,7 +192,7 @@ export default function WeatherPage() {
         <div style={{ padding: '50px 20px', textAlign: 'center', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: 12, marginTop: 40 }}>
           <h2 style={{ color: '#888', marginBottom: 15 }}>☁️ Météo Dynamique Désactivée</h2>
           <p style={{ color: '#666', fontSize: '1.1rem' }}>
-            Le module de météo dynamique n'est pas configuré pour ce serveur.
+            Le module de météo dynamique n&apos;est pas configuré pour ce serveur.
           </p>
         </div>
       </div>
@@ -181,29 +206,31 @@ export default function WeatherPage() {
   const appliedPresetId = currentState?.applied_preset;
   const currentPresetInfo = appliedPresetId ? presets[appliedPresetId] : null;
 
-  const categories = Array.from(new Set(Object.values(presets).map((p: any) => p.category).filter(Boolean))).sort();
+  const categories = Array.from(new Set(
+    Object.values(presets).map((preset) => preset.category).filter((category): category is string => Boolean(category))
+  )).sort();
 
-  const filteredPresets = Object.entries(presets).filter(([id, preset]: [string, any]) => {
+  const filteredPresets = Object.entries(presets).filter(([, preset]) => {
     if (selectedCategory === 'all') return true;
     return preset.category === selectedCategory;
   });
 
-  const atmosxPresets = filteredPresets.filter(([id, preset]: [string, any]) => 
+  const atmosxPresets = filteredPresets.filter(([, preset]) =>
     preset.source === 'atmosx' || preset.name?.toUpperCase().includes('[ATMOS-X]') || preset.name?.toUpperCase().includes('ATX')
   );
 
-  const customPresets = filteredPresets.filter(([id, preset]: [string, any]) => 
+  const customPresets = filteredPresets.filter(([, preset]) =>
     preset.source === 'custom'
   );
   
-  const edPresets = filteredPresets.filter(([id, preset]: [string, any]) => 
+  const edPresets = filteredPresets.filter(([, preset]) =>
     !(preset.source === 'atmosx' || preset.name?.toUpperCase().includes('[ATMOS-X]') || preset.name?.toUpperCase().includes('ATX')) && preset.source !== 'custom'
   );
 
-  const renderPresetCard = ([id, preset]: [string, any]) => (
+  const renderPresetCard = ([id, preset]: [string, WeatherPreset]) => (
     <div key={id} className={styles.card}>
       <div className={styles.cardImageWrapper}>
-        <img src={getPresetThumbnail(preset.name, preset.clouds?.preset, preset.source)} alt={preset.name} className={styles.cardImage} />
+        <Image src={getPresetThumbnail(preset.name, preset.clouds?.preset || '', preset.source)} alt={preset.name} className={styles.cardImage} width={320} height={180} />
       </div>
       <div className={styles.cardCategory}>{preset.category}</div>
       <h4 className={styles.cardTitle}>{preset.name}</h4>
@@ -311,7 +338,7 @@ export default function WeatherPage() {
                 }}
               >
                 <option value="all">Toutes les catégories</option>
-                {categories.map((cat: any) => (
+                {categories.map((cat) => (
                   <option key={cat} value={cat}>{cat}</option>
                 ))}
               </select>

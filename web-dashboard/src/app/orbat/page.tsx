@@ -22,11 +22,11 @@ type StaticObj = {
   name: string;
   type: string;
   coalition: number;
-  position: any;
+  position: { lat?: number; lon?: number; alt?: number };
 };
 
 type CoalitionData = {
-  bullseye: any;
+  bullseye: { lat: number; lon: number } | null;
   groups: Group[];
   players: Unit[];
   statics: StaticObj[];
@@ -48,7 +48,6 @@ export default function OrbatPage() {
   };
 
   const loadData = async () => {
-    setLoading(true);
     try {
       // Helper to fetch all data for a coalition (2 = Red, 3 = Blue)
       const fetchCoalition = async (c: number): Promise<CoalitionData> => {
@@ -79,7 +78,8 @@ export default function OrbatPage() {
   };
 
   useEffect(() => {
-    loadData();
+    const initial = setTimeout(loadData, 0);
+    return () => clearTimeout(initial);
   }, []);
 
   const renderSide = (sideName: string, color: string, data: CoalitionData | null, prefix: string) => {
@@ -89,7 +89,7 @@ export default function OrbatPage() {
     const groundGroups = data.groups.filter(g => g.category === 3);
     const navalGroups = data.groups.filter(g => g.category === 4);
 
-    const renderTree = (title: string, count: number, key: string, items: any[], renderItem: (item: any, idx: number) => React.ReactNode) => (
+    const renderTree = <T,>(title: string, count: number, key: string, items: T[], renderItem: (item: T, idx: number) => React.ReactNode) => (
       <div style={{ marginBottom: '10px' }}>
         <div 
           onClick={() => toggleCat(key)}

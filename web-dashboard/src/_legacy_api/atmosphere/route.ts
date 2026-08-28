@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getWind, getTemperatureAndPressure } from '@/lib/grpc';
+import { errorMessage } from '@/lib/errors';
 
 export async function GET(req: Request) {
   try {
@@ -13,7 +14,7 @@ export async function GET(req: Request) {
     }
 
     // Call both gRPC endpoints simultaneously
-    const [windRes, tempRes]: any = await Promise.all([
+    const [windRes, tempRes] = await Promise.all([
       getWind(lat, lon, alt),
       getTemperatureAndPressure(lat, lon, alt)
     ]);
@@ -28,8 +29,8 @@ export async function GET(req: Request) {
         pressure: tempRes.pressure
       }
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Failed to get atmosphere data:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: errorMessage(err) }, { status: 500 });
   }
 }

@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import { missionClient } from '@/lib/grpc';
+import { streamUnits } from '@/lib/grpc';
+import { errorCode } from '@/lib/errors';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const activeCalls: any[] = [];
+  const activeCalls: ReturnType<typeof streamUnits>[] = [];
 
   const stream = new ReadableStream({
     start(controller) {
@@ -18,35 +19,33 @@ export async function GET() {
         ];
 
         categories.forEach(category => {
-          const call = missionClient.StreamUnits({ poll_rate: 1, max_backoff: 1, category });
+          const call = streamUnits(category);
           activeCalls.push(call);
           
-          call.on('data', (data: any) => {
+          call.on('data', (data: unknown) => {
             try {
               const msg = `data: ${JSON.stringify(data)}\n\n`;
               controller.enqueue(new TextEncoder().encode(msg));
-            } catch (e) {
+            } catch {
               call.cancel();
             }
           });
           
-          call.on('end', () => {});
-          
-          call.on('error', (err: any) => {
-            if (err.code !== 1) { // 1 is CANCELLED
+          call.on('error', (err: unknown) => {
+            if (errorCode(err) !== '1' && errorCode(err) !== 'CANCELLED') {
               console.error(`StreamUnits error for ${category}:`, err);
             }
           });
         });
       } catch (err) {
         console.error('Failed to start StreamUnits:', err);
-        try { controller.close(); } catch(e) {}
+        try { controller.close(); } catch { /* already closed */ }
       }
     },
     cancel() {
       console.log('Client disconnected from radar stream');
       activeCalls.forEach(call => {
-        try { call.cancel(); } catch(e) {}
+        try { call.cancel(); } catch { /* already cancelled */ }
       });
     }
   });

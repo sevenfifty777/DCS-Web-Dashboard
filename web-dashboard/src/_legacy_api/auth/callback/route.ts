@@ -93,7 +93,7 @@ export async function GET(req: Request) {
 
     return response;
 
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Discord Auth Error:', err);
     return NextResponse.redirect(new URL('/login?error=Authentication+Failed', baseUrl));
   }

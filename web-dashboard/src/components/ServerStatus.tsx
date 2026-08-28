@@ -2,8 +2,13 @@
 import { useEffect, useState } from 'react';
 import styles from './ServerStatus.module.css';
 
+interface HealthData {
+  health?: { alive?: boolean };
+  version?: { version?: string };
+}
+
 export default function ServerStatus() {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<HealthData | null>(null);
 
   useEffect(() => {
     fetch('/api/health')

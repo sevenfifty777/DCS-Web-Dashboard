@@ -20,7 +20,7 @@ export default function ServerPerformance() {
         if (data.simulation_fps) {
           setFps(Math.round(data.simulation_fps.average));
         }
-      } catch (err) {
+      } catch {
         // ignore
       }
     };
@@ -51,7 +51,7 @@ export default function ServerPerformance() {
           setPrevModelTime(data.model_time);
           setPrevRealTime(data.real_time);
         }
-      } catch (err) {
+      } catch {
         // ignore
       }
     };

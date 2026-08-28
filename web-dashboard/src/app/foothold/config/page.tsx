@@ -5,14 +5,29 @@ import { apiFetch } from '@/lib/api';
 import styles from './page.module.css';
 import Link from 'next/link';
 import schemaData from '@/data/foothold-gui-schema.json';
+import { errorMessage } from '@/lib/errors';
 
-type ConfigValues = Record<string, any>;
+type ConfigValue = string | number | boolean | null;
+type ConfigValues = Record<string, ConfigValue>;
 type MetadataValues = Record<string, { help?: string; choices: string[] }>;
 
 type ConfigResponse = {
     values: ConfigValues;
     metadata: MetadataValues;
 };
+
+interface SchemaChoice {
+    Display: string;
+    Literal?: string;
+}
+
+interface SchemaEntry {
+    Label?: string;
+    Help?: string | null;
+    IsEmpty?: boolean;
+    ControlType?: string | null;
+    Choices?: SchemaChoice[];
+}
 
 export default function FootholdConfigPage() {
     const [config, setConfig] = useState<ConfigValues>({});
@@ -32,8 +47,8 @@ export default function FootholdConfigPage() {
                 setConfig(data.values);
                 setOriginalConfig(data.values);
                 setMetadata(data.metadata || {});
-            } catch (e: any) {
-                setError(e.message || 'Error loading configuration');
+            } catch (e: unknown) {
+                setError(errorMessage(e, 'Error loading configuration'));
             } finally {
                 setIsLoading(false);
             }
@@ -69,22 +84,22 @@ export default function FootholdConfigPage() {
             setOriginalConfig(config);
             setSuccessMessage("Configuration saved successfully!");
             setTimeout(() => setSuccessMessage(null), 3000);
-        } catch (e: any) {
-            setError(e.message || 'Error saving configuration');
+        } catch (e: unknown) {
+            setError(errorMessage(e, 'Error saving configuration'));
         } finally {
             setIsSaving(false);
         }
     };
 
-    const handleChange = (key: string, value: any) => {
+    const handleChange = (key: string, value: ConfigValue) => {
         setConfig(prev => ({ ...prev, [key]: value }));
     };
 
     if (isLoading) return <div className={styles.loading}>Loading Configuration...</div>;
 
-    const entries = (schemaData as any).Entries || {};
-    const categoryOrder: string[] = (schemaData as any).CategoryOrder || [];
-    const categoryLayout = (schemaData as any).CategoryLayouts || {};
+    const entries = schemaData.Entries as Record<string, SchemaEntry>;
+    const categoryOrder = schemaData.CategoryOrder;
+    const categoryLayout = schemaData.CategoryLayouts as Record<string, { Items: string[] }>;
     
     return (
         <div className={styles.container}>
@@ -129,8 +144,9 @@ export default function FootholdConfigPage() {
                                     const helpText = meta.Help || dynamicMeta.help;
                                     
                                     // Combine schema choices with dynamic choices
-                                    const hasSchemaChoices = meta.Choices && meta.Choices.length > 0;
-                                    const choices = hasSchemaChoices ? meta.Choices.map((c: any) => {
+                                    const schemaChoices = meta.Choices ?? [];
+                                    const hasSchemaChoices = schemaChoices.length > 0;
+                                    const choices = hasSchemaChoices ? schemaChoices.map((c) => {
                                         return c.Literal ? c.Literal.replace(/^"|"$/g, '') : c.Display;
                                     }) : dynamicMeta.choices;
                                     
@@ -163,7 +179,7 @@ export default function FootholdConfigPage() {
                                                                             <input
                                                                                 type={typeof config[tKey] === 'number' ? 'number' : 'text'}
                                                                                 className={styles.input}
-                                                                                value={config[tKey]}
+                                                                                value={String(config[tKey] ?? '')}
                                                                                 onChange={(e) => {
                                                                                     const v = e.target.type === 'number' ? parseFloat(e.target.value) : e.target.value;
                                                                                     handleChange(tKey, v);
@@ -231,7 +247,7 @@ export default function FootholdConfigPage() {
                                                             type="number" 
                                                             className={styles.input} 
                                                             style={{ width: '100px' }}
-                                                            value={config[`${key}.1`]} 
+                                                            value={String(config[`${key}.1`] ?? '')}
                                                             onChange={(e) => handleChange(`${key}.1`, parseFloat(e.target.value))} 
                                                         />
                                                     </div>
@@ -241,7 +257,7 @@ export default function FootholdConfigPage() {
                                                             type="number" 
                                                             className={styles.input} 
                                                             style={{ width: '100px' }}
-                                                            value={config[`${key}.2`]} 
+                                                            value={String(config[`${key}.2`] ?? '')}
                                                             onChange={(e) => handleChange(`${key}.2`, parseFloat(e.target.value))} 
                                                         />
                                                     </div>
@@ -289,14 +305,14 @@ export default function FootholdConfigPage() {
                                                 <input 
                                                     type="number"
                                                     className={styles.input}
-                                                    value={value}
+                                                    value={String(value ?? '')}
                                                     onChange={(e) => handleChange(key, parseFloat(e.target.value))}
                                                 />
                                             ) : (
                                                 <input 
                                                     type="text"
                                                     className={styles.input}
-                                                    value={value}
+                                                    value={String(value ?? '')}
                                                     onChange={(e) => handleChange(key, e.target.value)}
                                                 />
                                             )}

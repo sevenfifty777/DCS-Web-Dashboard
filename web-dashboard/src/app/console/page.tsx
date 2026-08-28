@@ -1,6 +1,7 @@
 "use client";
 import { useState } from 'react';
 import { apiFetch } from '@/lib/api';
+import { errorMessage } from '@/lib/errors';
 
 export default function ConsolePage() {
   const [lua, setLua] = useState('return trigger.misc.getUserFlag("100")');
@@ -28,8 +29,8 @@ export default function ConsolePage() {
           setResult(data.result);
         }
       }
-    } catch (err: any) {
-      setResult(`Network Error: ${err.message}`);
+    } catch (err: unknown) {
+      setResult(`Network Error: ${errorMessage(err)}`);
     }
     setLoading(false);
   };

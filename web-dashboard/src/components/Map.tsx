@@ -1,15 +1,14 @@
 "use client";
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, LayersControl, Circle, Polygon, Polyline, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { apiFetch } from '@/lib/api';
 import UnitPopup from './UnitPopup';
-import AirbasePopup from './AirbasePopup';
 import MapToolbar from './MapToolbar';
 
 // Fix for default Leaflet icons in Next.js
-delete (L.Icon.Default.prototype as any)._getIconUrl;
+delete (L.Icon.Default.prototype as L.Icon.Default & { _getIconUrl?: unknown })._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
@@ -17,6 +16,87 @@ L.Icon.Default.mergeOptions({
 });
 
 const iconCache: Record<string, L.DivIcon> = {};
+
+interface MapUnit {
+  id: string | number;
+  name: string;
+  type: string;
+  coalition: string;
+  playerName?: string;
+  player_name?: string;
+  position: { lat: number; lon: number; alt: number };
+  velocity?: { speed?: number };
+  group?: { category?: string };
+}
+
+interface MapMark {
+  id: number;
+  text?: string;
+  coalition?: string;
+  time: number;
+  position?: { lat: number; lon: number };
+}
+
+interface MapAirbase {
+  name?: string;
+  display_name?: string;
+  callsign?: string;
+  category?: number;
+  coalition: string;
+  position?: { lat: number; lon: number };
+}
+
+interface MapZone {
+  name?: string;
+  lat: number;
+  lon: number;
+  type?: number;
+  radius?: number;
+  side?: number;
+  level?: number;
+  hidden?: boolean;
+  color: number[];
+  verticies?: { lat: number; lon: number }[];
+}
+
+interface Wreck {
+  id: string | number;
+  lat: number;
+  lon: number;
+  coalition: number;
+  unit_type: string;
+  time: number;
+}
+
+interface ActiveLaser {
+  id: string | number;
+  sourceUnit: string;
+  target: { lat: number; lng: number };
+  type: string;
+}
+
+interface SpawnSettings {
+  country: number;
+  name: string;
+  unitType: string;
+  heading: number;
+  count: number;
+}
+
+interface DrawingEventsProps {
+  drawingMode: string | null;
+  setDrawingMode: React.Dispatch<React.SetStateAction<string | null>>;
+  drawingStart: { lat: number; lon: number } | null;
+  setDrawingStart: React.Dispatch<React.SetStateAction<{ lat: number; lon: number } | null>>;
+  setMyMarks: React.Dispatch<React.SetStateAction<number[]>>;
+  refreshMarks: () => void;
+  markText: string;
+  smokeColor: number;
+  jtacMode: { unitName: string; type: 'lase' | 'ir'; code?: number } | null;
+  setJtacMode: React.Dispatch<React.SetStateAction<{ unitName: string; type: 'lase' | 'ir'; code?: number } | null>>;
+  setActiveLasers: React.Dispatch<React.SetStateAction<ActiveLaser[]>>;
+  spawnSettings: SpawnSettings;
+}
 
 const getIcon = (color: string, category: string, isPlayer: boolean = false) => {
   const key = `${color}-${category}-${isPlayer}`;
@@ -52,7 +132,7 @@ const getIcon = (color: string, category: string, isPlayer: boolean = false) => 
 };
 
 const parsePathOptions = (colorArr: number[], isDrawing: boolean = false) => {
-  const baseOpts: any = { color: 'white', fillColor: 'white', fillOpacity: 0.15, weight: 2 };
+  const baseOpts: L.PathOptions = { color: 'white', fillColor: 'white', fillOpacity: 0.15, weight: 2 };
   if (isDrawing) baseOpts.className = 'pointer-events-none';
   if (!colorArr || colorArr.length < 4) return baseOpts;
   
@@ -70,7 +150,7 @@ const parsePathOptions = (colorArr: number[], isDrawing: boolean = false) => {
   };
 };
 
-const DrawingEvents = ({ drawingMode, setDrawingMode, drawingStart, setDrawingStart, setMyMarks, refreshMarks, markText, smokeColor, jtacMode, setJtacMode, setActiveLasers, spawnSettings }: any) => {
+const DrawingEvents = ({ drawingMode, setDrawingMode, drawingStart, setDrawingStart, setMyMarks, refreshMarks, markText, smokeColor, jtacMode, setJtacMode, setActiveLasers, spawnSettings }: DrawingEventsProps) => {
   useMapEvents({
     click: async (e) => {
       if (!drawingMode) return;
@@ -86,7 +166,7 @@ const DrawingEvents = ({ drawingMode, setDrawingMode, drawingStart, setDrawingSt
           });
           const data = await res.json();
           if (data.spot_id) {
-            setActiveLasers((prev: any) => [...prev, { id: data.spot_id, sourceUnit: jtacMode.unitName, target: {lat, lng}, type: drawingMode }]);
+            setActiveLasers((prev) => [...prev, { id: data.spot_id, sourceUnit: jtacMode.unitName, target: {lat, lng}, type: drawingMode }]);
           }
         } catch(err) { console.error(err); }
         setDrawingMode(null);
@@ -131,7 +211,7 @@ const DrawingEvents = ({ drawingMode, setDrawingMode, drawingStart, setDrawingSt
          try {
            const res = await apiFetch('/api/trigger/marks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
            const data = await res.json();
-           if (data.id) setMyMarks((prev: any) => [...prev, data.id]);
+           if (data.id) setMyMarks((prev) => [...prev, data.id]);
            setDrawingMode(null);
            refreshMarks();
          } catch(err) { console.error(err); }
@@ -146,7 +226,7 @@ const DrawingEvents = ({ drawingMode, setDrawingMode, drawingStart, setDrawingSt
           try {
             const res = await apiFetch('/api/trigger/marks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
             const data = await res.json();
-            if (data.id) setMyMarks((prev: any) => [...prev, data.id]);
+            if (data.id) setMyMarks((prev) => [...prev, data.id]);
             refreshMarks();
           } catch(err) { console.error(err); }
           setDrawingStart(null);
@@ -160,16 +240,13 @@ const DrawingEvents = ({ drawingMode, setDrawingMode, drawingStart, setDrawingSt
 
 export default function Map() {
 
-  const [units, setUnits] = useState<Record<string, any>>({});
-  const [marks, setMarks] = useState<any[]>([]);
-  const [airbases, setAirbases] = useState<any[]>([]);
-  const [zones, setZones] = useState<any[]>([]);
+  const [units, setUnits] = useState<Record<string, MapUnit>>({});
+  const [marks, setMarks] = useState<MapMark[]>([]);
+  const [airbases, setAirbases] = useState<MapAirbase[]>([]);
+  const [zones, setZones] = useState<MapZone[]>([]);
   
   const [zoneMode, setZoneMode] = useState<'generic' | 'foothold' | 'graveyard'>('generic');
-  const [wrecks, setWrecks] = useState<any[]>([]);
-  
-  const [showCombatEvents, setShowCombatEvents] = useState(false);
-  const [liveEvents, setLiveEvents] = useState<any[]>([]);
+  const [wrecks, setWrecks] = useState<Wreck[]>([]);
 
   // Drawing state
   const [drawingMode, setDrawingMode] = useState<string | null>(null);
@@ -178,12 +255,11 @@ export default function Map() {
   const [markText, setMarkText] = useState('Dashboard Mark');
   const [smokeColor, setSmokeColor] = useState(2);
   const [jtacMode, setJtacMode] = useState<{ unitName: string, type: 'lase' | 'ir', code?: number } | null>(null);
-  const [activeLasers, setActiveLasers] = useState<any[]>([]);
+  const [activeLasers, setActiveLasers] = useState<ActiveLaser[]>([]);
   const [spawnSettings, setSpawnSettings] = useState({ country: 0, name: 'Spawned Group', unitType: 'BTR-80', heading: 0, count: 1 });
   
   useEffect(() => {
     if (zoneMode === 'graveyard') {
-      setZones([]);
       return;
     }
     apiFetch(zoneMode === 'foothold' ? '/api/zones/foothold' : '/api/zones')
@@ -217,8 +293,6 @@ export default function Map() {
     if (zoneMode === 'graveyard') {
       fetchGraveyard();
       interval = setInterval(fetchGraveyard, 5000); // Poll every 5s for live updates
-    } else {
-      setWrecks([]);
     }
 
     return () => {
@@ -386,6 +460,7 @@ export default function Map() {
           jtacMode={jtacMode}
           setJtacMode={setJtacMode}
           setActiveLasers={setActiveLasers}
+          spawnSettings={spawnSettings}
         />
 
         <LayersControl position="bottomleft">
@@ -415,10 +490,10 @@ export default function Map() {
           </LayersControl.BaseLayer>
         </LayersControl>
 
-        {Array.isArray(zones) && zones.map((zone, idx) => {
+        {zoneMode !== 'graveyard' && zones.map((zone, idx) => {
           if (!zone || !zone.lat || !zone.lon) return null;
           
-          let pathOptions: any = { color: 'white', fillColor: 'white', fillOpacity: 0.15, weight: 2, className: drawingMode ? 'pointer-events-none' : '' };
+          let pathOptions: L.PathOptions = { color: 'white', fillColor: 'white', fillOpacity: 0.15, weight: 2, className: drawingMode ? 'pointer-events-none' : '' };
           if (zoneMode === 'foothold') {
             let color = '#6c757d';
             let fillColor = '#6c757d';
@@ -452,9 +527,9 @@ export default function Map() {
               </Circle>
             );
           } else if (zone.type === 2 && zone.verticies && zone.verticies.length > 0) {
-            const positions = zone.verticies.map((v: any) => [v.lat, v.lon]);
+            const positions: [number, number][] = zone.verticies.map((v) => [v.lat, v.lon]);
             return (
-              <Polygon key={`zone-${idx}`} positions={positions as any} pathOptions={pathOptions}>
+              <Polygon key={`zone-${idx}`} positions={positions} pathOptions={pathOptions}>
                 <Popup>
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: '#000' }}>
                     <strong>{zone.name || 'Zone'}</strong><br/>
@@ -541,7 +616,7 @@ export default function Map() {
           );
         })}
 
-        {wrecks.map((wreck) => {
+        {zoneMode === 'graveyard' && wrecks.map((wreck) => {
           let bgColor = 'rgba(80, 80, 80, 0.7)';
           if (wreck.coalition === 1) bgColor = 'rgba(220, 53, 69, 0.7)'; // RED
           else if (wreck.coalition === 2) bgColor = 'rgba(13, 110, 253, 0.7)'; // BLUE
@@ -549,8 +624,8 @@ export default function Map() {
           const wreckIcon = new L.DivIcon({
             className: 'custom-wreck-icon',
             html: `<div style="background-color: ${bgColor}; width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: white; border-radius: 2px; border: 1px solid rgba(255,255,255,0.5);">☠</div>`,
-            iconSize: [14, 14] as any,
-            iconAnchor: [7, 7] as any
+            iconSize: [14, 14],
+            iconAnchor: [7, 7]
           });
 
           return (
@@ -583,7 +658,7 @@ export default function Map() {
             html: `<div style="background-color: ${bgColor}; color: white; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-family: monospace; white-space: nowrap; border: 1px solid rgba(255,255,255,0.3); box-shadow: 0 2px 4px rgba(0,0,0,0.5);">
               ${mark.text || 'Mark'}
             </div>`,
-            iconSize: [0, 0] as any,
+            iconSize: [0, 0],
             iconAnchor: [0, 0]
           });
 
@@ -621,8 +696,8 @@ export default function Map() {
             html: `<div style="background-color: rgba(10,10,10,0.9); border-radius: 50%; border: 2px solid ${color}; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.8);">
               ${symbol}
             </div>`,
-            iconSize: [28, 28] as any,
-            iconAnchor: [14, 14] as any
+            iconSize: [28, 28],
+            iconAnchor: [14, 14]
           });
 
           return (

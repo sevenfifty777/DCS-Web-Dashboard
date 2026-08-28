@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { customEval } from '@/lib/grpc';
+import { errorMessage } from '@/lib/errors';
 
 export async function POST(req: Request) {
   try {
@@ -7,10 +8,10 @@ export async function POST(req: Request) {
     if (!lua) {
       return NextResponse.json({ error: 'Lua script is required' }, { status: 400 });
     }
-    const res: any = await customEval(lua);
+    const res = await customEval(lua);
     return NextResponse.json({ result: res.json });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Failed to eval lua:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: errorMessage(err) }, { status: 500 });
   }
 }

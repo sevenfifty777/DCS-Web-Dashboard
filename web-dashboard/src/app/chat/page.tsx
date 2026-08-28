@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { apiFetch } from '@/lib/api';
 import styles from '../page.module.css';
+import { errorMessage } from '@/lib/errors';
 
 export default function Chat() {
   const [message, setMessage] = useState('');
@@ -33,8 +34,8 @@ export default function Chat() {
       } else {
         setStatus(`Error: ${data.error}`);
       }
-    } catch (err: any) {
-      setStatus(`Error: ${err.message}`);
+    } catch (err: unknown) {
+      setStatus(`Error: ${errorMessage(err)}`);
     }
   };
 

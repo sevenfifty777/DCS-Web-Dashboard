@@ -1,36 +1,36 @@
-import { missionClient } from '@/lib/grpc';
+import { streamMissionEvents } from '@/lib/grpc';
+import { errorCode } from '@/lib/errors';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   const stream = new ReadableStream({
     start(controller) {
-      let call: any;
+      let call: ReturnType<typeof streamMissionEvents> | undefined;
       try {
-        call = missionClient.StreamEvents({});
-        
-        call.on('data', (data: any) => {
+        call = streamMissionEvents();
+        call.on('data', (data: unknown) => {
           try {
             const msg = `data: ${JSON.stringify(data)}\n\n`;
             controller.enqueue(new TextEncoder().encode(msg));
-          } catch (e) {
-            call.cancel();
+          } catch {
+            call?.cancel();
           }
         });
         
         call.on('end', () => {
-          try { controller.close(); } catch(e) {}
+          try { controller.close(); } catch { /* already closed */ }
         });
         
-        call.on('error', (err: any) => {
-          if (err.code !== 1) { // 1 = CANCELLED
+        call.on('error', (err: unknown) => {
+          if (errorCode(err) !== '1' && errorCode(err) !== 'CANCELLED') {
             console.error('StreamEvents error:', err);
           }
-          try { controller.close(); } catch(e) {}
+          try { controller.close(); } catch { /* already closed */ }
         });
       } catch (err) {
         console.error('Failed to start StreamEvents:', err);
-        try { controller.close(); } catch(e) {}
+        try { controller.close(); } catch { /* already closed */ }
       }
     },
     cancel() {

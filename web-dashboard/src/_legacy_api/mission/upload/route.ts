@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
+import { errorMessage } from '@/lib/errors';
 
 export async function POST(req: Request) {
   try {
@@ -11,7 +12,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    if (!file.name.endsWith('.miz')) {
+    const safeFileName = path.basename(file.name);
+    if (safeFileName !== file.name || !safeFileName.toLowerCase().endsWith('.miz')) {
       return NextResponse.json({ error: 'Only .miz files are allowed' }, { status: 400 });
     }
 
@@ -23,7 +25,7 @@ export async function POST(req: Request) {
     // Ensure the directory exists
     await fs.mkdir(uploadDir, { recursive: true });
 
-    const filePath = path.join(uploadDir, file.name);
+    const filePath = path.join(uploadDir, safeFileName);
     
     // Convert File to ArrayBuffer and write to disk
     const arrayBuffer = await file.arrayBuffer();
@@ -35,8 +37,8 @@ export async function POST(req: Request) {
       message: 'File uploaded successfully',
       file_name: filePath
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('File upload failed:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: errorMessage(err) }, { status: 500 });
   }
 }

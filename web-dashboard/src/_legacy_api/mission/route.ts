@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getMissionName, getPaused, setPaused, stopMission, reloadCurrentMission, loadMission, hookEval } from '@/lib/grpc';
+import { getMissionName, getPaused, setPaused, stopMission, reloadCurrentMission, loadMission } from '@/lib/grpc';
+import { errorMessage } from '@/lib/errors';
 
 import fs from 'fs/promises';
 import path from 'path';
@@ -17,7 +18,7 @@ async function getServerSettings() {
         const ipRes = await fetch('https://api.ipify.org?format=json', { signal: AbortSignal.timeout(2000) });
         const ipData = await ipRes.json();
         cachedIp = ipData.ip;
-      } catch (e) {
+      } catch {
         cachedIp = 'Unknown IP';
       }
     }
@@ -36,7 +37,7 @@ async function getServerSettings() {
     };
 
     const missionListBlockMatch = content.match(/\["missionList"\]\s*=\s*\{([\s\S]*?)\}/);
-    let serverQueue: string[] = [];
+    const serverQueue: string[] = [];
     if (missionListBlockMatch) {
       const block = missionListBlockMatch[1];
       const missionRegex = /\[\d+\]\s*=\s*"(.*?)"/g;
@@ -55,7 +56,7 @@ async function getServerSettings() {
 
 export async function GET() {
   try {
-    const [nameRes, pausedRes, settings]: any = await Promise.all([
+    const [nameRes, pausedRes, settings] = await Promise.all([
       getMissionName().catch(() => ({ name: 'Unknown' })),
       getPaused().catch(() => ({ paused: false })),
       getServerSettings()
@@ -69,7 +70,7 @@ export async function GET() {
       uploadedMissions = files
         .filter(f => f.endsWith('.miz'))
         .map(f => path.join(uploadDir, f));
-    } catch(e) {
+    } catch {
       // directory might not exist yet
     }
 
@@ -80,9 +81,9 @@ export async function GET() {
       queue: settings.serverQueue,
       uploadedMissions: uploadedMissions
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Failed to get mission status:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: errorMessage(err) }, { status: 500 });
   }
 }
 
@@ -155,8 +156,8 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ success: true, action });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Failed to execute mission action:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: errorMessage(err) }, { status: 500 });
   }
 }

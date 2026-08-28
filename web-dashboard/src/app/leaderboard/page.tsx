@@ -34,9 +34,12 @@ export default function LeaderboardPage() {
   };
 
   useEffect(() => {
-    fetchFootholdData();
+    const initial = setTimeout(fetchFootholdData, 0);
     const interval = setInterval(fetchFootholdData, 10000); // refresh every 10s
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(initial);
+      clearInterval(interval);
+    };
   }, []);
 
   if (loading) return <div style={{ padding: '2rem' }}>Loading leaderboard...</div>;

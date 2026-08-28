@@ -1,20 +1,24 @@
 "use client";
 import { useState } from 'react';
-// @ts-ignore
 import * as mgrs from 'mgrs';
 import { apiFetch } from '@/lib/api';
+import { errorMessage } from '@/lib/errors';
+
+interface AtmosphereData {
+  coords: { lat: number; lon: number; alt: number };
+  wind: { heading: number; strength: number };
+  atmosphere: { temperature: number; pressure: number };
+}
 
 export default function AtmospherePage() {
   const [inputStr, setInputStr] = useState("Lat Long Precise: N 41°36'56.36\"   E 40°38'05.65\"\nAltitude: 0 m / 0 feet");
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<AtmosphereData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const parseCoordinates = (input: string): { lat: number, lon: number, alt?: number } | null => {
     const text = input.trim().toUpperCase();
     
-    let lat: number | null = null;
-    let lon: number | null = null;
     let alt: number = 0;
 
     // Try to parse altitude anywhere in the string (e.g. "Altitude: 123 m" or "123m")
@@ -28,10 +32,10 @@ export default function AtmospherePage() {
     const dmsRegex = /([NS])\s*(\d+)°\s*(\d+)'\s*([\d.]+)"\s*([EW])\s*(\d+)°\s*(\d+)'\s*([\d.]+)"/i;
     const dmsMatch = text.match(dmsRegex);
     if (dmsMatch) {
-      lat = parseInt(dmsMatch[2]) + parseInt(dmsMatch[3])/60 + parseFloat(dmsMatch[4])/3600;
+      let lat = parseInt(dmsMatch[2]) + parseInt(dmsMatch[3])/60 + parseFloat(dmsMatch[4])/3600;
       if (dmsMatch[1] === 'S') lat = -lat;
 
-      lon = parseInt(dmsMatch[6]) + parseInt(dmsMatch[7])/60 + parseFloat(dmsMatch[8])/3600;
+      let lon = parseInt(dmsMatch[6]) + parseInt(dmsMatch[7])/60 + parseFloat(dmsMatch[8])/3600;
       if (dmsMatch[5] === 'W') lon = -lon;
       
       return { lat, lon, alt };
@@ -41,10 +45,10 @@ export default function AtmospherePage() {
     const dmmRegex = /([NS])\s*(\d+)°\s*([\d.]+)'\s*([EW])\s*(\d+)°\s*([\d.]+)'/i;
     const dmmMatch = text.match(dmmRegex);
     if (dmmMatch) {
-      lat = parseInt(dmmMatch[2]) + parseFloat(dmmMatch[3])/60;
+      let lat = parseInt(dmmMatch[2]) + parseFloat(dmmMatch[3])/60;
       if (dmmMatch[1] === 'S') lat = -lat;
 
-      lon = parseInt(dmmMatch[5]) + parseFloat(dmmMatch[6])/60;
+      let lon = parseInt(dmmMatch[5]) + parseFloat(dmmMatch[6])/60;
       if (dmmMatch[4] === 'W') lon = -lon;
       
       return { lat, lon, alt };
@@ -58,7 +62,7 @@ export default function AtmospherePage() {
         const mgrsStr = `${mgrsBlockMatch[1]}${mgrsBlockMatch[2]}${mgrsBlockMatch[3]}${mgrsBlockMatch[4]}${mgrsBlockMatch[5]}`;
         const pt = mgrs.toPoint(mgrsStr);
         return { lat: pt[1], lon: pt[0], alt };
-      } catch (e) {}
+      } catch { /* try the next supported coordinate format */ }
     }
 
     // Try exact MGRS without prefix (e.g. 37 T FG 36212 08395)
@@ -69,7 +73,7 @@ export default function AtmospherePage() {
         const mgrsStr = `${mgrsExactMatch[1]}${mgrsExactMatch[2]}${mgrsExactMatch[3]}${mgrsExactMatch[4]}${mgrsExactMatch[5]}`;
         const pt = mgrs.toPoint(mgrsStr);
         return { lat: pt[1], lon: pt[0], alt };
-      } catch (e) {}
+      } catch { /* try the next supported coordinate format */ }
     }
 
     // Try Decimal Degrees (e.g. 41.615555, 40.634722)
@@ -99,8 +103,8 @@ export default function AtmospherePage() {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error);
       setData({ ...json, coords });
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(errorMessage(err));
     }
     setLoading(false);
   };

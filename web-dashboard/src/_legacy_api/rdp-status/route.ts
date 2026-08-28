@@ -4,15 +4,25 @@ import { promisify } from 'util';
 
 const execAsync = promisify(exec);
 
+function commandOutput(error: unknown): string {
+  if (typeof error !== 'object' || error === null) return '';
+  const result = error as { stdout?: unknown; stderr?: unknown };
+  return String(result.stdout ?? result.stderr ?? '');
+}
+
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
     // Execute the Windows 'query user' command
     // If no users are found, it throws an error but outputs 'No User exists for *'
-    const result = await execAsync('quser').catch((e: any) => e);
-    
-    const output = (result.stdout || result.stderr || '').toString();
+    let output: string;
+    try {
+      const result = await execAsync('quser');
+      output = result.stdout || result.stderr || '';
+    } catch (error: unknown) {
+      output = commandOutput(error);
+    }
     
     if (output.includes('No User exists')) {
       return NextResponse.json({ active: false, users: [] });
@@ -57,7 +67,7 @@ export async function GET() {
       users: activeUsers 
     });
 
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Failed to get RDP status:', err);
     // If the command fails for a different reason, return false gracefully
     return NextResponse.json({ active: false, users: [] });

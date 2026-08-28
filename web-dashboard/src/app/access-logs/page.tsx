@@ -2,8 +2,16 @@
 import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
 
+interface AccessLog {
+  timestamp: string;
+  username: string;
+  userId: string;
+  status: string;
+  reason?: string;
+}
+
 export default function AccessLogsPage() {
-  const [logs, setLogs] = useState<any[]>([]);
+  const [logs, setLogs] = useState<AccessLog[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchLogs = () => {

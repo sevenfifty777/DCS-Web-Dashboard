@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server';
 import { getPlayers } from '@/lib/grpc';
+import { errorMessage } from '@/lib/errors';
 
 export async function GET() {
   try {
-    const response: any = await getPlayers();
+    const response = await getPlayers();
     return NextResponse.json({ players: response.players || [] });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: 'Failed to fetch players', details: error.message },
+      { error: 'Failed to fetch players', details: errorMessage(error) },
       { status: 500 }
     );
   }

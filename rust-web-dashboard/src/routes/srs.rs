@@ -6,11 +6,27 @@ use axum::{
 };
 use serde_json::{json, Value};
 
-use crate::state::AppState;
 use crate::auth::AuthUser;
+use crate::state::AppState;
+
+const SRS_CLIENTS_UNAVAILABLE_MESSAGE: &str =
+    "Connected-client data is temporarily unavailable. Please try again shortly.";
 
 fn err_500(msg: &str) -> Response {
     (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": msg }))).into_response()
+}
+
+fn srs_clients_unavailable(status: tonic::Status) -> Response {
+    tracing::warn!(
+        grpc_code = ?status.code(),
+        grpc_message = status.message(),
+        "DCS-gRPC SRS client lookup failed"
+    );
+    (
+        StatusCode::SERVICE_UNAVAILABLE,
+        Json(json!({ "error": SRS_CLIENTS_UNAVAILABLE_MESSAGE })),
+    )
+        .into_response()
 }
 
 #[utoipa::path(
@@ -137,7 +153,10 @@ pub async fn post_settings(
     path = "/api/srs/clients",
     tags = ["srs"],
     security(("jwt" = [])),
-    responses((status = 200, description = "List of SRS clients"))
+    responses(
+        (status = 200, description = "List of SRS clients"),
+        (status = 503, description = "Connected-client data temporarily unavailable")
+    )
 )]
 pub async fn get_clients(_user: AuthUser, State(state): State<AppState>) -> Result<Json<Value>, Response> {
     match crate::grpc::get_srs_clients(state.grpc.clone()).await {
@@ -175,8 +194,31 @@ pub async fn get_clients(_user: AuthUser, State(state): State<AppState>) -> Resu
             
             Ok(Json(json!({ "Clients": clients })))
         }
-        Err(e) => {
-            Ok(Json(json!({ "error": format!("gRPC Error: {}", e.message()), "Clients": [] })))
-        }
+        Err(status) => Err(srs_clients_unavailable(status)),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_srs_clients_unavailable_returns_503() {
+        let response = srs_clients_unavailable(tonic::Status::unavailable("transport failure"));
+
+        assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+    }
+
+    #[tokio::test]
+    async fn test_srs_clients_unavailable_hides_grpc_details() {
+        let response = srs_clients_unavailable(tonic::Status::internal("private gRPC detail"));
+        let body = axum::body::to_bytes(response.into_body(), 1_024)
+            .await
+            .expect("error response body should be readable");
+        let payload: Value =
+            serde_json::from_slice(&body).expect("error response body should contain JSON");
+
+        assert_eq!(payload["error"], SRS_CLIENTS_UNAVAILABLE_MESSAGE);
+        assert!(!String::from_utf8_lossy(&body).contains("private gRPC detail"));
     }
 }

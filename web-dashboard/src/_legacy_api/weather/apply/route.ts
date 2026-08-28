@@ -4,6 +4,7 @@ import util from 'util';
 import path from 'path';
 import fs from 'fs/promises';
 import { loadMission, getMissionName } from '@/lib/grpc';
+import { errorMessage } from '@/lib/errors';
 
 const execFilePromise = util.promisify(execFile);
 
@@ -27,7 +28,7 @@ export async function POST(req: Request) {
 
     // 1. Ask DCS directly for the currently running mission
     try {
-      const activeMission: any = await getMissionName();
+      const activeMission = await getMissionName();
       const activeName = activeMission?.name; // e.g. "Foothold_CA_..._B"
       
       if (activeName) {
@@ -52,7 +53,7 @@ export async function POST(req: Request) {
           }
         }
       }
-    } catch (e) {
+    } catch {
       console.warn("Could not reach DCS for active mission, falling back to dto.json");
     }
 
@@ -65,7 +66,7 @@ export async function POST(req: Request) {
         if (dtoData && dtoData.mission) {
           currentMission = dtoData.mission;
         }
-      } catch (e) {
+      } catch {
         console.warn("Failed to read dto.json for current mission");
       }
     }
@@ -128,8 +129,8 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, output: stdout });
 
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Failed to apply weather preset:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: errorMessage(err) }, { status: 500 });
   }
 }

@@ -1,9 +1,25 @@
 "use client";
 import { useEffect, useState, useRef } from 'react';
 import { apiFetch } from '@/lib/api';
+import { errorMessage } from '@/lib/errors';
+
+interface MissionData {
+  currentMission?: string;
+  isPaused?: boolean;
+  isOffline?: boolean;
+  serverInfo?: {
+    name: string;
+    ip: string;
+    port: number;
+    maxPlayers: number;
+    password: string;
+  };
+  queue?: string[];
+  uploadedMissions?: string[];
+}
 
 export default function MissionPage() {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<MissionData | null>(null);
   const [serverFiles, setServerFiles] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentFolder, setCurrentFolder] = useState('');
@@ -92,7 +108,7 @@ export default function MissionPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const sendAction = async (action: string, payload?: any) => {
+  const sendAction = async (action: string, payload?: Record<string, unknown>) => {
     try {
       await apiFetch('/api/mission', {
         method: 'POST',
@@ -156,8 +172,8 @@ export default function MissionPage() {
       setTimeout(() => setUploadMsg(''), 3000);
       fetchMission();
       
-    } catch (err: any) {
-      setUploadMsg(`Error: ${err.message}`);
+    } catch (err: unknown) {
+      setUploadMsg(`Error: ${errorMessage(err)}`);
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';

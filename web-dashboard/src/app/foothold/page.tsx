@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { apiFetch } from '@/lib/api';
 import styles from './page.module.css';
+import { errorMessage } from '@/lib/errors';
 
 const DynamicCSARMap = dynamic(() => import('../../components/CSARMap'), { 
     ssr: false,
@@ -90,17 +91,20 @@ export default function FootholdPage() {
             const data = await res.json();
             setData(data);
             setError(null);
-        } catch (e: any) {
-            setError(e.message || 'Failed to load Foothold data');
+        } catch (e: unknown) {
+            setError(errorMessage(e, 'Failed to load Foothold data'));
         } finally {
             setIsLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchData();
+        const initial = setTimeout(fetchData, 0);
         const interval = setInterval(fetchData, 10000);
-        return () => clearInterval(interval);
+        return () => {
+            clearTimeout(initial);
+            clearInterval(interval);
+        };
     }, []);
 
     if (isLoading && !data) return <div className={styles.loading}>Loading Foothold Data...</div>;

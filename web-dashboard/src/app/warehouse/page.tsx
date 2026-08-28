@@ -2,10 +2,11 @@
 import { useState } from 'react';
 import { apiFetch } from '@/lib/api';
 import styles from '../page.module.css';
+import { errorMessage } from '@/lib/errors';
 
 export default function WarehousePage() {
   const [airbase, setAirbase] = useState('');
-  const [inventory, setInventory] = useState<any>(null);
+  const [inventory, setInventory] = useState<unknown>(null);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   
@@ -23,8 +24,8 @@ export default function WarehousePage() {
       const data = await res.json();
       if (!res.ok || data.error) throw new Error(data.error || 'Failed to fetch inventory');
       setInventory(data.inventory);
-    } catch (e: any) {
-      setErrorMsg(e.message);
+    } catch (e: unknown) {
+      setErrorMsg(errorMessage(e));
     } finally {
       setLoading(false);
     }
@@ -41,8 +42,8 @@ export default function WarehousePage() {
       if (!res.ok) throw new Error('Failed to add item');
       alert(`Successfully added ${itemCount}x ${itemName} to ${airbase}`);
       fetchInventory();
-    } catch (e: any) {
-      alert(e.message);
+    } catch (e: unknown) {
+      alert(errorMessage(e));
     }
   };
 
@@ -57,8 +58,8 @@ export default function WarehousePage() {
       if (!res.ok) throw new Error('Failed to add liquid');
       alert(`Successfully added ${liquidAmount} units of liquid type ${liquidType} to ${airbase}`);
       fetchInventory();
-    } catch (e: any) {
-      alert(e.message);
+    } catch (e: unknown) {
+      alert(errorMessage(e));
     }
   };
 

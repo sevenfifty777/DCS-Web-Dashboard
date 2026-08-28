@@ -1,61 +1,142 @@
 "use client";
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useReducer, useState } from 'react';
 import { apiFetch } from '@/lib/api';
+import {
+  hasApiError,
+  INITIAL_SRS_CLIENTS_STATE,
+  parseSrsClientsResponse,
+  reduceSrsClientsState,
+  SRS_CLIENTS_UNAVAILABLE_MESSAGE,
+} from './srsState';
+
+type SrsSettingValue = boolean | number | string;
+type SrsSettings = Record<string, Record<string, SrsSettingValue>>;
+
+interface SrsProcessResponse {
+  running: boolean;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function isSrsSettings(value: unknown): value is SrsSettings {
+  if (!isRecord(value)) return false;
+
+  return Object.values(value).every((section) => (
+    isRecord(section)
+    && Object.values(section).every((setting) => (
+      typeof setting === 'boolean'
+      || typeof setting === 'number'
+      || typeof setting === 'string'
+    ))
+  ));
+}
+
+function isSrsProcessResponse(value: unknown): value is SrsProcessResponse {
+  return isRecord(value) && typeof value.running === 'boolean';
+}
+
+function errorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
+}
+
+async function responseError(response: Response, fallback: string): Promise<string> {
+  const payload: unknown = await response.json().catch(() => null);
+  return isRecord(payload) && typeof payload.error === 'string' ? payload.error : fallback;
+}
 
 export default function SrsPage() {
-  const [settings, setSettings] = useState<any>(null);
-  const [clients, setClients] = useState<any[]>([]);
+  const [settings, setSettings] = useState<SrsSettings | null>(null);
+  const [clientsState, dispatchClients] = useReducer(
+    reduceSrsClientsState,
+    INITIAL_SRS_CLIENTS_STATE,
+  );
   const [serverVersion, setServerVersion] = useState<string>('');
   const [srsProcess, setSrsProcess] = useState({ running: false, checking: true });
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
-  const [errorMsg, setErrorMsg] = useState('');
+  const [settingsError, setSettingsError] = useState('');
+  const [processError, setProcessError] = useState('');
 
-  const fetchSrsData = () => {
-    apiFetch('/api/srs/clients')
-      .then(res => res.json())
-      .then(data => {
-        if (data.Clients) setClients(data.Clients);
-        if (data.ServerVersion) setServerVersion(data.ServerVersion);
-        if (data.error) setErrorMsg(data.error);
-      })
-      .catch(console.error);
+  const fetchSrsClients = useCallback(async () => {
+    try {
+      const response = await apiFetch('/api/srs/clients');
+      const payload: unknown = await response.json();
+      if (!response.ok || hasApiError(payload)) {
+        throw new Error(SRS_CLIENTS_UNAVAILABLE_MESSAGE);
+      }
 
-    apiFetch('/api/server/srs-process')
-      .then(r => r.json())
-      .then(d => setSrsProcess({ running: d.running, checking: false }))
-      .catch(() => setSrsProcess({ running: false, checking: false }));
-  };
+      const data = parseSrsClientsResponse(payload);
+      if (!data) {
+        throw new Error(SRS_CLIENTS_UNAVAILABLE_MESSAGE);
+      }
 
-  useEffect(() => {
-    apiFetch('/api/srs/settings')
-      .then(res => res.json())
-      .then(data => {
-        if (data.error) {
-            setErrorMsg(data.error);
-        } else {
-            setSettings(data);
-        }
-      })
-      .catch(console.error);
-
-    fetchSrsData();
-    const interval = setInterval(fetchSrsData, 5000);
-    return () => clearInterval(interval);
+      dispatchClients({ type: 'success', clients: data.Clients });
+      if (data.ServerVersion) setServerVersion(data.ServerVersion);
+    } catch {
+      dispatchClients({ type: 'failure', message: SRS_CLIENTS_UNAVAILABLE_MESSAGE });
+    }
   }, []);
 
-  const manageSrsProcess = (action: 'start' | 'stop' | 'restart') => {
+  const fetchSrsProcess = useCallback(async () => {
+    try {
+      const response = await apiFetch('/api/server/srs-process');
+      const payload: unknown = await response.json();
+      if (!response.ok || !isSrsProcessResponse(payload)) throw new Error('Invalid response');
+      setSrsProcess({ running: payload.running, checking: false });
+      setProcessError('');
+    } catch {
+      setSrsProcess({ running: false, checking: false });
+      setProcessError('SRS process status is temporarily unavailable.');
+    }
+  }, []);
+
+  const fetchSrsData = useCallback(() => {
+    void fetchSrsClients();
+    void fetchSrsProcess();
+  }, [fetchSrsClients, fetchSrsProcess]);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const response = await apiFetch('/api/srs/settings');
+        const payload: unknown = await response.json();
+        if (!response.ok || hasApiError(payload) || !isSrsSettings(payload)) {
+          throw new Error('SRS settings are temporarily unavailable.');
+        }
+
+        setSettings(payload);
+        setSettingsError('');
+      } catch (error: unknown) {
+        setSettingsError(errorMessage(error, 'SRS settings are temporarily unavailable.'));
+      }
+    };
+
+    void fetchSettings();
+    const initialFetch = window.setTimeout(fetchSrsData, 0);
+    const interval = setInterval(fetchSrsData, 5000);
+    return () => {
+      clearTimeout(initialFetch);
+      clearInterval(interval);
+    };
+  }, [fetchSrsData]);
+
+  const manageSrsProcess = async (action: 'start' | 'stop' | 'restart') => {
     setSrsProcess(p => ({ ...p, checking: true }));
-    apiFetch('/api/server/srs-process', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action })
-    })
-      .then(r => r.json())
-      .then(() => {
-        setTimeout(fetchSrsData, 2000);
-      })
-      .catch(console.error);
+    setProcessError('');
+    try {
+      const response = await apiFetch('/api/server/srs-process', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
+      if (!response.ok) throw new Error('SRS process action failed.');
+      setTimeout(fetchSrsData, 2000);
+    } catch (error: unknown) {
+      setSrsProcess(p => ({ ...p, checking: false }));
+      setProcessError(errorMessage(error, 'SRS process action failed.'));
+    }
   };
 
   const handleSave = async () => {
@@ -68,27 +149,28 @@ export default function SrsPage() {
         body: JSON.stringify(settings)
       });
       if (!res.ok) {
-          const e = await res.json();
-          throw new Error(e.error || 'Failed to save');
+          throw new Error(await responseError(res, 'Failed to save'));
       }
       setSaveMsg('Settings saved successfully!');
-    } catch (e: any) {
-      setSaveMsg(`Error: ${e.message}`);
+    } catch (error: unknown) {
+      setSaveMsg(`Error: ${errorMessage(error, 'Failed to save')}`);
     } finally {
       setSaving(false);
       setTimeout(() => setSaveMsg(''), 3000);
     }
   };
 
-  const updateSetting = (section: string, key: string, value: any) => {
-    setSettings((prev: any) => ({
-      ...prev,
+  const updateSetting = (section: string, key: string, value: SrsSettingValue) => {
+    setSettings((previous) => previous ? ({
+      ...previous,
       [section]: {
-        ...prev[section],
-        [key]: value
-      }
-    }));
+        ...previous[section],
+        [key]: value,
+      },
+    }) : previous);
   };
+
+  const clients = clientsState.clients;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -97,9 +179,16 @@ export default function SrsPage() {
         Manage SimpleRadio Standalone server process, settings, and view connected players.
       </p>
 
-      {errorMsg && (
+      {settingsError && (
         <div style={{ backgroundColor: 'rgba(255,68,68,0.1)', border: '1px solid #ff4444', color: '#ff4444', padding: '1rem', borderRadius: '4px', marginBottom: '1rem' }}>
-          {errorMsg}
+          {settingsError}
+        </div>
+      )}
+
+      {clientsState.error && (
+        <div style={{ backgroundColor: 'rgba(255,68,68,0.1)', border: '1px solid #ff4444', color: '#ff4444', padding: '1rem', borderRadius: '4px', marginBottom: '1rem' }}>
+          {clientsState.error}
+          {clientsState.hasSuccessfulResult && ' Showing the last successful client list.'}
         </div>
       )}
 
@@ -129,6 +218,12 @@ export default function SrsPage() {
                 {srsProcess.checking ? 'CHECKING...' : (srsProcess.running ? 'RUNNING' : 'STOPPED')}
               </strong>
             </div>
+
+            {processError && (
+              <div style={{ color: '#ff4444', marginBottom: '1rem' }}>
+                {processError}
+              </div>
+            )}
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
               <button 
@@ -200,7 +295,11 @@ export default function SrsPage() {
               Connected Clients ({clients.length})
             </h3>
             
-            {clients.length === 0 ? (
+            {!clientsState.hasSuccessfulResult ? (
+              <div style={{ color: 'var(--text-secondary)', fontStyle: 'italic', textAlign: 'center', padding: '2rem 0' }}>
+                {clientsState.error ? 'Connected-client data unavailable.' : 'Loading connected clients...'}
+              </div>
+            ) : clients.length === 0 ? (
               <div style={{ color: 'var(--text-secondary)', fontStyle: 'italic', textAlign: 'center', padding: '2rem 0' }}>
                 No clients connected.
               </div>
@@ -224,7 +323,7 @@ export default function SrsPage() {
                           {c.Coalition === 0 ? 'Spectator' : (c.Coalition === 1 ? <span style={{color: '#ff4444'}}>Red</span> : <span style={{color: '#44aaff'}}>Blue</span>)}
                         </td>
                         <td style={{ padding: '0.75rem 0.5rem', fontFamily: 'var(--font-mono)', fontSize: '12px' }}>
-                          {c.RadioInfo?.radios ? c.RadioInfo.radios.filter((r: any) => r.freq > 1).map((r: any) => (r.freq/1000000).toFixed(3)).join(', ') : 'N/A'}
+                          {c.RadioInfo.radios.filter((radio) => radio.freq > 1).map((radio) => (radio.freq / 1_000_000).toFixed(3)).join(', ') || 'N/A'}
                         </td>
                       </tr>
                     ))}
@@ -277,7 +376,7 @@ export default function SrsPage() {
             </div>
           )}
 
-          {!settings && !errorMsg ? (
+          {!settings && !settingsError ? (
             <div style={{ color: 'var(--text-secondary)' }}>Loading settings...</div>
           ) : settings ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>

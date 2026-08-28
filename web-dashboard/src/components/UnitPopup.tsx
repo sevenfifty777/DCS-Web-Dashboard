@@ -1,8 +1,26 @@
 import { useState } from 'react';
 import { apiFetch } from '@/lib/api';
 
-export default function UnitPopup({ unit, onStartLase, onStartIR }: { unit: any, onStartLase?: (unitName: string, code: number) => void, onStartIR?: (unitName: string) => void }) {
-  const [details, setDetails] = useState<any>(null);
+interface UnitSummary {
+  name: string;
+  type: string;
+  playerName?: string;
+  player_name?: string;
+  position: { alt: number };
+  velocity?: { speed?: number };
+}
+
+interface UnitDetails {
+  life: number;
+  life0: number;
+  fuel: number;
+  radar_active?: boolean;
+  sensors?: { type_name: string; radar_head_on?: number; irst_distance_maximal?: number }[];
+  weapons?: { count: number; name: string }[];
+}
+
+export default function UnitPopup({ unit, onStartLase, onStartIR }: { unit: UnitSummary, onStartLase?: (unitName: string, code: number) => void, onStartIR?: (unitName: string) => void }) {
+  const [details, setDetails] = useState<UnitDetails | null>(null);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'info' | 'ai' | 'jtac'>('info');
   const [laserCode, setLaserCode] = useState<string>('1688');
@@ -124,7 +142,7 @@ export default function UnitPopup({ unit, onStartLase, onStartIR }: { unit: any,
                   <div style={{ marginTop: '5px', borderTop: '1px solid #ccc', paddingTop: '5px' }}>
                     <strong>Sensors:</strong>
                     <ul style={{ margin: '2px 0 0 15px', padding: 0 }}>
-                      {details.sensors.map((s: any, i: number) => (
+                      {details.sensors.map((s, i) => (
                         <li key={i}>
                           {s.type_name}
                           {s.radar_head_on && <span> (Radar {Math.round(s.radar_head_on / 1852)}nm)</span>}
@@ -139,7 +157,7 @@ export default function UnitPopup({ unit, onStartLase, onStartIR }: { unit: any,
                   <div style={{ marginTop: '5px', borderTop: '1px solid #ccc', paddingTop: '5px' }}>
                     <strong>Weapons:</strong>
                     <ul style={{ margin: '2px 0 0 15px', padding: 0 }}>
-                      {details.weapons.map((w: any, i: number) => (
+                      {details.weapons.map((w, i) => (
                         <li key={i}>{w.count}x {w.name}</li>
                       ))}
                     </ul>

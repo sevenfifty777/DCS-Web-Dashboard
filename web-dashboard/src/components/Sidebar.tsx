@@ -8,9 +8,10 @@ import styles from './Sidebar.module.css';
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const [rdpStatus, setRdpStatus] = useState<{active: boolean, users: any[]} | null>(null);
-  const [missionStatus, setMissionStatus] = useState<any>(null);
-  const [isOpen, setIsOpen] = useState(false);
+  const [rdpStatus, setRdpStatus] = useState<{active: boolean, users: { username: string }[]} | null>(null);
+  const [missionStatus, setMissionStatus] = useState<{ theatre?: string; time?: number } | null>(null);
+  const [openedAtPath, setOpenedAtPath] = useState<string | null>(null);
+  const isOpen = openedAtPath === pathname;
 
   useEffect(() => {
     const fetchRdpStatus = async () => {
@@ -53,11 +54,6 @@ export default function Sidebar() {
     return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  // Auto-close sidebar on mobile when navigating
-  useEffect(() => {
-    setIsOpen(false);
-  }, [pathname]);
-
   return (
     <>
       {/* Mobile Header */}
@@ -91,7 +87,7 @@ export default function Sidebar() {
           </div>
         )}
 
-        <button className={styles.hamburger} onClick={() => setIsOpen(!isOpen)}>
+        <button className={styles.hamburger} onClick={() => setOpenedAtPath(isOpen ? null : pathname)}>
           ☰
         </button>
       </div>
@@ -151,7 +147,7 @@ export default function Sidebar() {
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Time:</span>
-              <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--primary)', fontFamily: 'var(--font-mono)' }}>{formatTime(missionStatus.time)}</span>
+              <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--primary)', fontFamily: 'var(--font-mono)' }}>{formatTime(missionStatus.time ?? 0)}</span>
             </div>
           </div>
         )}
@@ -204,7 +200,7 @@ export default function Sidebar() {
       {/* Mobile Overlay (Click to close) */}
       {isOpen && (
         <div 
-          onClick={() => setIsOpen(false)}
+          onClick={() => setOpenedAtPath(null)}
           style={{
             position: 'fixed',
             inset: 0,

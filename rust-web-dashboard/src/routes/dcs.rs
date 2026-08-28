@@ -885,7 +885,7 @@ pub async fn mission_action(
 
 #[derive(Deserialize, utoipa::ToSchema)]
 pub struct PlayerActionBody {
-    id: u32,
+    id: Option<u32>,
     reason: Option<String>,
     period: Option<u32>, // for ban
     ucid: Option<String>, // for unban
@@ -899,10 +899,9 @@ pub struct PlayerActionBody {
     request_body = PlayerActionBody,
     responses((status = 200, description = "Player kicked"))
 )]
-pub async fn kick_player(_user: AuthUser, State(state): State<AppState>, Json(payload): Json<serde_json::Value>) -> Response {
-    let id = payload["id"].as_u64().unwrap_or(0) as u32;
-    let reason = payload["reason"].as_str().unwrap_or("Kicked").to_string();
-    match grpc::kick_player(state.grpc.clone(), id, reason).await {
+pub async fn kick_player(_user: AuthUser, State(state): State<AppState>, Json(payload): Json<PlayerActionBody>) -> Response {
+    let reason = payload.reason.unwrap_or_else(|| "Kicked".to_string());
+    match grpc::kick_player(state.grpc.clone(), payload.id.unwrap_or(0), reason).await {
         Ok(()) => Json(json!({"success":true})).into_response(),
         Err(e) => err_detail("Failed to kick player", e),
     }
@@ -916,11 +915,10 @@ pub async fn kick_player(_user: AuthUser, State(state): State<AppState>, Json(pa
     request_body = PlayerActionBody,
     responses((status = 200, description = "Player banned"))
 )]
-pub async fn ban_player(_user: AuthUser, State(state): State<AppState>, Json(payload): Json<serde_json::Value>) -> Response {
-    let id = payload["id"].as_u64().unwrap_or(0) as u32;
-    let period = payload["period"].as_u64().unwrap_or(0) as u32;
-    let reason = payload["reason"].as_str().unwrap_or("Banned").to_string();
-    match grpc::ban_player(state.grpc.clone(), id, period, reason).await {
+pub async fn ban_player(_user: AuthUser, State(state): State<AppState>, Json(payload): Json<PlayerActionBody>) -> Response {
+    let period = payload.period.unwrap_or(0);
+    let reason = payload.reason.unwrap_or_else(|| "Banned".to_string());
+    match grpc::ban_player(state.grpc.clone(), payload.id.unwrap_or(0), period, reason).await {
         Ok(()) => Json(json!({"success":true})).into_response(),
         Err(e) => err_detail("Failed to ban player", e),
     }
@@ -934,8 +932,8 @@ pub async fn ban_player(_user: AuthUser, State(state): State<AppState>, Json(pay
     request_body = PlayerActionBody,
     responses((status = 200, description = "Player unbanned"))
 )]
-pub async fn unban_player(_user: AuthUser, State(state): State<AppState>, Json(payload): Json<serde_json::Value>) -> Response {
-    let ucid = payload["ucid"].as_str().unwrap_or("").to_string();
+pub async fn unban_player(_user: AuthUser, State(state): State<AppState>, Json(payload): Json<PlayerActionBody>) -> Response {
+    let ucid = payload.ucid.unwrap_or_default();
     match grpc::unban_player(state.grpc.clone(), ucid).await {
         Ok(()) => Json(json!({"success":true})).into_response(),
         Err(e) => err_detail("Failed to unban player", e),
@@ -944,6 +942,7 @@ pub async fn unban_player(_user: AuthUser, State(state): State<AppState>, Json(p
 
 #[derive(Deserialize, utoipa::ToSchema)]
 pub struct AnnouncementBody {
+    #[serde(alias = "text")]
     message: String,
     display_time: Option<u32>,
     coalition: Option<String>,
@@ -957,25 +956,23 @@ pub struct AnnouncementBody {
     request_body = AnnouncementBody,
     responses((status = 200, description = "Announcement sent"))
 )]
-pub async fn announcements(_user: AuthUser, State(state): State<AppState>, Json(payload): Json<serde_json::Value>) -> Response {
-    let text = payload.get("message").or_else(|| payload.get("text")).and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let display_time = payload.get("display_time").and_then(|v| v.as_u64()).unwrap_or(10) as u32;
-    
-    let coalition = if let Some(coalition_str) = payload.get("coalition").and_then(|v| v.as_str()) {
-        match coalition_str {
+pub async fn announcements(_user: AuthUser, State(state): State<AppState>, Json(payload): Json<AnnouncementBody>) -> Response {
+    let display_time = payload.display_time.unwrap_or(10);
+
+    let coalition = match payload.coalition.as_deref() {
+        Some(coalition_str) => match coalition_str {
             "COALITION_RED" => 1,
             "COALITION_BLUE" => 2,
             "COALITION_NEUTRAL" => 0,
             _ => -1,
-        }
-    } else {
-        payload.get("coalition").and_then(|v| v.as_i64()).unwrap_or(-1) as i32
+        },
+        None => -1,
     };
-    
+
     let result = if coalition >= 0 {
-        grpc::out_text_for_coalition(state.grpc.clone(), coalition, text, display_time, false).await
+        grpc::out_text_for_coalition(state.grpc.clone(), coalition, payload.message, display_time, false).await
     } else {
-        grpc::out_text(state.grpc.clone(), text, display_time, false).await
+        grpc::out_text(state.grpc.clone(), payload.message, display_time, false).await
     };
     
     match result {

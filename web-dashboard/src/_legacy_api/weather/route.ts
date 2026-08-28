@@ -2,6 +2,18 @@ import { NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
 import { getMissionName } from '@/lib/grpc';
+import { errorMessage } from '@/lib/errors';
+
+interface WeatherPresetFile {
+  presets?: Record<string, unknown>;
+  selection_rules?: Record<string, unknown>;
+  dcs_cloud_presets?: Record<string, unknown>;
+}
+
+interface WeatherState {
+  mission?: string;
+  [key: string]: unknown;
+}
 
 export async function GET() {
   try {
@@ -13,27 +25,27 @@ export async function GET() {
 
     // Read weather_presets.json
     const presetsPath = path.join(weatherDir, 'weather_presets.json');
-    let presetsData = null;
+    let presetsData: WeatherPresetFile | null = null;
     try {
       const pContent = await fs.readFile(presetsPath, 'utf8');
       presetsData = JSON.parse(pContent);
-    } catch (e) {
-      console.error("Failed to read weather_presets.json from", presetsPath, e);
+    } catch (error: unknown) {
+      console.error("Failed to read weather_presets.json from", presetsPath, error);
     }
 
     // Read dto.json for current applied state
     const dtoPath = path.join(weatherDir, 'data', 'dto.json');
-    let dtoData = null;
+    let dtoData: WeatherState | null = null;
     try {
       const dContent = await fs.readFile(dtoPath, 'utf8');
       dtoData = JSON.parse(dContent);
-    } catch (e) {
+    } catch {
       console.warn("Failed to read dto.json (may not exist yet) from", dtoPath);
     }
 
     // Attempt to query DCS directly to get the absolute source of truth
     try {
-      const activeMission: any = await getMissionName();
+      const activeMission = await getMissionName();
       if (activeMission && activeMission.name && dtoData) {
         // We know what DCS is currently playing. Update the reported mission name to match reality.
         const baseName = activeMission.name.replace(/_[AB]$/, '');
@@ -45,7 +57,7 @@ export async function GET() {
           dtoData.mission = `(Active in DCS) ${activeMission.name}.miz`;
         }
       }
-    } catch (e) {
+    } catch {
       // Ignore if DCS is offline, just use dto.json
     }
 
@@ -56,8 +68,8 @@ export async function GET() {
       current_state: dtoData || {}
     });
 
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Failed to get weather data:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: errorMessage(err) }, { status: 500 });
   }
 }

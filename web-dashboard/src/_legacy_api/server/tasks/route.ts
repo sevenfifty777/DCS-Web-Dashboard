@@ -1,9 +1,21 @@
 import { NextResponse } from 'next/server';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { errorMessage } from '@/lib/errors';
 
 const execAsync = promisify(exec);
 export const dynamic = 'force-dynamic';
+
+interface ScheduledTask {
+  TaskName: string;
+  State: number;
+}
+
+function isScheduledTask(value: unknown): value is ScheduledTask {
+  if (typeof value !== 'object' || value === null) return false;
+  const task = value as Record<string, unknown>;
+  return typeof task.TaskName === 'string' && typeof task.State === 'number';
+}
 
 export async function GET() {
   try {
@@ -15,11 +27,11 @@ export async function GET() {
       return NextResponse.json({ tasks: [] });
     }
 
-    let parsed = JSON.parse(stdout);
-    let tasks = Array.isArray(parsed) ? parsed : [parsed];
+    const parsed: unknown = JSON.parse(stdout);
+    const tasks = (Array.isArray(parsed) ? parsed : [parsed]).filter(isScheduledTask);
 
     // Map properties and translate state from integers to strings
-    const formattedTasks = tasks.map((t: any) => ({
+    const formattedTasks = tasks.map((t) => ({
       name: t.TaskName,
       state: t.State === 4 ? 'Running' : t.State === 3 ? 'Ready' : t.State === 1 ? 'Disabled' : 'Unknown',
       rawState: t.State
@@ -37,18 +49,21 @@ export async function GET() {
     formattedTasks.sort((a, b) => a.name.localeCompare(b.name));
 
     return NextResponse.json({ tasks: formattedTasks });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to get tasks:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: errorMessage(error) }, { status: 500 });
   }
 }
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { taskName, action } = body;
+    const body: unknown = await req.json();
+    if (typeof body !== 'object' || body === null) {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+    }
+    const { taskName, action } = body as Record<string, unknown>;
 
-    if (!taskName || !action) {
+    if (typeof taskName !== 'string' || typeof action !== 'string') {
       return NextResponse.json({ error: 'Missing taskName or action' }, { status: 400 });
     }
 
@@ -79,8 +94,8 @@ export async function POST(req: Request) {
     await execAsync(`powershell -NoProfile -Command "${psCommand}"`);
     
     return NextResponse.json({ success: true, message: `Task ${taskName} ${action} command sent successfully.` });
-  } catch (error: any) {
-    console.error(`Failed to ${req.body} task:`, error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    console.error('Failed to control scheduled task:', error);
+    return NextResponse.json({ error: errorMessage(error) }, { status: 500 });
   }
 }

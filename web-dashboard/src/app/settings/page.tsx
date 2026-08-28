@@ -1,9 +1,25 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
+import { errorMessage } from '@/lib/errors';
+
+type SettingValue = string | number | boolean;
+
+interface ServerSettings {
+  name?: string;
+  password?: string;
+  port?: number;
+  maxPlayers?: number;
+  description?: string;
+  isPublic?: boolean;
+  listShuffle?: boolean;
+  listLoop?: boolean;
+  advanced: Record<string, SettingValue>;
+  [key: string]: unknown;
+}
 
 export default function SettingsPage() {
-  const [settings, setSettings] = useState<any>(null);
+  const [settings, setSettings] = useState<ServerSettings | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
 
@@ -25,26 +41,26 @@ export default function SettingsPage() {
       });
       if (!res.ok) throw new Error('Failed to save');
       setSaveMsg('Settings saved successfully!');
-    } catch (e: any) {
-      setSaveMsg(`Error: ${e.message}`);
+    } catch (e: unknown) {
+      setSaveMsg(`Error: ${errorMessage(e)}`);
     } finally {
       setSaving(false);
       setTimeout(() => setSaveMsg(''), 3000);
     }
   };
 
-  const updateSetting = (key: string, value: any) => {
-    setSettings({ ...settings, [key]: value });
+  const updateSetting = (key: string, value: SettingValue) => {
+    setSettings(current => current ? { ...current, [key]: value } : current);
   };
 
-  const updateAdvanced = (key: string, value: any) => {
-    setSettings({
-      ...settings,
+  const updateAdvanced = (key: string, value: SettingValue) => {
+    setSettings(current => current ? {
+      ...current,
       advanced: {
-        ...settings.advanced,
+        ...current.advanced,
         [key]: value
       }
-    });
+    } : current);
   };
 
   if (!settings) {

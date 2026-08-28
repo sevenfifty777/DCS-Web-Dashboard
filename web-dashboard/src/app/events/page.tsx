@@ -1,15 +1,47 @@
 "use client";
 import { useEffect, useState, useRef } from 'react';
 
+interface EventEntity {
+  name?: string;
+  playerName?: string;
+}
+
+interface CombatEvent {
+  initiator?: EventEntity;
+  target?: EventEntity;
+  weapon?: EventEntity;
+  weapon_name?: string;
+  place?: EventEntity;
+}
+
+interface MissionEvent {
+  time?: number;
+  shot?: CombatEvent;
+  hit?: CombatEvent;
+  kill?: CombatEvent;
+  takeoff?: CombatEvent;
+  land?: CombatEvent;
+  crash?: CombatEvent;
+  ejection?: CombatEvent;
+  player_enter_unit?: CombatEvent;
+  player_leave_unit?: CombatEvent;
+  player_send_chat?: { playerName?: string; message?: string };
+  connect?: { name?: string };
+  disconnect?: { id?: number };
+  mission_start?: unknown;
+  mission_end?: unknown;
+  [key: string]: unknown;
+}
+
 export default function EventsPage() {
-  const [events, setEvents] = useState<any[]>([]);
+  const [events, setEvents] = useState<MissionEvent[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const source = new EventSource('/api/events/stream');
     
     source.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+      const data = JSON.parse(event.data) as MissionEvent;
       // Keep only last 150 events in memory
       setEvents(prev => [...prev, data].slice(-150));
     };
@@ -23,7 +55,7 @@ export default function EventsPage() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [events]);
 
-  const renderEvent = (data: any) => {
+  const renderEvent = (data: MissionEvent) => {
     if (data.shot) {
       return <span><strong style={{ color: 'var(--primary)' }}>{data.shot.initiator?.name || 'Unknown'}</strong> fired <strong>{data.shot.weapon?.name || 'Weapon'}</strong></span>;
     }

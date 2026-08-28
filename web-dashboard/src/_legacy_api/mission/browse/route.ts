@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
+import { errorMessage } from '@/lib/errors';
 
 async function getFiles(dir: string, depth: number = 0, maxDepth: number = 3): Promise<string[]> {
   if (depth > maxDepth) return [];
@@ -24,7 +25,7 @@ async function getFiles(dir: string, depth: number = 0, maxDepth: number = 3): P
       }
     }
     return files;
-  } catch (err) {
+  } catch {
     // Ignore permission errors or unreadable directories
     return [];
   }
@@ -39,7 +40,7 @@ export async function GET() {
     let allFiles: string[] = [];
     try {
       allFiles = await getFiles(missionsDir);
-    } catch(e) {
+    } catch {
       // ignore if folder doesn't exist
     }
 
@@ -52,8 +53,8 @@ export async function GET() {
       success: true,
       files: mizFiles
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Failed to browse missions:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: errorMessage(err) }, { status: 500 });
   }
 }

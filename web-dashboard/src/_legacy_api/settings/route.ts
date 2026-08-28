@@ -1,6 +1,18 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
+import { errorMessage } from '@/lib/errors';
+
+type SettingValue = string | number | boolean;
+
+interface ServerSettings extends Record<string, unknown> {
+  advanced: Record<string, SettingValue>;
+  missionList: string[];
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
 
 export async function GET() {
   try {
@@ -8,7 +20,7 @@ export async function GET() {
     const configPath = path.join(dcsDir, 'Config', 'serverSettings.lua');
     const content = await fs.readFile(configPath, 'utf8');
 
-    const result: any = {
+    const result: ServerSettings = {
       advanced: {},
       missionList: []
     };
@@ -38,7 +50,7 @@ export async function GET() {
 
     // Extract primitive keys
     // Strip advanced and missionList out to avoid regex confusion
-    let strippedContent = content
+    const strippedContent = content
       .replace(/\["advanced"\]\s*=\s*\{[\s\S]*?\},\s*--\s*end of \["advanced"\]/, '')
       .replace(/\["missionList"\]\s*=\s*\{[\s\S]*?\},+.*--\s*end of \["missionList"\]/, '')
       .replace(/}\s*--\s*end of cfg.*/, '');
@@ -77,13 +89,13 @@ export async function GET() {
     }
 
     return NextResponse.json(result);
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Failed to parse serverSettings.lua', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: errorMessage(err) }, { status: 500 });
   }
 }
 
-function parseAndSet(key: string, val: string, result: any) {
+function parseAndSet(key: string, val: string, result: ServerSettings) {
   if (val === 'true') {
     result[key] = true;
   } else if (val === 'false') {
@@ -103,7 +115,10 @@ function parseAndSet(key: string, val: string, result: any) {
 
 export async function POST(req: Request) {
   try {
-    const payload = await req.json();
+    const payload: unknown = await req.json();
+    if (!isRecord(payload)) {
+      return NextResponse.json({ error: 'Invalid settings payload' }, { status: 400 });
+    }
     const dcsDir = process.env.DCS_SAVED_GAMES_DIR || path.join(process.cwd(), '..', '..', '..');
     const configPath = path.join(dcsDir, 'Config', 'serverSettings.lua');
 
@@ -137,7 +152,7 @@ export async function POST(req: Request) {
     }
 
     // Advanced block
-    if (payload.advanced) {
+    if (isRecord(payload.advanced)) {
       luaStr += '\t["advanced"] = \r\n\t{\r\n';
       for (const [k, v] of Object.entries(payload.advanced)) {
         let advVal = v;
@@ -166,8 +181,8 @@ export async function POST(req: Request) {
     await fs.writeFile(configPath, luaStr, 'utf8');
 
     return NextResponse.json({ success: true });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Failed to save serverSettings.lua', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: errorMessage(err) }, { status: 500 });
   }
 }

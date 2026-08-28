@@ -1027,7 +1027,6 @@ export default function AirbossPlanner() {
 
   return (
     <div className="airboss-container">
-      <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
       
       <div className="ab-topbar">
         <div className="ab-tb-title">Airboss Planner</div>

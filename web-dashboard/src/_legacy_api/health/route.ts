@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getHealth, getVersion } from '@/lib/grpc';
+import { errorMessage } from '@/lib/errors';
 
 export async function GET() {
   try {
@@ -8,9 +9,9 @@ export async function GET() {
       getVersion(),
     ]);
     return NextResponse.json({ health, version });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: 'Failed to connect to DCS server', details: error.message },
+      { error: 'Failed to connect to DCS server', details: errorMessage(error) },
       { status: 500 }
     );
   }

@@ -1,9 +1,24 @@
 import { useState, useEffect } from 'react';
 import { apiFetch } from '@/lib/api';
 
-export default function AirbasePopup({ base }: { base: any }) {
-  const [runways, setRunways] = useState<any[]>([]);
-  const [parking, setParking] = useState<any[]>([]);
+interface Airbase {
+  name?: string;
+  display_name?: string;
+  callsign?: string;
+  category?: number;
+  coalition: string;
+}
+
+interface Runway {
+  name: string;
+  course: number;
+  length: number;
+  width: number;
+}
+
+export default function AirbasePopup({ base }: { base: Airbase }) {
+  const [runways, setRunways] = useState<Runway[]>([]);
+  const [parking, setParking] = useState<unknown[]>([]);
   const [loading, setLoading] = useState(true);
   const [coalition, setCoalition] = useState<string>(base.coalition);
   const [changing, setChanging] = useState(false);

@@ -3,9 +3,23 @@ import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
 import styles from '../page.module.css';
 
+interface Player {
+  id: number;
+  name: string;
+  ping: number;
+  slot?: string;
+  coalition: string;
+}
+
+interface BannedPlayer {
+  player_name?: string;
+  ucid: string;
+  reason?: string;
+}
+
 export default function Players() {
-  const [players, setPlayers] = useState<any[]>([]);
-  const [bannedPlayers, setBannedPlayers] = useState<any[]>([]);
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [bannedPlayers, setBannedPlayers] = useState<BannedPlayer[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'connected' | 'banned'>('connected');
 
