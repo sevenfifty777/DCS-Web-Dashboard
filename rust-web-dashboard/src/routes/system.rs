@@ -731,9 +731,9 @@ pub async fn dcs_process_post(
             }
         } else if let Some(raw_cmd) = &state.config.dcs_start_cmd {
             let cmd_str = raw_cmd.trim_matches('\'');
-            let (exe_path, args_str) = if cmd_str.starts_with('"') {
-                if let Some(end_quote) = cmd_str[1..].find('"') {
-                    (&cmd_str[1..=end_quote], cmd_str[end_quote + 2..].trim())
+            let (exe_path, args_str) = if let Some(unquoted) = cmd_str.strip_prefix('"') {
+                if let Some(end_quote) = unquoted.find('"') {
+                    (&unquoted[..end_quote], unquoted[end_quote + 1..].trim())
                 } else {
                     (cmd_str, "")
                 }
@@ -861,9 +861,9 @@ pub async fn srs_process_post(
                 .spawn();
         } else if let Some(raw_cmd) = &state.config.srs_start_cmd {
             let cmd_str = raw_cmd.trim_matches('\'');
-            let (exe_path, args_str) = if cmd_str.starts_with('"') {
-                if let Some(end_quote) = cmd_str[1..].find('"') {
-                    (&cmd_str[1..=end_quote], cmd_str[end_quote + 2..].trim())
+            let (exe_path, args_str) = if let Some(unquoted) = cmd_str.strip_prefix('"') {
+                if let Some(end_quote) = unquoted.find('"') {
+                    (&unquoted[..end_quote], unquoted[end_quote + 1..].trim())
                 } else {
                     (cmd_str, "")
                 }
@@ -1039,7 +1039,7 @@ pub async fn windows_services_post(
         return Json(json!({ "success": true })).into_response();
     }
 
-    return (axum::http::StatusCode::BAD_REQUEST, Json(serde_json::json!({ "error": "Invalid action" }))).into_response();
+    (axum::http::StatusCode::BAD_REQUEST, Json(serde_json::json!({ "error": "Invalid action" }))).into_response()
 }
 
 // --- /api/logs/dcs/stream ---------------------------------------------------

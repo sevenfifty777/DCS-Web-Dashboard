@@ -32,17 +32,19 @@ pub async fn spawn_ground(
     State(state): State<AppState>,
     Json(payload): Json<SpawnGroundPayload>,
 ) -> axum::response::Response {
-    let count = if payload.count < 1 { 1 } else if payload.count > 10 { 10 } else { payload.count };
+    let count = payload.count.clamp(1, 10);
 
     match grpc::add_ground_group(
         state.grpc.clone(),
-        payload.country,
-        payload.name,
-        payload.unit_type,
-        payload.lat,
-        payload.lon,
-        payload.heading,
-        count,
+        grpc::GroundGroupSpawn {
+            country: payload.country,
+            name: payload.name,
+            unit_type: payload.unit_type,
+            lat: payload.lat,
+            lon: payload.lon,
+            heading: payload.heading,
+            count,
+        },
     )
     .await
     {

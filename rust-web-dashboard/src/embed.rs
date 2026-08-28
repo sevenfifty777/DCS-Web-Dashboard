@@ -19,7 +19,7 @@ use rust_embed::{EmbeddedFile, RustEmbed};
 struct Assets;
 
 /// Serve an embedded asset, falling back to `index.html` for SPA routes.
-////
+///
 /// Next.js static export emits one HTML file per route (`weather.html`,
 /// `settings.html`, ...) plus hashed assets under `_next/`. To make deep links
 /// and hard refreshes work we try, in order: the exact path, `<path>.html`, and

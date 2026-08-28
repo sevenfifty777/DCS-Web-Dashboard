@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::Path;
 use mlua::{Lua, Table};
 use serde::{Deserialize, Serialize};
 use anyhow::Result;
@@ -66,7 +66,7 @@ pub struct FootholdData {
     pub attacks: Vec<FootholdAttack>,
 }
 
-fn parse_foothold_ranks(lua: &Lua, path: &PathBuf) -> Result<std::collections::HashMap<String, FootholdPlayer>> {
+fn parse_foothold_ranks(lua: &Lua, path: &Path) -> Result<std::collections::HashMap<String, FootholdPlayer>> {
     let script = std::fs::read_to_string(path)?;
     lua.load(&script).exec().map_err(|e| anyhow::anyhow!("{}", e))?;
     let globals = lua.globals();
@@ -75,24 +75,22 @@ fn parse_foothold_ranks(lua: &Lua, path: &PathBuf) -> Result<std::collections::H
 
     let mut map = std::collections::HashMap::new();
 
-    for pair in players.pairs::<String, Table>() {
-        if let Ok((name, p_table)) = pair {
-            // Strip out slashes and extra quotes from the raw names
-            let clean_name = name.replace("\\", "").replace("\"", "");
-            let credits: f64 = p_table.get("credits").unwrap_or(0.0);
-            
-            map.insert(clean_name.clone(), FootholdPlayer {
-                name: clean_name,
-                credits,
-                ..Default::default()
-            });
-        }
+    for (name, p_table) in players.pairs::<String, Table>().flatten() {
+        // Strip out slashes and extra quotes from the raw names
+        let clean_name = name.replace("\\", "").replace("\"", "");
+        let credits: f64 = p_table.get("credits").unwrap_or(0.0);
+
+        map.insert(clean_name.clone(), FootholdPlayer {
+            name: clean_name,
+            credits,
+            ..Default::default()
+        });
     }
     
     Ok(map)
 }
 
-fn parse_foothold_ca(lua: &Lua, path: &PathBuf, player_map: &mut std::collections::HashMap<String, FootholdPlayer>) -> Result<FootholdData> {
+fn parse_foothold_ca(lua: &Lua, path: &Path, player_map: &mut std::collections::HashMap<String, FootholdPlayer>) -> Result<FootholdData> {
     let script = std::fs::read_to_string(path)?;
     lua.load(&script).exec().map_err(|e| anyhow::anyhow!("{}", e))?;
     
@@ -101,171 +99,106 @@ fn parse_foothold_ca(lua: &Lua, path: &PathBuf, player_map: &mut std::collection
 
     // Parse Player Stats
     if let Ok(player_stats) = zone_persistance.get::<Table>("playerStats") {
-        for pair in player_stats.pairs::<String, Table>() {
-            if let Ok((name, stats)) = pair {
-                let clean_name = name.replace("\\", "").replace("\"", "");
-                let entry = player_map.entry(clean_name.clone()).or_insert(FootholdPlayer {
-                    name: clean_name,
-                    ..Default::default()
-                });
+        for (name, stats) in player_stats.pairs::<String, Table>().flatten() {
+            let clean_name = name.replace("\\", "").replace("\"", "");
+            let entry = player_map.entry(clean_name.clone()).or_insert(FootholdPlayer {
+                name: clean_name,
+                ..Default::default()
+            });
 
-                entry.points = stats.get("Points").unwrap_or(0.0);
-                entry.points_spent = stats.get("Points spent").unwrap_or(0.0);
-                entry.kills_air = stats.get("Air").unwrap_or(0);
-                entry.kills_helo = stats.get("Helo").unwrap_or(0);
-                entry.kills_sam = stats.get("SAM").unwrap_or(0);
-                entry.kills_ground = stats.get("Ground Units").unwrap_or(0);
-                entry.kills_infantry = stats.get("Infantry").unwrap_or(0);
-                entry.deaths = stats.get("Deaths").unwrap_or(0);
-            }
+            entry.points = stats.get("Points").unwrap_or(0.0);
+            entry.points_spent = stats.get("Points spent").unwrap_or(0.0);
+            entry.kills_air = stats.get("Air").unwrap_or(0);
+            entry.kills_helo = stats.get("Helo").unwrap_or(0);
+            entry.kills_sam = stats.get("SAM").unwrap_or(0);
+            entry.kills_ground = stats.get("Ground Units").unwrap_or(0);
+            entry.kills_infantry = stats.get("Infantry").unwrap_or(0);
+            entry.deaths = stats.get("Deaths").unwrap_or(0);
         }
     }
 
     // Parse Missions
     let mut missions = Vec::new();
     if let Ok(missions_table) = zone_persistance.get::<Table>("missions") {
-        for pair in missions_table.pairs::<i64, Table>() {
-            if let Ok((id, m)) = pair {
-                missions.push(FootholdMission {
-                    id,
-                    title: m.get("title").unwrap_or_default(),
-                    description: m.get("description").unwrap_or_default(),
-                    is_running: m.get("isRunning").unwrap_or(false),
-                });
-            }
+        for (id, mission) in missions_table.pairs::<i64, Table>().flatten() {
+            missions.push(FootholdMission {
+                id,
+                title: mission.get("title").unwrap_or_default(),
+                description: mission.get("description").unwrap_or_default(),
+                is_running: mission.get("isRunning").unwrap_or(false),
+            });
         }
     }
 
     // Parse Ejected Pilots
     let mut ejected_pilots = Vec::new();
     if let Ok(pilots_table) = zone_persistance.get::<Table>("ejectedPilots") {
-        for pair in pilots_table.pairs::<i64, Table>() {
-            if let Ok((id, p)) = pair {
-                ejected_pilots.push(FootholdEjectedPilot {
-                    id,
-                    coalition: p.get("coalition").unwrap_or(0),
-                    player_name: p.get("playerName").unwrap_or_default(),
-                    lat: p.get("latitude").unwrap_or(0.0),
-                    lon: p.get("longitude").unwrap_or(0.0),
-                    alt: p.get("altitude").unwrap_or(0.0),
-                    timestamp: p.get("timestamp").unwrap_or(0.0),
-                });
-            }
+        for (id, pilot) in pilots_table.pairs::<i64, Table>().flatten() {
+            ejected_pilots.push(FootholdEjectedPilot {
+                id,
+                coalition: pilot.get("coalition").unwrap_or(0),
+                player_name: pilot.get("playerName").unwrap_or_default(),
+                lat: pilot.get("latitude").unwrap_or(0.0),
+                lon: pilot.get("longitude").unwrap_or(0.0),
+                alt: pilot.get("altitude").unwrap_or(0.0),
+                timestamp: pilot.get("timestamp").unwrap_or(0.0),
+            });
         }
     }
 
     // Parse Zones
     let mut zones = Vec::new();
     if let Ok(zones_table) = zone_persistance.get::<Table>("zones") {
-        for pair in zones_table.pairs::<String, Table>() {
-            if let Ok((name, z)) = pair {
-                let side = z.get("side").unwrap_or(0);
-                let level = z.get("level").unwrap_or(0);
-                let (lat, lon) = if let Ok(lat_long) = z.get::<Table>("lat_long") {
-                    (lat_long.get("latitude").unwrap_or(0.0), lat_long.get("longitude").unwrap_or(0.0))
-                } else {
-                    (0.0, 0.0)
-                };
+        for (name, zone) in zones_table.pairs::<String, Table>().flatten() {
+            let side = zone.get("side").unwrap_or(0);
+            let level = zone.get("level").unwrap_or(0);
+            let (lat, lon) = if let Ok(lat_long) = zone.get::<Table>("lat_long") {
+                (lat_long.get("latitude").unwrap_or(0.0), lat_long.get("longitude").unwrap_or(0.0))
+            } else {
+                (0.0, 0.0)
+            };
 
-                let mut units = Vec::new();
-                if let Ok(remaining_units) = z.get::<Table>("remainingUnits") {
-                    for group_pair in remaining_units.pairs::<i64, Table>() {
-                        if let Ok((_, group_table)) = group_pair {
-                            for unit_pair in group_table.pairs::<i64, String>() {
-                                if let Ok((_, unit_name)) = unit_pair {
-                                    units.push(unit_name);
-                                }
-                            }
-                        }
+            let mut units = Vec::new();
+            if let Ok(remaining_units) = zone.get::<Table>("remainingUnits") {
+                for (_, group_table) in remaining_units.pairs::<i64, Table>().flatten() {
+                    for (_, unit_name) in group_table.pairs::<i64, String>().flatten() {
+                        units.push(unit_name);
                     }
                 }
-
-                zones.push(FootholdZone {
-                    name,
-                    side,
-                    level,
-                    lat,
-                    lon,
-                    units,
-                });
             }
+
+            zones.push(FootholdZone {
+                name,
+                side,
+                level,
+                lat,
+                lon,
+                units,
+            });
         }
     }
 
     // Parse Attacks
     let mut attacks = Vec::new();
     let parse_attacks = |attacks_vec: &mut Vec<FootholdAttack>, parent_table: &Table| {
-        if let Ok(active) = parent_table.get::<Table>("active") {
-            for pair in active.pairs::<String, Table>() {
-                if let Ok((_, atk)) = pair {
+        for table_name in ["active", "inair", "spawnNowTakeoff"] {
+            if let Ok(attack_table) = parent_table.get::<Table>(table_name) {
+                for (_, attack) in attack_table.pairs::<String, Table>().flatten() {
                     let mut unit_types = Vec::new();
-                    if let Ok(alive_types) = atk.get::<Table>("aliveUnitTypes") {
-                        for unit_pair in alive_types.pairs::<i64, String>() {
-                            if let Ok((_, unit_name)) = unit_pair {
-                                unit_types.push(unit_name);
-                            }
+                    if let Ok(alive_types) = attack.get::<Table>("aliveUnitTypes") {
+                        for (_, unit_name) in alive_types.pairs::<i64, String>().flatten() {
+                            unit_types.push(unit_name);
                         }
-                    } else if let Ok(template_name) = atk.get::<String>("templateName") {
+                    } else if let Ok(template_name) = attack.get::<String>("templateName") {
                         unit_types.push(template_name);
                     }
                     attacks_vec.push(FootholdAttack {
-                        group_name: atk.get("groupName").unwrap_or_default(),
-                        origin_zone: atk.get::<String>("originZone").unwrap_or_else(|_| atk.get::<String>("zoneName").unwrap_or_default()),
-                        target_zone: atk.get::<String>("targetZone").unwrap_or_else(|_| atk.get::<String>("dynamicTargetZone").unwrap_or_default()),
-                        side: atk.get("side").unwrap_or(0),
-                        mission_type: atk.get::<String>("missionType").unwrap_or_else(|_| atk.get::<String>("mission").unwrap_or_default()),
-                        alive_count: atk.get("aliveCount").unwrap_or(0),
-                        unit_types,
-                    });
-                }
-            }
-        }
-        
-        if let Ok(inair) = parent_table.get::<Table>("inair") {
-            for pair in inair.pairs::<String, Table>() {
-                if let Ok((_, atk)) = pair {
-                    let mut unit_types = Vec::new();
-                    if let Ok(alive_types) = atk.get::<Table>("aliveUnitTypes") {
-                        for unit_pair in alive_types.pairs::<i64, String>() {
-                            if let Ok((_, unit_name)) = unit_pair {
-                                unit_types.push(unit_name);
-                            }
-                        }
-                    } else if let Ok(template_name) = atk.get::<String>("templateName") {
-                        unit_types.push(template_name);
-                    }
-                    attacks_vec.push(FootholdAttack {
-                        group_name: atk.get("groupName").unwrap_or_default(),
-                        origin_zone: atk.get::<String>("originZone").unwrap_or_else(|_| atk.get::<String>("zoneName").unwrap_or_default()),
-                        target_zone: atk.get::<String>("targetZone").unwrap_or_else(|_| atk.get::<String>("dynamicTargetZone").unwrap_or_default()),
-                        side: atk.get("side").unwrap_or(0),
-                        mission_type: atk.get::<String>("missionType").unwrap_or_else(|_| atk.get::<String>("mission").unwrap_or_default()),
-                        alive_count: atk.get("aliveCount").unwrap_or(0),
-                        unit_types,
-                    });
-                }
-            }
-        }
-        if let Ok(spawn_now) = parent_table.get::<Table>("spawnNowTakeoff") {
-            for pair in spawn_now.pairs::<String, Table>() {
-                if let Ok((_, atk)) = pair {
-                    let mut unit_types = Vec::new();
-                    if let Ok(alive_types) = atk.get::<Table>("aliveUnitTypes") {
-                        for unit_pair in alive_types.pairs::<i64, String>() {
-                            if let Ok((_, unit_name)) = unit_pair {
-                                unit_types.push(unit_name);
-                            }
-                        }
-                    } else if let Ok(template_name) = atk.get::<String>("templateName") {
-                        unit_types.push(template_name);
-                    }
-                    attacks_vec.push(FootholdAttack {
-                        group_name: atk.get("groupName").unwrap_or_default(),
-                        origin_zone: atk.get::<String>("originZone").unwrap_or_else(|_| atk.get::<String>("zoneName").unwrap_or_default()),
-                        target_zone: atk.get::<String>("targetZone").unwrap_or_else(|_| atk.get::<String>("dynamicTargetZone").unwrap_or_default()),
-                        side: atk.get("side").unwrap_or(0),
-                        mission_type: atk.get::<String>("missionType").unwrap_or_else(|_| atk.get::<String>("mission").unwrap_or_default()),
-                        alive_count: atk.get("aliveCount").unwrap_or(0),
+                        group_name: attack.get("groupName").unwrap_or_default(),
+                        origin_zone: attack.get::<String>("originZone").unwrap_or_else(|_| attack.get::<String>("zoneName").unwrap_or_default()),
+                        target_zone: attack.get::<String>("targetZone").unwrap_or_else(|_| attack.get::<String>("dynamicTargetZone").unwrap_or_default()),
+                        side: attack.get("side").unwrap_or(0),
+                        mission_type: attack.get::<String>("missionType").unwrap_or_else(|_| attack.get::<String>("mission").unwrap_or_default()),
+                        alive_count: attack.get("aliveCount").unwrap_or(0),
                         unit_types,
                     });
                 }
@@ -293,7 +226,7 @@ fn parse_foothold_ca(lua: &Lua, path: &PathBuf, player_map: &mut std::collection
     })
 }
 
-pub fn get_foothold_data(saves_dir: &PathBuf) -> Result<FootholdData> {
+pub fn get_foothold_data(saves_dir: &Path) -> Result<FootholdData> {
     let lua = Lua::new();
 
     let ranks_file = saves_dir.join("Foothold_Ranks.lua");
@@ -360,29 +293,27 @@ fn flatten_lua_value(
             config.insert(prefix.to_string(), serde_json::json!(n));
         }
         mlua::Value::Table(t) => {
-            for pair in t.pairs::<mlua::Value, mlua::Value>() {
-                if let Ok((k, v)) = pair {
-                    let key_str = match k {
-                        mlua::Value::String(s) => {
-                            if let Ok(s_str) = s.to_str() {
-                                s_str.to_string()
-                            } else {
-                                "".to_string()
-                            }
-                        },
-                        mlua::Value::Integer(i) => i.to_string(),
-                        _ => continue,
-                    };
-                    if key_str.is_empty() {
-                        continue;
-                    }
-                    let new_prefix = if prefix.is_empty() {
-                        key_str
-                    } else {
-                        format!("{}.{}", prefix, key_str)
-                    };
-                    flatten_lua_value(&new_prefix, v, config);
+            for (key, value) in t.pairs::<mlua::Value, mlua::Value>().flatten() {
+                let key_str = match key {
+                    mlua::Value::String(s) => {
+                        if let Ok(s_str) = s.to_str() {
+                            s_str.to_string()
+                        } else {
+                            "".to_string()
+                        }
+                    },
+                    mlua::Value::Integer(i) => i.to_string(),
+                    _ => continue,
+                };
+                if key_str.is_empty() {
+                    continue;
                 }
+                let new_prefix = if prefix.is_empty() {
+                    key_str
+                } else {
+                    format!("{}.{}", prefix, key_str)
+                };
+                flatten_lua_value(&new_prefix, value, config);
             }
         }
         _ => {}
@@ -401,7 +332,7 @@ pub struct FootholdMetadata {
     pub choices: Vec<String>,
 }
 
-pub fn get_foothold_config(saves_dir: &PathBuf) -> Result<FootholdConfigResponse> {
+pub fn get_foothold_config(saves_dir: &Path) -> Result<FootholdConfigResponse> {
     let config_file = saves_dir.join("Foothold Config.lua");
     if !config_file.exists() {
         return Err(anyhow::anyhow!("Foothold Config.lua not found at {:?}", config_file));
@@ -413,13 +344,11 @@ pub fn get_foothold_config(saves_dir: &PathBuf) -> Result<FootholdConfigResponse
     let globals = lua.globals();
     
     let mut config = std::collections::HashMap::new();
-    for pair in globals.pairs::<String, mlua::Value>() {
-        if let Ok((key, val)) = pair {
-            if key == "_G" || key == "_VERSION" || key == "package" || key == "string" || key == "table" || key == "math" || key == "io" || key == "os" || key == "coroutine" || key == "debug" || key == "utf8" {
-                continue;
-            }
-            flatten_lua_value(&key, val, &mut config);
+    for (key, value) in globals.pairs::<String, mlua::Value>().flatten() {
+        if key == "_G" || key == "_VERSION" || key == "package" || key == "string" || key == "table" || key == "math" || key == "io" || key == "os" || key == "coroutine" || key == "debug" || key == "utf8" {
+            continue;
         }
+        flatten_lua_value(&key, value, &mut config);
     }
     
     let mut metadata = std::collections::HashMap::new();
@@ -452,7 +381,7 @@ pub fn get_foothold_config(saves_dir: &PathBuf) -> Result<FootholdConfigResponse
                     help.push_str(&current_block_comment.join("\n"));
                 }
                 if let Some(tc) = trailing_comment {
-                    if !help.is_empty() { help.push_str("\n"); }
+                    if !help.is_empty() { help.push('\n'); }
                     help.push_str(&tc);
                 }
                 
@@ -463,7 +392,7 @@ pub fn get_foothold_config(saves_dir: &PathBuf) -> Result<FootholdConfigResponse
                     // Splitting by \n first to isolate the line
                     if let Some(line_end) = help[idx..].find('\n') {
                         let remaining = &help[idx + "valid values:".len()..idx + line_end];
-                        let parts: Vec<&str> = remaining.split(|c| c == '|' || c == ',').collect();
+                        let parts: Vec<&str> = remaining.split(['|', ',']).collect();
                         for part in parts {
                             let p = part.trim();
                             if let Some(start) = p.find('"') {
@@ -478,7 +407,7 @@ pub fn get_foothold_config(saves_dir: &PathBuf) -> Result<FootholdConfigResponse
                         }
                     } else {
                         let remaining = &help[idx + "valid values:".len()..];
-                        let parts: Vec<&str> = remaining.split(|c| c == '|' || c == ',').collect();
+                        let parts: Vec<&str> = remaining.split(['|', ',']).collect();
                         for part in parts {
                             let p = part.trim();
                             if let Some(start) = p.find('"') {
@@ -519,7 +448,7 @@ pub fn get_foothold_config(saves_dir: &PathBuf) -> Result<FootholdConfigResponse
     })
 }
 
-pub fn update_foothold_config(saves_dir: &PathBuf, updates: std::collections::HashMap<String, serde_json::Value>) -> Result<()> {
+pub fn update_foothold_config(saves_dir: &Path, updates: std::collections::HashMap<String, serde_json::Value>) -> Result<()> {
     let config_file = saves_dir.join("Foothold Config.lua");
     if !config_file.exists() {
         return Err(anyhow::anyhow!("Foothold Config.lua not found at {:?}", config_file));
@@ -553,8 +482,8 @@ pub fn update_foothold_config(saves_dir: &PathBuf, updates: std::collections::Ha
     let re_assignment = regex::Regex::new(r#"^\s*(?:(?:\["([^"]+)"\])|([a-zA-Z_]\w*))\s*=\s*(.*)$"#).unwrap();
     let re_table_end = regex::Regex::new(r#"^\s*\}\,?\s*(?:--.*)?$"#).unwrap();
 
-    for i in 0..lines.len() {
-        let line = lines[i].clone();
+    for current_line in &mut lines {
+        let line = current_line.clone();
         
         if re_table_end.is_match(&line) {
             // Check if there are any unprocessed new keys for this path to insert
@@ -578,7 +507,7 @@ pub fn update_foothold_config(saves_dir: &PathBuf, updates: std::collections::Ha
                     }
                 }
                 if !to_insert.is_empty() {
-                    lines[i] = format!("{}\n{}", to_insert.join("\n"), line);
+                    *current_line = format!("{}\n{}", to_insert.join("\n"), line);
                 }
             }
             current_path.pop();
@@ -599,7 +528,7 @@ pub fn update_foothold_config(saves_dir: &PathBuf, updates: std::collections::Ha
             
             if let Some(new_val) = str_updates.get(&path_str) {
                 if new_val == "__DELETE__" {
-                    lines[i] = String::new(); // Mark line for deletion
+                    *current_line = String::new(); // Mark line for deletion
                 } else {
                     let rest = caps.get(3).unwrap().as_str();
                     let comment = rest.find("--").map(|idx| &rest[idx..]).unwrap_or("");
@@ -608,7 +537,7 @@ pub fn update_foothold_config(saves_dir: &PathBuf, updates: std::collections::Ha
                     let prefix_end = caps.get(3).unwrap().start();
                     let prefix = &line[..prefix_end];
                     let new_line = format!("{}{}{} {}", prefix, new_val, comma, comment);
-                    lines[i] = new_line.trim_end().to_string();
+                    *current_line = new_line.trim_end().to_string();
                 }
                 // We've processed this update
                 str_updates.remove(&path_str);

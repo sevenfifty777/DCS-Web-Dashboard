@@ -89,7 +89,7 @@ pub fn launch_in_user_session(exe_path: &str, args: &str, working_dir: Option<&s
         let mut cmd_wide = to_wide_mut(&cmd_line);
 
         // Optional working directory.
-        let wd_wide: Option<Vec<u16>> = working_dir.map(|d| to_wide(d));
+        let wd_wide: Option<Vec<u16>> = working_dir.map(to_wide);
         let wd_ptr: *const u16 = wd_wide.as_ref().map_or(ptr::null(), |v| v.as_ptr());
 
         // 5. Set up STARTUPINFO.
@@ -114,7 +114,7 @@ pub fn launch_in_user_session(exe_path: &str, args: &str, working_dir: Option<&s
             cmd_wide.as_mut_ptr(),   // lpCommandLine (mutable)
             ptr::null_mut(),         // lpProcessAttributes
             ptr::null_mut(),         // lpThreadAttributes
-            FALSE as i32,            // bInheritHandles
+            FALSE,                   // bInheritHandles
             creation_flags,          // dwCreationFlags
             env_block,               // lpEnvironment
             wd_ptr,                  // lpCurrentDirectory

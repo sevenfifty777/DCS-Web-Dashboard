@@ -163,9 +163,9 @@ impl Config {
                 let cmd_str = cmd.trim_matches('\'');
                 if let Some(cfg_idx) = cmd_str.find("-cfg=") {
                     let path_part = &cmd_str[cfg_idx + 5..];
-                    let cfg_val = if path_part.starts_with('"') {
-                        if let Some(end) = path_part[1..].find('"') {
-                            &path_part[1..=end]
+                    let cfg_val = if let Some(unquoted) = path_part.strip_prefix('"') {
+                        if let Some(end) = unquoted.find('"') {
+                            &unquoted[..end]
                         } else {
                             path_part
                         }

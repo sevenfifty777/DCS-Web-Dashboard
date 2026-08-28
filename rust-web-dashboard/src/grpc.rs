@@ -749,40 +749,41 @@ pub async fn stream_units(
     Ok(resp.into_inner())
 }
 
-pub async fn add_ground_group(
-    channel: Channel,
-    country: i32,
-    name: String,
-    unit_type: String,
-    lat: f64,
-    lon: f64,
-    heading: u32,
-    count: u32,
-) -> Result<(), Status> {
+pub struct GroundGroupSpawn {
+    pub country: i32,
+    pub name: String,
+    pub unit_type: String,
+    pub lat: f64,
+    pub lon: f64,
+    pub heading: u32,
+    pub count: u32,
+}
+
+pub async fn add_ground_group(channel: Channel, spawn: GroundGroupSpawn) -> Result<(), Status> {
     // Generate a unique suffix using timestamp
     let ts = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
-    let unique_name = format!("{}_{}", name, ts);
+    let unique_name = format!("{}_{}", spawn.name, ts);
     
     // Construct the Lua script
     let mut lua = String::new();
-    lua.push_str(&format!("local country_id = {}\n", country));
+    lua.push_str(&format!("local country_id = {}\n", spawn.country));
     lua.push_str("local cat = Group.Category.GROUND\n");
     lua.push_str(&format!("local group_name = '{}'\n", unique_name.replace("'", "\\'")));
-    lua.push_str(&format!("local pos = coord.LLtoLO({}, {})\n", lat, lon));
+    lua.push_str(&format!("local pos = coord.LLtoLO({}, {})\n", spawn.lat, spawn.lon));
     lua.push_str("local groupData = {\n");
     lua.push_str("  name = group_name,\n");
     lua.push_str("  task = 'Ground Nothing',\n");
     lua.push_str("  route = { points = { [1] = { x = pos.x, y = pos.z, type = 'Turning Point', action = 'Off Road' } } },\n");
     lua.push_str("  units = {\n");
     
-    for i in 1..=count {
+    for i in 1..=spawn.count {
         let offset = (i as f64 - 1.0) * 10.0;
         lua.push_str(&format!("    [{}] = {{\n", i));
         lua.push_str(&format!("      name = group_name .. '-unit-{}',\n", i));
-        lua.push_str(&format!("      type = '{}',\n", unit_type.replace("'", "\\'")));
+        lua.push_str(&format!("      type = '{}',\n", spawn.unit_type.replace("'", "\\'")));
         lua.push_str(&format!("      x = pos.x + {},\n", offset));
         lua.push_str(&format!("      y = pos.z + {},\n", offset));
-        lua.push_str(&format!("      heading = {},\n", heading));
+        lua.push_str(&format!("      heading = {},\n", spawn.heading));
         lua.push_str("      skill = 'High',\n");
         lua.push_str("    },\n");
     }

@@ -1342,7 +1342,7 @@ pub async fn airboss_data(State(state): State<AppState>, Query(q): Query<Airboss
         }}))
     "#, carrier_name, carrier_name, carrier_name);
 
-    match grpc::custom_eval(state.grpc.clone(), lua.into()).await {
+    match grpc::custom_eval(state.grpc.clone(), lua).await {
         Ok(res) => {
             if let Ok(json) = serde_json::from_str::<serde_json::Value>(&res.json) {
                 if let Some(err) = json.get("error").and_then(|v| v.as_str()) {
