@@ -1,0 +1,848 @@
+{
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\docs\\book\\book-609e4cb8.js": {
+    "mtime": 1787417538.8170857,
+    "seen": 1787916496.4042823,
+    "ast_hash": "2465c6ef840cd12a2371394a8c5b3959",
+    "semantic_hash": "2465c6ef840cd12a2371394a8c5b3959"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\docs\\book\\clipboard-1626706a.min.js": {
+    "mtime": 1787417538.820086,
+    "seen": 1787916496.4042823,
+    "ast_hash": "f06c52bfddb458ad87349acf9fac06c5",
+    "semantic_hash": "f06c52bfddb458ad87349acf9fac06c5"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\docs\\book\\elasticlunr-ef4e11c1.min.js": {
+    "mtime": 1787417538.826087,
+    "seen": 1787916496.4042823,
+    "ast_hash": "bdc2dbed628a3bb7a62d58b999dd7123",
+    "semantic_hash": "bdc2dbed628a3bb7a62d58b999dd7123"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\docs\\book\\highlight-abc7f01d.js": {
+    "mtime": 1787417538.820086,
+    "seen": 1787916496.4042823,
+    "ast_hash": "a59ae1483df68e7fc5c3116462a4c15c",
+    "semantic_hash": "a59ae1483df68e7fc5c3116462a4c15c"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\docs\\book\\mark-09e88c2c.min.js": {
+    "mtime": 1787417538.826087,
+    "seen": 1787916496.4042823,
+    "ast_hash": "2ab50194c1473b8ab8589a3f63f204d8",
+    "semantic_hash": "2ab50194c1473b8ab8589a3f63f204d8"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\docs\\book\\openapi.json": {
+    "mtime": 1787417592.263829,
+    "seen": 1787916496.4042823,
+    "ast_hash": "d99e302fc2a6fff0fd3cd4701c3a6999",
+    "semantic_hash": "d99e302fc2a6fff0fd3cd4701c3a6999"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\docs\\book\\searcher-09f2665d.js": {
+    "mtime": 1787417592.2648754,
+    "seen": 1787916496.4042823,
+    "ast_hash": "c099830f0f0de2279e72c4f143ff83db",
+    "semantic_hash": "c099830f0f0de2279e72c4f143ff83db"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\docs\\book\\searchindex-8b265ab8.js": {
+    "mtime": 1787417592.2654393,
+    "seen": 1787916496.4042823,
+    "ast_hash": "6fef369c275c4c5a09fb08c4ea85315e",
+    "semantic_hash": "6fef369c275c4c5a09fb08c4ea85315e"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\docs\\book\\toc-7ef7debc.js": {
+    "mtime": 1787417592.2664874,
+    "seen": 1787916496.4042823,
+    "ast_hash": "b213070862ce976e436d899b87d2d220",
+    "semantic_hash": "b213070862ce976e436d899b87d2d220"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\docs\\src\\openapi.json": {
+    "mtime": 1787915554.4480553,
+    "seen": 1787916496.4042823,
+    "ast_hash": "88fc0cb03e4a80de2c108d4ba554bd06",
+    "semantic_hash": "88fc0cb03e4a80de2c108d4ba554bd06"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\rust-web-dashboard\\append.rs": {
+    "mtime": 1786650676.7583172,
+    "seen": 1787916496.4042823,
+    "ast_hash": "63bde8cded21b35b9188081527fa8e65",
+    "semantic_hash": "63bde8cded21b35b9188081527fa8e65"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\rust-web-dashboard\\build.rs": {
+    "mtime": 1782206156.6718805,
+    "seen": 1787916496.4042823,
+    "ast_hash": "cbd001878199db5abf699b017b6b549c",
+    "semantic_hash": "cbd001878199db5abf699b017b6b549c"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\rust-web-dashboard\\src\\auth.rs": {
+    "mtime": 1787565857.2424252,
+    "seen": 1787916496.4042823,
+    "ast_hash": "9eb9dae433248275072f65ea6aff02e5",
+    "semantic_hash": "9eb9dae433248275072f65ea6aff02e5"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\rust-web-dashboard\\src\\config.rs": {
+    "mtime": 1787565857.2424252,
+    "seen": 1787916496.4042823,
+    "ast_hash": "bc79d1525dbabeac42f12799e11e412f",
+    "semantic_hash": "bc79d1525dbabeac42f12799e11e412f"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\rust-web-dashboard\\src\\embed.rs": {
+    "mtime": 1787609319.1213381,
+    "seen": 1787916496.4042823,
+    "ast_hash": "1a9e2c95c94796dafe652853ca659a8c",
+    "semantic_hash": "1a9e2c95c94796dafe652853ca659a8c"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\rust-web-dashboard\\src\\foothold.rs": {
+    "mtime": 1787565857.2434247,
+    "seen": 1787916496.4042823,
+    "ast_hash": "cf412a30d582cfe05c8e90f4889f9d18",
+    "semantic_hash": "cf412a30d582cfe05c8e90f4889f9d18"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\rust-web-dashboard\\src\\graveyard.rs": {
+    "mtime": 1787565857.2434247,
+    "seen": 1787916496.4042823,
+    "ast_hash": "9733efdbe5cd5babded5bf30bb14961b",
+    "semantic_hash": "9733efdbe5cd5babded5bf30bb14961b"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\rust-web-dashboard\\src\\grpc.rs": {
+    "mtime": 1787915554.4480553,
+    "seen": 1787916496.4042823,
+    "ast_hash": "cd69f8eaf2789b620810b04f95f2afe6",
+    "semantic_hash": "cd69f8eaf2789b620810b04f95f2afe6"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\rust-web-dashboard\\src\\main.rs": {
+    "mtime": 1787609319.1213381,
+    "seen": 1787916496.4042823,
+    "ast_hash": "c14b4137c8c1788d33e360daae52ab01",
+    "semantic_hash": "c14b4137c8c1788d33e360daae52ab01"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\rust-web-dashboard\\src\\pb.rs": {
+    "mtime": 1786650676.7773163,
+    "seen": 1787916496.4042823,
+    "ast_hash": "1e1bf3f132a554e0f3ac694db932a0a6",
+    "semantic_hash": "1e1bf3f132a554e0f3ac694db932a0a6"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\rust-web-dashboard\\src\\proto_json.rs": {
+    "mtime": 1782206176.3975444,
+    "seen": 1787916496.4042823,
+    "ast_hash": "797f221472de9d6ce7483542eb18e2e3",
+    "semantic_hash": "797f221472de9d6ce7483542eb18e2e3"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\rust-web-dashboard\\src\\routes\\auth.rs": {
+    "mtime": 1787565857.2449293,
+    "seen": 1787916496.4042823,
+    "ast_hash": "cbadb90d3d26c8dd117cff59dd7fde01",
+    "semantic_hash": "cbadb90d3d26c8dd117cff59dd7fde01"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\rust-web-dashboard\\src\\routes\\coalition.rs": {
+    "mtime": 1787609319.1223366,
+    "seen": 1787916496.4042823,
+    "ast_hash": "4af87f0a241a23fbd9efe6d47af1abe1",
+    "semantic_hash": "4af87f0a241a23fbd9efe6d47af1abe1"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\rust-web-dashboard\\src\\routes\\dcs.rs": {
+    "mtime": 1787915554.4480553,
+    "seen": 1787916496.4042823,
+    "ast_hash": "21014d6d87ad705338efff4aa58bbc54",
+    "semantic_hash": "21014d6d87ad705338efff4aa58bbc54"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\rust-web-dashboard\\src\\routes\\mod.rs": {
+    "mtime": 1787565857.2474377,
+    "seen": 1787916496.4042823,
+    "ast_hash": "0c0786329a82334040670086ce305a05",
+    "semantic_hash": "0c0786329a82334040670086ce305a05"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\rust-web-dashboard\\src\\routes\\spawner.rs": {
+    "mtime": 1787565857.2484381,
+    "seen": 1787916496.4042823,
+    "ast_hash": "0665d17f31ad2f203b98a011d0798694",
+    "semantic_hash": "0665d17f31ad2f203b98a011d0798694"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\rust-web-dashboard\\src\\routes\\srs.rs": {
+    "mtime": 1787915554.4526348,
+    "seen": 1787916496.4042823,
+    "ast_hash": "0bcf6028a7b7c079cd75bbaf6f66ae7f",
+    "semantic_hash": "0bcf6028a7b7c079cd75bbaf6f66ae7f"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\rust-web-dashboard\\src\\routes\\stream.rs": {
+    "mtime": 1787565857.2504368,
+    "seen": 1787916496.4042823,
+    "ast_hash": "826ef5097d19b976478b67ff83d35b5c",
+    "semantic_hash": "826ef5097d19b976478b67ff83d35b5c"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\rust-web-dashboard\\src\\routes\\system.rs": {
+    "mtime": 1787565857.2504368,
+    "seen": 1787916496.4042823,
+    "ast_hash": "4a7592303d00100050739ecd62a8acec",
+    "semantic_hash": "4a7592303d00100050739ecd62a8acec"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\rust-web-dashboard\\src\\routes\\trigger.rs": {
+    "mtime": 1787565857.251437,
+    "seen": 1787916496.4042823,
+    "ast_hash": "c81a6e0a2d6b39f726937d2969f88177",
+    "semantic_hash": "c81a6e0a2d6b39f726937d2969f88177"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\rust-web-dashboard\\src\\routes\\warehouse.rs": {
+    "mtime": 1787565857.251437,
+    "seen": 1787916496.4042823,
+    "ast_hash": "3cc183a8a866ea272cce51c426135295",
+    "semantic_hash": "3cc183a8a866ea272cce51c426135295"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\rust-web-dashboard\\src\\routes\\world.rs": {
+    "mtime": 1787609319.123338,
+    "seen": 1787916496.4042823,
+    "ast_hash": "d56aefda8e2b14cd8a1891dedd111bd5",
+    "semantic_hash": "d56aefda8e2b14cd8a1891dedd111bd5"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\rust-web-dashboard\\src\\settings_lua.rs": {
+    "mtime": 1787565857.2524366,
+    "seen": 1787916496.4042823,
+    "ast_hash": "0eedec7854bc0b342330c842f2b18ab8",
+    "semantic_hash": "0eedec7854bc0b342330c842f2b18ab8"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\rust-web-dashboard\\src\\state.rs": {
+    "mtime": 1786983788.1777613,
+    "seen": 1787916496.4042823,
+    "ast_hash": "4bb30c9cb49607c55e4edbb2134cb439",
+    "semantic_hash": "4bb30c9cb49607c55e4edbb2134cb439"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\rust-web-dashboard\\src\\telemetry.rs": {
+    "mtime": 1787565857.2524366,
+    "seen": 1787916496.4042823,
+    "ast_hash": "133cc1ca3c292b7f75a895f1bc83a65c",
+    "semantic_hash": "133cc1ca3c292b7f75a895f1bc83a65c"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\rust-web-dashboard\\src\\win_session.rs": {
+    "mtime": 1787565857.2524366,
+    "seen": 1787916496.4042823,
+    "ast_hash": "674d598b855ded6f955ce5cb8eb49bf4",
+    "semantic_hash": "674d598b855ded6f955ce5cb8eb49bf4"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\rust-web-dashboard\\test.rs": {
+    "mtime": 1782404510.4138694,
+    "seen": 1787916496.4042823,
+    "ast_hash": "a9cfa788422f1fe2ad026601538b9b7a",
+    "semantic_hash": "a9cfa788422f1fe2ad026601538b9b7a"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\eslint.config.mjs": {
+    "mtime": 1781945950.4642925,
+    "seen": 1787916496.4042823,
+    "ast_hash": "dfa1f5f6a7037bf39dc510f30b180002",
+    "semantic_hash": "dfa1f5f6a7037bf39dc510f30b180002"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\next.config.ts": {
+    "mtime": 1786784545.3032568,
+    "seen": 1787916496.4042823,
+    "ast_hash": "e604f7ee77e32d5a0669bde6cf1a7102",
+    "semantic_hash": "e604f7ee77e32d5a0669bde6cf1a7102"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\package.json": {
+    "mtime": 1786650676.8375766,
+    "seen": 1787916496.4042823,
+    "ast_hash": "9296394f0dae2d4c5d35181ed1c089e0",
+    "semantic_hash": "9296394f0dae2d4c5d35181ed1c089e0"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\_legacy_api\\atmosphere\\route.ts": {
+    "mtime": 1787915554.4526348,
+    "seen": 1787916496.4042823,
+    "ast_hash": "0aeb6873dab33587a4282a7ea272e3fd",
+    "semantic_hash": "0aeb6873dab33587a4282a7ea272e3fd"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\_legacy_api\\auth\\callback\\route.ts": {
+    "mtime": 1787915554.4526348,
+    "seen": 1787916496.4042823,
+    "ast_hash": "0fbab431d75e62b1d97fab5d8a7cc060",
+    "semantic_hash": "0fbab431d75e62b1d97fab5d8a7cc060"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\_legacy_api\\auth\\discord\\route.ts": {
+    "mtime": 1781958930.2431288,
+    "seen": 1787916496.4042823,
+    "ast_hash": "98c2a80cea4b727ad95febde4c6dcf55",
+    "semantic_hash": "98c2a80cea4b727ad95febde4c6dcf55"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\_legacy_api\\auth\\route.ts": {
+    "mtime": 1787915554.4526348,
+    "seen": 1787916496.4042823,
+    "ast_hash": "aa4a190f07ed9b6ee3b6323acb2ec820",
+    "semantic_hash": "aa4a190f07ed9b6ee3b6323acb2ec820"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\_legacy_api\\chat\\route.ts": {
+    "mtime": 1787915554.4526348,
+    "seen": 1787916496.4042823,
+    "ast_hash": "5afa78a166b00d4d207d6dd472e904c9",
+    "semantic_hash": "5afa78a166b00d4d207d6dd472e904c9"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\_legacy_api\\console\\route.ts": {
+    "mtime": 1787915554.4526348,
+    "seen": 1787916496.4042823,
+    "ast_hash": "2aceab04c0f980aa3b4c057994a71079",
+    "semantic_hash": "2aceab04c0f980aa3b4c057994a71079"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\_legacy_api\\events\\stream\\route.ts": {
+    "mtime": 1787915554.4526348,
+    "seen": 1787916496.4042823,
+    "ast_hash": "6e00734664e0ea9a949593848ff0d95a",
+    "semantic_hash": "6e00734664e0ea9a949593848ff0d95a"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\_legacy_api\\health\\route.ts": {
+    "mtime": 1787915554.456398,
+    "seen": 1787916496.4042823,
+    "ast_hash": "2593560f2405c802aa297287e77e6cef",
+    "semantic_hash": "2593560f2405c802aa297287e77e6cef"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\_legacy_api\\mission\\browse\\route.ts": {
+    "mtime": 1787915554.456398,
+    "seen": 1787916496.4042823,
+    "ast_hash": "4292372dbdee39d8ae3a0e3e6ce898b5",
+    "semantic_hash": "4292372dbdee39d8ae3a0e3e6ce898b5"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\_legacy_api\\mission\\route.ts": {
+    "mtime": 1787915554.456398,
+    "seen": 1787916496.4042823,
+    "ast_hash": "2b56c4f436ed43fb7c15a65f5a9f94b8",
+    "semantic_hash": "2b56c4f436ed43fb7c15a65f5a9f94b8"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\_legacy_api\\mission\\upload\\route.ts": {
+    "mtime": 1787915554.456398,
+    "seen": 1787916496.4042823,
+    "ast_hash": "9974700d257491d80bc249ec6fad0233",
+    "semantic_hash": "9974700d257491d80bc249ec6fad0233"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\_legacy_api\\players\\route.ts": {
+    "mtime": 1787915554.456398,
+    "seen": 1787916496.4042823,
+    "ast_hash": "85c6ca7f3be77d4ea16d0d3c6c2eb334",
+    "semantic_hash": "85c6ca7f3be77d4ea16d0d3c6c2eb334"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\_legacy_api\\radar\\stream\\route.ts": {
+    "mtime": 1787915554.456398,
+    "seen": 1787916496.4042823,
+    "ast_hash": "db245caf9500d647e9eff545d5c870ab",
+    "semantic_hash": "db245caf9500d647e9eff545d5c870ab"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\_legacy_api\\rdp-status\\route.ts": {
+    "mtime": 1787915554.456398,
+    "seen": 1787916496.4042823,
+    "ast_hash": "6eb0cd5c85a0f9de74a07cac1222c439",
+    "semantic_hash": "6eb0cd5c85a0f9de74a07cac1222c439"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\_legacy_api\\server\\tasks\\route.ts": {
+    "mtime": 1787915554.456398,
+    "seen": 1787916496.4042823,
+    "ast_hash": "8ae816afe24ac4a8ab78f8de5ef579ae",
+    "semantic_hash": "8ae816afe24ac4a8ab78f8de5ef579ae"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\_legacy_api\\settings\\route.ts": {
+    "mtime": 1787915554.460561,
+    "seen": 1787916496.4042823,
+    "ast_hash": "c4b4fcf0c3347ab0fa430d8b10884c56",
+    "semantic_hash": "c4b4fcf0c3347ab0fa430d8b10884c56"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\_legacy_api\\triggers\\route.ts": {
+    "mtime": 1787915554.460561,
+    "seen": 1787916496.4042823,
+    "ast_hash": "ee7805e6a631beeae7d23f59a0268be4",
+    "semantic_hash": "ee7805e6a631beeae7d23f59a0268be4"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\_legacy_api\\weather\\apply\\route.ts": {
+    "mtime": 1787915554.460561,
+    "seen": 1787916496.4042823,
+    "ast_hash": "b99b7cc98bbd7f74456d3824a5aaf24e",
+    "semantic_hash": "b99b7cc98bbd7f74456d3824a5aaf24e"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\_legacy_api\\weather\\route.ts": {
+    "mtime": 1787915554.460561,
+    "seen": 1787916496.4042823,
+    "ast_hash": "ef03a8e5e028312175286cfcd0e4a509",
+    "semantic_hash": "ef03a8e5e028312175286cfcd0e4a509"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\_legacy_proxy.ts": {
+    "mtime": 1782056672.5133963,
+    "seen": 1787916496.4042823,
+    "ast_hash": "638346a933cb98bb8cfa0fef0a9a6a8a",
+    "semantic_hash": "638346a933cb98bb8cfa0fef0a9a6a8a"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\app\\access-logs\\page.tsx": {
+    "mtime": 1787915554.460561,
+    "seen": 1787916496.4042823,
+    "ast_hash": "ead3837d1047ce1f0f764a11d64952f3",
+    "semantic_hash": "ead3837d1047ce1f0f764a11d64952f3"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\app\\airboss\\aircraftIcons.test.ts": {
+    "mtime": 1787609319.1243365,
+    "seen": 1787916496.4042823,
+    "ast_hash": "4712879b8e71a47b74709b25c87a4f66",
+    "semantic_hash": "4712879b8e71a47b74709b25c87a4f66"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\app\\airboss\\aircraftIcons.ts": {
+    "mtime": 1787609319.125337,
+    "seen": 1787916496.4042823,
+    "ast_hash": "7eb62c3542e5dd09bcaabfc30201c25b",
+    "semantic_hash": "7eb62c3542e5dd09bcaabfc30201c25b"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\app\\airboss\\deckRoutes.test.ts": {
+    "mtime": 1787609319.125337,
+    "seen": 1787916496.4042823,
+    "ast_hash": "9a35704f401627fa87851c61f1b0ae6d",
+    "semantic_hash": "9a35704f401627fa87851c61f1b0ae6d"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\app\\airboss\\deckRoutes.ts": {
+    "mtime": 1787609319.1263359,
+    "seen": 1787916496.4042823,
+    "ast_hash": "81370b41c7bccddaec342c035ce932cf",
+    "semantic_hash": "81370b41c7bccddaec342c035ce932cf"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\app\\airboss\\deckSpots.test.ts": {
+    "mtime": 1787609319.1263359,
+    "seen": 1787916496.4042823,
+    "ast_hash": "3bd194dddcc5c7e66d785b124c690045",
+    "semantic_hash": "3bd194dddcc5c7e66d785b124c690045"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\app\\airboss\\deckSpots.ts": {
+    "mtime": 1787609319.127336,
+    "seen": 1787916496.4042823,
+    "ast_hash": "320439899d00106c9199905fdb8f5679",
+    "semantic_hash": "320439899d00106c9199905fdb8f5679"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\app\\airboss\\deckTracking.test.ts": {
+    "mtime": 1787609319.127336,
+    "seen": 1787916496.4042823,
+    "ast_hash": "6e8c9fd366e1c077d5c2e2cd0f726638",
+    "semantic_hash": "6e8c9fd366e1c077d5c2e2cd0f726638"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\app\\airboss\\deckTracking.ts": {
+    "mtime": 1787609319.128423,
+    "seen": 1787916496.4042823,
+    "ast_hash": "4f180241d04597d017d9f521284e655d",
+    "semantic_hash": "4f180241d04597d017d9f521284e655d"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\app\\airboss\\page.tsx": {
+    "mtime": 1787915554.460561,
+    "seen": 1787916496.4042823,
+    "ast_hash": "d9b2ba166f00a01e10d55ecdab42569c",
+    "semantic_hash": "d9b2ba166f00a01e10d55ecdab42569c"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\app\\atmosphere\\page.tsx": {
+    "mtime": 1787915554.460561,
+    "seen": 1787916496.4042823,
+    "ast_hash": "74e5203437e1f77c67564cb0b92a0583",
+    "semantic_hash": "74e5203437e1f77c67564cb0b92a0583"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\app\\chat\\page.tsx": {
+    "mtime": 1787915554.460561,
+    "seen": 1787916496.4042823,
+    "ast_hash": "8583e2ee5a3cea6e16c9eb3c2da453dc",
+    "semantic_hash": "8583e2ee5a3cea6e16c9eb3c2da453dc"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\app\\console\\page.tsx": {
+    "mtime": 1787915554.460561,
+    "seen": 1787916496.4042823,
+    "ast_hash": "06accab884a1fc34b6483b02f68a2e6e",
+    "semantic_hash": "06accab884a1fc34b6483b02f68a2e6e"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\app\\events\\page.tsx": {
+    "mtime": 1787915554.46474,
+    "seen": 1787916496.4042823,
+    "ast_hash": "b68553220f5f89f65e797abfc1ac53a7",
+    "semantic_hash": "b68553220f5f89f65e797abfc1ac53a7"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\app\\foothold\\config\\page.tsx": {
+    "mtime": 1787915554.46474,
+    "seen": 1787916496.4042823,
+    "ast_hash": "1b48ad83cd2cf978e4d261fd0446cf88",
+    "semantic_hash": "1b48ad83cd2cf978e4d261fd0446cf88"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\app\\foothold\\page.tsx": {
+    "mtime": 1787915554.46474,
+    "seen": 1787916496.4042823,
+    "ast_hash": "a5313a83fb06999b96490bbcd520dcb5",
+    "semantic_hash": "a5313a83fb06999b96490bbcd520dcb5"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\app\\layout.tsx": {
+    "mtime": 1787910984.1222837,
+    "seen": 1787916496.4042823,
+    "ast_hash": "ac975b12253fc80066de56c7af4a6fc7",
+    "semantic_hash": "ac975b12253fc80066de56c7af4a6fc7"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\app\\leaderboard\\page.tsx": {
+    "mtime": 1787915554.46474,
+    "seen": 1787916496.4042823,
+    "ast_hash": "2e50fb64aa95691b32d4e6ba73217ab8",
+    "semantic_hash": "2e50fb64aa95691b32d4e6ba73217ab8"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\app\\login\\page.tsx": {
+    "mtime": 1787915554.46474,
+    "seen": 1787916496.4042823,
+    "ast_hash": "e244b4cc7619448ef55272555cec9e1d",
+    "semantic_hash": "e244b4cc7619448ef55272555cec9e1d"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\app\\mission\\page.tsx": {
+    "mtime": 1787915554.46474,
+    "seen": 1787916496.4042823,
+    "ast_hash": "737ace6b390fe58f871e34ca7dffb817",
+    "semantic_hash": "737ace6b390fe58f871e34ca7dffb817"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\app\\orbat\\page.tsx": {
+    "mtime": 1787915554.46474,
+    "seen": 1787916496.4042823,
+    "ast_hash": "6843febdab4153b3fdb6eed7879d7682",
+    "semantic_hash": "6843febdab4153b3fdb6eed7879d7682"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\app\\page.tsx": {
+    "mtime": 1781946131.1626787,
+    "seen": 1787916496.4042823,
+    "ast_hash": "46fbea556f5ff8d17964b7c8579940ef",
+    "semantic_hash": "46fbea556f5ff8d17964b7c8579940ef"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\app\\players\\page.tsx": {
+    "mtime": 1787915554.4689012,
+    "seen": 1787916496.4042823,
+    "ast_hash": "828caa79144b45c2aabf0a60af0814dd",
+    "semantic_hash": "828caa79144b45c2aabf0a60af0814dd"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\app\\radar\\page.tsx": {
+    "mtime": 1781977856.5223167,
+    "seen": 1787916496.4042823,
+    "ast_hash": "d2ea1768a404a7623fd87252fd4f83e1",
+    "semantic_hash": "d2ea1768a404a7623fd87252fd4f83e1"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\app\\settings\\page.tsx": {
+    "mtime": 1787915554.4689012,
+    "seen": 1787916496.4042823,
+    "ast_hash": "c24c4d2780f1ce40b1ee0447c0ebcf45",
+    "semantic_hash": "c24c4d2780f1ce40b1ee0447c0ebcf45"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\app\\srs\\page.tsx": {
+    "mtime": 1787915554.4689012,
+    "seen": 1787916496.4042823,
+    "ast_hash": "d40fe4225fa445e4750dc900dbe08e6a",
+    "semantic_hash": "d40fe4225fa445e4750dc900dbe08e6a"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\app\\srs\\srsState.test.ts": {
+    "mtime": 1787915554.4689012,
+    "seen": 1787916496.4042823,
+    "ast_hash": "09310740fb0442abd0ad3b47cc54cf65",
+    "semantic_hash": "09310740fb0442abd0ad3b47cc54cf65"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\app\\srs\\srsState.ts": {
+    "mtime": 1787915554.4689012,
+    "seen": 1787916496.4042823,
+    "ast_hash": "77ec60acb27e5392ceab787ffdd116ef",
+    "semantic_hash": "77ec60acb27e5392ceab787ffdd116ef"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\app\\tasks\\page.tsx": {
+    "mtime": 1787915554.4689012,
+    "seen": 1787916496.4042823,
+    "ast_hash": "dcf38b89007dea86fef99455efc2d4ff",
+    "semantic_hash": "dcf38b89007dea86fef99455efc2d4ff"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\app\\triggers\\page.tsx": {
+    "mtime": 1787915554.4689012,
+    "seen": 1787916496.4042823,
+    "ast_hash": "c6257a3ce9898317786fff5724d83825",
+    "semantic_hash": "c6257a3ce9898317786fff5724d83825"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\app\\warehouse\\page.tsx": {
+    "mtime": 1787915554.4689012,
+    "seen": 1787916496.4042823,
+    "ast_hash": "ef2d0eb7c693f2e1e73eee76e6c72775",
+    "semantic_hash": "ef2d0eb7c693f2e1e73eee76e6c72775"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\app\\weather\\page.tsx": {
+    "mtime": 1787915554.4689012,
+    "seen": 1787916496.4042823,
+    "ast_hash": "25b1082320b3bb09520c683c1fb2e1ed",
+    "semantic_hash": "25b1082320b3bb09520c683c1fb2e1ed"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\components\\AirbasePopup.tsx": {
+    "mtime": 1787915554.4730656,
+    "seen": 1787916496.4042823,
+    "ast_hash": "216024ce057a8c641e3f764bbe815a4d",
+    "semantic_hash": "216024ce057a8c641e3f764bbe815a4d"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\components\\AuthGate.tsx": {
+    "mtime": 1787915554.4730656,
+    "seen": 1787916496.4042823,
+    "ast_hash": "f2eecc6f000437bd984ba2bcca14c6e8",
+    "semantic_hash": "f2eecc6f000437bd984ba2bcca14c6e8"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\components\\CSARMap.tsx": {
+    "mtime": 1787915554.4730656,
+    "seen": 1787916496.4042823,
+    "ast_hash": "e1e3f3e6d8f3f0dba5d90096d99ad76e",
+    "semantic_hash": "e1e3f3e6d8f3f0dba5d90096d99ad76e"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\components\\Map.tsx": {
+    "mtime": 1787915554.4730656,
+    "seen": 1787916496.4042823,
+    "ast_hash": "61ac4b95d5adfeacd9d91e55167d8481",
+    "semantic_hash": "61ac4b95d5adfeacd9d91e55167d8481"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\components\\MapToolbar.tsx": {
+    "mtime": 1786650676.8428671,
+    "seen": 1787916496.4042823,
+    "ast_hash": "4ae0c0c078aa5d465c29d2fadcb187b0",
+    "semantic_hash": "4ae0c0c078aa5d465c29d2fadcb187b0"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\components\\RedAttacksMap.tsx": {
+    "mtime": 1787915554.4730656,
+    "seen": 1787916496.4042823,
+    "ast_hash": "dee888078db886eefb7076fa7a7ba42a",
+    "semantic_hash": "dee888078db886eefb7076fa7a7ba42a"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\components\\ServerPerformance.tsx": {
+    "mtime": 1787915554.4730656,
+    "seen": 1787916496.4042823,
+    "ast_hash": "2b25f2f6f7227db2d700d4dabdaf20f8",
+    "semantic_hash": "2b25f2f6f7227db2d700d4dabdaf20f8"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\components\\ServerStatus.tsx": {
+    "mtime": 1787915554.4730656,
+    "seen": 1787916496.4042823,
+    "ast_hash": "4c47afa7fbff04c69a18accf146ebd9a",
+    "semantic_hash": "4c47afa7fbff04c69a18accf146ebd9a"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\components\\Sidebar.tsx": {
+    "mtime": 1787915554.4730656,
+    "seen": 1787916496.4042823,
+    "ast_hash": "fc33f4022473f781909db81f07ab7b90",
+    "semantic_hash": "fc33f4022473f781909db81f07ab7b90"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\components\\UnitPopup.tsx": {
+    "mtime": 1787915554.4730656,
+    "seen": 1787916496.4042823,
+    "ast_hash": "306f1dcaa8db8d33f29718c9117ba538",
+    "semantic_hash": "306f1dcaa8db8d33f29718c9117ba538"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\components\\ZoneDetailsMap.tsx": {
+    "mtime": 1787915554.4730656,
+    "seen": 1787916496.4042823,
+    "ast_hash": "7f618dc6f6b2b876436434eb3f3c8512",
+    "semantic_hash": "7f618dc6f6b2b876436434eb3f3c8512"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\data\\foothold-gui-schema.json": {
+    "mtime": 1787403644.6333685,
+    "seen": 1787916496.4042823,
+    "ast_hash": "d468f145c460dfdf6f7fbafffe0fa96b",
+    "semantic_hash": "d468f145c460dfdf6f7fbafffe0fa96b"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\lib\\api.ts": {
+    "mtime": 1787915554.4772315,
+    "seen": 1787916496.4042823,
+    "ast_hash": "9fefc13ad4d4b8fee32af2231aa0db42",
+    "semantic_hash": "9fefc13ad4d4b8fee32af2231aa0db42"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\lib\\errors.ts": {
+    "mtime": 1787915554.4772315,
+    "seen": 1787916496.4042823,
+    "ast_hash": "2f5b2540e961ff2232dc212169e2b98d",
+    "semantic_hash": "2f5b2540e961ff2232dc212169e2b98d"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\lib\\grpc.ts": {
+    "mtime": 1787915554.4772315,
+    "seen": 1787916496.4042823,
+    "ast_hash": "8c2934ee9c8e8d02c960e048915940da",
+    "semantic_hash": "8c2934ee9c8e8d02c960e048915940da"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\src\\lib\\logger.ts": {
+    "mtime": 1787915554.4772315,
+    "seen": 1787916496.4042823,
+    "ast_hash": "583234f44d9fc1321c75179cefac9563",
+    "semantic_hash": "583234f44d9fc1321c75179cefac9563"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\tsconfig.json": {
+    "mtime": 1787609319.1294284,
+    "seen": 1787916496.4042823,
+    "ast_hash": "f72feb9cacb0424a693c5da6c503997a",
+    "semantic_hash": "f72feb9cacb0424a693c5da6c503997a"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\.agents\\AGENTS.md": {
+    "mtime": 1781945985.5284867,
+    "seen": 1787916496.4042823,
+    "ast_hash": "9e09241799026ac05be315a2f0b50055",
+    "semantic_hash": "9e09241799026ac05be315a2f0b50055"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\.github\\copilot-instructions.md": {
+    "mtime": 1782200903.6753972,
+    "seen": 1787916496.4042823,
+    "ast_hash": "f6f2039c9fb01dd23fddb1d8eb2c7347",
+    "semantic_hash": "f6f2039c9fb01dd23fddb1d8eb2c7347"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\.github\\workflows\\pages.yml": {
+    "mtime": 1786659055.6227481,
+    "seen": 1787916496.4042823,
+    "ast_hash": "7d20d40dce2c2f385e031297593cdcfe",
+    "semantic_hash": "7d20d40dce2c2f385e031297593cdcfe"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\README.md": {
+    "mtime": 1787405793.467861,
+    "seen": 1787916496.4042823,
+    "ast_hash": "d1e1d4b4cae81c15a8e7767420383e75",
+    "semantic_hash": "d1e1d4b4cae81c15a8e7767420383e75"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\docs\\book\\404.html": {
+    "mtime": 1787417592.2607021,
+    "seen": 1787916496.4042823,
+    "ast_hash": "7e94b4da9f8fe23d76c9fe35c94175c1",
+    "semantic_hash": "7e94b4da9f8fe23d76c9fe35c94175c1"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\docs\\book\\api_grpc.html": {
+    "mtime": 1787417592.2612236,
+    "seen": 1787916496.4042823,
+    "ast_hash": "d8d8a5072fba0cee2cc2d935e547a21b",
+    "semantic_hash": "d8d8a5072fba0cee2cc2d935e547a21b"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\docs\\book\\architecture.html": {
+    "mtime": 1787417592.2617466,
+    "seen": 1787916496.4042823,
+    "ast_hash": "64d2adbfde6b54d3d51609df1d0d7bc0",
+    "semantic_hash": "64d2adbfde6b54d3d51609df1d0d7bc0"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\docs\\book\\configuration.html": {
+    "mtime": 1787417592.2622695,
+    "seen": 1787916496.4042823,
+    "ast_hash": "e9e922e0ba76fd1be900c9ee32c25396",
+    "semantic_hash": "e9e922e0ba76fd1be900c9ee32c25396"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\docs\\book\\features.html": {
+    "mtime": 1787417592.2627869,
+    "seen": 1787916496.4042823,
+    "ast_hash": "b534cced60549353b7547b730304fa9a",
+    "semantic_hash": "b534cced60549353b7547b730304fa9a"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\docs\\book\\fonts\\OPEN-SANS-LICENSE.txt": {
+    "mtime": 1787417538.8210862,
+    "seen": 1787916496.4042823,
+    "ast_hash": "3b83ef96387f14655fc854ddc3c6bd57",
+    "semantic_hash": "3b83ef96387f14655fc854ddc3c6bd57"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\docs\\book\\fonts\\SOURCE-CODE-PRO-LICENSE.txt": {
+    "mtime": 1787417538.8210862,
+    "seen": 1787916496.4042823,
+    "ast_hash": "9473ccaac27014a922dc77b776f02834",
+    "semantic_hash": "9473ccaac27014a922dc77b776f02834"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\docs\\book\\index.html": {
+    "mtime": 1787417592.263307,
+    "seen": 1787916496.4042823,
+    "ast_hash": "e9034295be9dddc567946fbe3828daf3",
+    "semantic_hash": "e9034295be9dddc567946fbe3828daf3"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\docs\\book\\print.html": {
+    "mtime": 1787417592.2643535,
+    "seen": 1787916496.4042823,
+    "ast_hash": "541555966e77123738621a5918ac2faa",
+    "semantic_hash": "541555966e77123738621a5918ac2faa"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\docs\\book\\setup.html": {
+    "mtime": 1787417592.2659624,
+    "seen": 1787916496.4042823,
+    "ast_hash": "b8ca60dcc2944c2371483518fd3947b7",
+    "semantic_hash": "b8ca60dcc2944c2371483518fd3947b7"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\docs\\book\\swagger.html": {
+    "mtime": 1786650676.7573154,
+    "seen": 1787916496.4042823,
+    "ast_hash": "f4066649eaf862149c5b2c15573a9143",
+    "semantic_hash": "f4066649eaf862149c5b2c15573a9143"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\docs\\book\\toc.html": {
+    "mtime": 1787417592.2670078,
+    "seen": 1787916496.4042823,
+    "ast_hash": "25863ef20dbed78ed0c7b041026e098b",
+    "semantic_hash": "25863ef20dbed78ed0c7b041026e098b"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\docs\\src\\README.md": {
+    "mtime": 1786650676.7543156,
+    "seen": 1787916496.4042823,
+    "ast_hash": "961152d0e46e6c9c9e0348365de45b2a",
+    "semantic_hash": "961152d0e46e6c9c9e0348365de45b2a"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\docs\\src\\SUMMARY.md": {
+    "mtime": 1787609319.1183362,
+    "seen": 1787916496.4042823,
+    "ast_hash": "04d11f2081de4808717cc37628ee2001",
+    "semantic_hash": "04d11f2081de4808717cc37628ee2001"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\docs\\src\\airboss_deck_tracking.md": {
+    "mtime": 1787609319.1183362,
+    "seen": 1787916496.4042823,
+    "ast_hash": "bf3d4f172dadb0fa4758a16422e3e015",
+    "semantic_hash": "bf3d4f172dadb0fa4758a16422e3e015"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\docs\\src\\api_grpc.md": {
+    "mtime": 1786650676.7543156,
+    "seen": 1787916496.4042823,
+    "ast_hash": "8ae6fce3a813628c3bac5616d1c98fa5",
+    "semantic_hash": "8ae6fce3a813628c3bac5616d1c98fa5"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\docs\\src\\architecture.md": {
+    "mtime": 1787609319.1193354,
+    "seen": 1787916496.4042823,
+    "ast_hash": "c55717a629ad0299d25e91e3508f48c8",
+    "semantic_hash": "c55717a629ad0299d25e91e3508f48c8"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\docs\\src\\configuration.md": {
+    "mtime": 1787609319.1193354,
+    "seen": 1787916496.4042823,
+    "ast_hash": "64e15646bcf9f656b500a376d6eeb262",
+    "semantic_hash": "64e15646bcf9f656b500a376d6eeb262"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\docs\\src\\features.md": {
+    "mtime": 1787915554.4480553,
+    "seen": 1787916496.4042823,
+    "ast_hash": "0b3f2d4ebb182905abf69fc954d1e1b4",
+    "semantic_hash": "0b3f2d4ebb182905abf69fc954d1e1b4"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\docs\\src\\setup.md": {
+    "mtime": 1787609319.1203356,
+    "seen": 1787916496.4042823,
+    "ast_hash": "822270fe994454454e1a20247c05ca9d",
+    "semantic_hash": "822270fe994454454e1a20247c05ca9d"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\docs\\src\\swagger.html": {
+    "mtime": 1786650676.7573154,
+    "seen": 1787916496.4042823,
+    "ast_hash": "f4066649eaf862149c5b2c15573a9143",
+    "semantic_hash": "f4066649eaf862149c5b2c15573a9143"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\README.md": {
+    "mtime": 1781945950.4461682,
+    "seen": 1787916496.4042823,
+    "ast_hash": "f15aaa42d5d299d091b1171097ea56ad",
+    "semantic_hash": "f15aaa42d5d299d091b1171097ea56ad"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\docs\\book\\favicon-de23e50b.svg": {
+    "mtime": 1787417538.8190866,
+    "seen": 1787916496.4042823,
+    "ast_hash": "2ab545f5294e510e3574d29bf08fc719",
+    "semantic_hash": "2ab545f5294e510e3574d29bf08fc719"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\public\\file.svg": {
+    "mtime": 1781945950.496312,
+    "seen": 1787916496.4042823,
+    "ast_hash": "d09f95206c3fa0bb9bd9fefabfd0ea71",
+    "semantic_hash": "d09f95206c3fa0bb9bd9fefabfd0ea71"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\public\\globe.svg": {
+    "mtime": 1781945950.5063114,
+    "seen": 1787916496.4042823,
+    "ast_hash": "2aaafa6a49b6563925fe440891e32717",
+    "semantic_hash": "2aaafa6a49b6563925fe440891e32717"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\public\\next.svg": {
+    "mtime": 1781945950.5189846,
+    "seen": 1787916496.4042823,
+    "ast_hash": "8e061864f388b47f33a1c3780831193e",
+    "semantic_hash": "8e061864f388b47f33a1c3780831193e"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\public\\vercel.svg": {
+    "mtime": 1781945950.5302005,
+    "seen": 1787916496.4042823,
+    "ast_hash": "c0af2f507b369b085b35ef4bbe3bcf1e",
+    "semantic_hash": "c0af2f507b369b085b35ef4bbe3bcf1e"
+  },
+  "C:\\Users\\thierry\\Documents\\GitHub\\sevenfifty777\\DCS-Web-Dashboard\\web-dashboard\\public\\window.svg": {
+    "mtime": 1781945950.5391939,
+    "seen": 1787916496.4042823,
+    "ast_hash": "a2760511c65806022ad20adf74370ff3",
+    "semantic_hash": "a2760511c65806022ad20adf74370ff3"
+  }
+}

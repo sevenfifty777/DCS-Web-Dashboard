@@ -1,0 +1,1 @@
+{"nodes": [], "edges": [], "hyperedges": [{"id": "documentation_suite", "label": "Project Documentation", "nodes": ["docs_architecture", "docs_configuration", "docs_features", "docs_api_grpc"], "relation": "form", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "docs/book/index.html"}]}

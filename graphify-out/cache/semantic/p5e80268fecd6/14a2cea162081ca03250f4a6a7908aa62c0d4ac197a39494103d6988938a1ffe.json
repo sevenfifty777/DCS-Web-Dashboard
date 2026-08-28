@@ -1,0 +1,1 @@
+{"nodes": [{"id": "docs_src_architecture", "label": "Architecture Overview", "file_type": "document", "source_file": "docs/src/architecture.md", "rationale": "Describes the single-binary structure combining Rust backend and Next.js frontend."}], "edges": [], "hyperedges": []}
