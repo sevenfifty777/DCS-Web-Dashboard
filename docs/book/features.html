@@ -36,10 +36,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-8b265ab8.js";
+            window.path_to_searchindex_js = "searchindex-d38d79f9.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-7ef7debc.js"></script>
+        <script src="toc-1c680d0f.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -221,7 +221,7 @@
 <p>A dedicated tab for managing SRS.</p>
 <ul>
 <li><strong>Server Process</strong>: View if the SRS process is running and cleanly Start/Stop/Restart it.</li>
-<li><strong>Connected Clients</strong>: See a live table of connected players, their coalition, and the radio frequencies they are currently tuned to.</li>
+<li><strong>Connected Clients</strong>: See a live table of connected players, their coalition, and the radio frequencies they are currently tuned to. The table refreshes every five seconds, preserves the last successful result during a temporary DCS-gRPC outage, and clears its warning automatically after recovery.</li>
 <li><strong>Configuration</strong>: A complete, categorized visual editor for your SRS <code>server.cfg</code>.</li>
 </ul>
 <h2 id="-atmosphere"><a class="header" href="#-atmosphere">🌬️ Atmosphere</a></h2>
@@ -243,6 +243,7 @@
 <ul>
 <li><strong>Auto-Sync</strong>: Automatically calculates the required Wind Over Deck (WOD) and Base Recovery Course (BRC) using live weather data and carrier speeds.</li>
 <li><strong>Carrier Actions</strong>: Remotely command the carrier to instantly turn into the wind for recovery operations, or resume its normal circuit, mirroring the in-game F10 radio menu functionality.</li>
+<li><strong>Live Deck Views</strong>: Track aircraft assigned to the Carrier and Tarawa decks with dedicated silhouettes for the F-14, F/A-18, AV-8B, A-4E-C, A-6E, E-2 Hawkeye, S-3B Viking, T-45C, AH-64D, CH-47F, Ka-50 III, OH-58D, SA342, and UH-1H families. Stationary fixed-wing aircraft face inward toward the deck centerline according to their port or starboard parking side, while helicopters face ship-forward and use <code>H1</code>–<code>H8</code> terminals on both ships. High-contrast cyan, magenta, and amber markers distinguish fixed-wing parking, helicopter parking, and launch positions; a white dashed ring identifies spots with no assigned taxi route by default. Click any parking marker to add the larger selection halo. Click a route-capable parking marker or aircraft to highlight its route to launch; a soft one-shot shimmer travels through the route line from parking to launch to show traffic flow. Click an amber catapult or STOVL launch marker to display every DCS-defined route connecting that launch point to its possible parking spots. Aircraft without a dedicated asset use the generic fallback marker.</li>
 </ul>
 <h2 id="-warehouse-wip"><a class="header" href="#-warehouse-wip">📦 Warehouse (WIP)</a></h2>
 <p>View and manage the inventory of airbases across the map. You can dynamically add items or liquids to airbase warehouses mid-mission.</p>

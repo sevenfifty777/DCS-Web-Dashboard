@@ -9,5 +9,5 @@
 
 ---
 
-- [REST API (Swagger UI)](./swagger.html)
+- [REST API (Swagger UI)](./rest-api.md)
 - [gRPC API](./api_grpc.md)

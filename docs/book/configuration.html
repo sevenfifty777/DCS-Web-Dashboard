@@ -36,10 +36,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-8b265ab8.js";
+            window.path_to_searchindex_js = "searchindex-d38d79f9.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-7ef7debc.js"></script>
+        <script src="toc-1c680d0f.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -193,8 +193,8 @@ nssm install "DCS Web Dashboard"
 </li>
 <li>In the GUI, configure the <strong>Application tab</strong>:
 <ul>
-<li><strong>Path:</strong> <code>C:\DCS-Dashboard\rust-web-dashboard.exe</code> (Path to your compiled binary)</li>
-<li><strong>Startup directory:</strong> <code>C:\DCS-Dashboard</code></li>
+<li><strong>Path:</strong> <code>&lt;dashboard-folder&gt;\rust-web-dashboard.exe</code> (Path to your compiled binary)</li>
+<li><strong>Startup directory:</strong> <code>&lt;dashboard-folder&gt;</code> (The folder may have any name.)</li>
 </ul>
 </li>
 <li>In the <strong>Details tab</strong>:
@@ -204,8 +204,15 @@ nssm install "DCS Web Dashboard"
 </ul>
 </li>
 <li>In the <strong>Environment tab</strong>, enter each variable on its own line (see the table below).</li>
+<li>In the <strong>I/O tab</strong>, configure the service output files:
+<ul>
+<li><strong>Output (stdout):</strong> <code>&lt;dashboard-folder&gt;\logs\dashboard.log</code></li>
+<li><strong>Error (stderr):</strong> <code>&lt;dashboard-folder&gt;\logs\dashboard-error.log</code></li>
+</ul>
+</li>
 <li>Click <strong>Install service</strong>, then open <code>services.msc</code> to start it.</li>
 </ol>
+<p>The release ZIP contains the empty <code>logs\</code> directory. NSSM creates and writes the two log files when the service starts; they are not included in the release archive.</p>
 <h2 id="2-environment-variables"><a class="header" href="#2-environment-variables">2. Environment Variables</a></h2>
 <p>Enter these variables in the NSSM Environment tab, one per line (e.g., <code>JWT_SECRET=my-secret-key</code>).</p>
 <h3 id="required"><a class="header" href="#required">Required</a></h3>

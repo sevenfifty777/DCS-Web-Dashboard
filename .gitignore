@@ -96,5 +96,6 @@ github_logs/
 *.pdf
 *.docx
 *.mp4
-*.png
+
 airboss_planner/
+/Releases/

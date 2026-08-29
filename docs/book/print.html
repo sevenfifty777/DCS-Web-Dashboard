@@ -37,10 +37,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-8b265ab8.js";
+            window.path_to_searchindex_js = "searchindex-d38d79f9.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-7ef7debc.js"></script>
+        <script src="toc-1c680d0f.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -211,7 +211,26 @@ npm run build
 <pre><code class="language-powershell">cd rust-web-dashboard
 cargo build --release
 </code></pre>
-<p>The final executable will be located in <code>rust-web-dashboard/target/release/rust-web-dashboard.exe</code>. You can move this single <code>.exe</code> file anywhere on your server (e.g., <code>C:\DCS-Dashboard\</code>).</p>
+<p>The final executable will be located in <code>rust-web-dashboard/target/release/rust-web-dashboard.exe</code>. Place it on the server with the external asset folders:</p>
+<pre><code class="language-text">&lt;dashboard-folder&gt;\
+├── rust-web-dashboard.exe
+├── icon\
+│   └── *.png
+├── images\
+│   └── background.png
+└── media\
+    └── background.mp4
+</code></pre>
+<p>The root folder can have any name and can be placed anywhere. The server resolves <code>/icon/*</code>, <code>/img/background.png</code>, and <code>/media/background.mp4</code> from folders beside the executable, regardless of the process working directory. When using NSSM, setting <strong>Startup directory</strong> to the executable folder remains recommended for the dashboard’s other relative runtime files.</p>
+<h3 id="create-a-release-zip"><a class="header" href="#create-a-release-zip">Create a Release ZIP</a></h3>
+<p>From the repository root, run the release script:</p>
+<pre><code class="language-powershell">.\build_release.ps1
+</code></pre>
+<p>The script installs the exact frontend dependencies from <code>package-lock.json</code>, builds the static frontend, refreshes the frontend embedded in the Rust executable, performs a locked Rust release build, and creates <code>Releases\DCS-Web-Dashboard-&lt;version&gt;.zip</code>. The ZIP contains <code>rust-web-dashboard.exe</code>, complete <code>icon\</code>, <code>images\</code>, and <code>media\</code> asset trees, plus an empty <code>logs\</code> directory reserved for the dashboard service’s stdout and stderr files. Video files are deliberately excluded from <code>media\</code>; the static background image remains available as the fallback.</p>
+<p>To test into an isolated directory without replacing the normal <code>Releases</code> output, or to reuse an already installed <code>node_modules</code> tree, use:</p>
+<pre><code class="language-powershell">.\build_release.ps1 -ReleasesDirectory "$env:TEMP\DCS-Web-Dashboard-release-check"
+.\build_release.ps1 -SkipDependencyInstall
+</code></pre>
 <h2 id="3-discord-oauth2-setup-optional"><a class="header" href="#3-discord-oauth2-setup-optional">3. Discord OAuth2 Setup (Optional)</a></h2>
 <p>If you want to allow your community to log in using Discord:</p>
 <ol>
@@ -244,8 +263,8 @@ nssm install "DCS Web Dashboard"
 </li>
 <li>In the GUI, configure the <strong>Application tab</strong>:
 <ul>
-<li><strong>Path:</strong> <code>C:\DCS-Dashboard\rust-web-dashboard.exe</code> (Path to your compiled binary)</li>
-<li><strong>Startup directory:</strong> <code>C:\DCS-Dashboard</code></li>
+<li><strong>Path:</strong> <code>&lt;dashboard-folder&gt;\rust-web-dashboard.exe</code> (Path to your compiled binary)</li>
+<li><strong>Startup directory:</strong> <code>&lt;dashboard-folder&gt;</code> (The folder may have any name.)</li>
 </ul>
 </li>
 <li>In the <strong>Details tab</strong>:
@@ -255,8 +274,15 @@ nssm install "DCS Web Dashboard"
 </ul>
 </li>
 <li>In the <strong>Environment tab</strong>, enter each variable on its own line (see the table below).</li>
+<li>In the <strong>I/O tab</strong>, configure the service output files:
+<ul>
+<li><strong>Output (stdout):</strong> <code>&lt;dashboard-folder&gt;\logs\dashboard.log</code></li>
+<li><strong>Error (stderr):</strong> <code>&lt;dashboard-folder&gt;\logs\dashboard-error.log</code></li>
+</ul>
+</li>
 <li>Click <strong>Install service</strong>, then open <code>services.msc</code> to start it.</li>
 </ol>
+<p>The release ZIP contains the empty <code>logs\</code> directory. NSSM creates and writes the two log files when the service starts; they are not included in the release archive.</p>
 <h2 id="2-environment-variables"><a class="header" href="#2-environment-variables">2. Environment Variables</a></h2>
 <p>Enter these variables in the NSSM Environment tab, one per line (e.g., <code>JWT_SECRET=my-secret-key</code>).</p>
 <h3 id="required"><a class="header" href="#required">Required</a></h3>
@@ -366,7 +392,7 @@ nssm install "DCS Web Dashboard"
 <p>A dedicated tab for managing SRS.</p>
 <ul>
 <li><strong>Server Process</strong>: View if the SRS process is running and cleanly Start/Stop/Restart it.</li>
-<li><strong>Connected Clients</strong>: See a live table of connected players, their coalition, and the radio frequencies they are currently tuned to.</li>
+<li><strong>Connected Clients</strong>: See a live table of connected players, their coalition, and the radio frequencies they are currently tuned to. The table refreshes every five seconds, preserves the last successful result during a temporary DCS-gRPC outage, and clears its warning automatically after recovery.</li>
 <li><strong>Configuration</strong>: A complete, categorized visual editor for your SRS <code>server.cfg</code>.</li>
 </ul>
 <h2 id="-atmosphere"><a class="header" href="#-atmosphere">🌬️ Atmosphere</a></h2>
@@ -388,6 +414,7 @@ nssm install "DCS Web Dashboard"
 <ul>
 <li><strong>Auto-Sync</strong>: Automatically calculates the required Wind Over Deck (WOD) and Base Recovery Course (BRC) using live weather data and carrier speeds.</li>
 <li><strong>Carrier Actions</strong>: Remotely command the carrier to instantly turn into the wind for recovery operations, or resume its normal circuit, mirroring the in-game F10 radio menu functionality.</li>
+<li><strong>Live Deck Views</strong>: Track aircraft assigned to the Carrier and Tarawa decks with dedicated silhouettes for the F-14, F/A-18, AV-8B, A-4E-C, A-6E, E-2 Hawkeye, S-3B Viking, T-45C, AH-64D, CH-47F, Ka-50 III, OH-58D, SA342, and UH-1H families. Stationary fixed-wing aircraft face inward toward the deck centerline according to their port or starboard parking side, while helicopters face ship-forward and use <code>H1</code>–<code>H8</code> terminals on both ships. High-contrast cyan, magenta, and amber markers distinguish fixed-wing parking, helicopter parking, and launch positions; a white dashed ring identifies spots with no assigned taxi route by default. Click any parking marker to add the larger selection halo. Click a route-capable parking marker or aircraft to highlight its route to launch; a soft one-shot shimmer travels through the route line from parking to launch to show traffic flow. Click an amber catapult or STOVL launch marker to display every DCS-defined route connecting that launch point to its possible parking spots. Aircraft without a dedicated asset use the generic fallback marker.</li>
 </ul>
 <h2 id="-warehouse-wip"><a class="header" href="#-warehouse-wip">📦 Warehouse (WIP)</a></h2>
 <p>View and manage the inventory of airbases across the map. You can dynamically add items or liquids to airbase warehouses mid-mission.</p>
@@ -405,7 +432,7 @@ nssm install "DCS Web Dashboard"
 </ul>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="architecture-overview"><a class="header" href="#architecture-overview">Architecture Overview</a></h1>
-<p>DCS-Web-Dashboard is composed of two primary components, but unlike traditional web applications, they are compiled together into a <strong>single, self-contained executable</strong> (<code>rust-web-dashboard.exe</code>). There is no Node.js runtime, no separate web server, and no external static files at runtime.</p>
+<p>DCS-Web-Dashboard is composed of two primary components compiled into one executable (<code>rust-web-dashboard.exe</code>). There is no Node.js runtime or separate web server. Large replaceable assets are kept outside the executable in <code>media</code>, <code>images</code>, and <code>icon</code> folders beside it to keep the binary smaller.</p>
 <h2 id="1-the-rust-backend-rust-web-dashboard"><a class="header" href="#1-the-rust-backend-rust-web-dashboard">1. The Rust Backend (<code>rust-web-dashboard</code>)</a></h2>
 <p>This is a standalone binary that acts as the core controller.</p>
 <ul>
@@ -418,9 +445,10 @@ nssm install "DCS Web Dashboard"
 <ul>
 <li><strong>Embedded SPA</strong>: During the build process, the Next.js application is statically exported (<code>output: 'export'</code>) as HTML, CSS, and JS. This output is copied into the Rust crate’s <code>static/</code> folder and baked directly into the binary using <code>rust-embed</code>.</li>
 <li><strong>Routing</strong>: Deep links (e.g., <code>/weather</code>) and hashed <code>/_next/</code> assets are served by the Rust backend with the correct MIME types. Unknown paths fall back to the SPA shell.</li>
+<li><strong>External Assets</strong>: <code>/media/background.mp4</code>, <code>/img/background.png</code>, and <code>/icon/*</code> are served from the <code>media</code>, <code>images</code>, and <code>icon</code> folders beside <code>rust-web-dashboard.exe</code>. Paths are resolved from the executable itself, so the parent folder can have any name and the process working directory does not affect asset loading.</li>
 </ul>
 <blockquote>
-<p><strong>Note:</strong> The <code>web-dashboard</code> directory remains the frontend source project. The Rust crate only embeds its built output. The two folders are independent during development, but the final binary is completely portable on its own.</p>
+<p><strong>Note:</strong> The <code>web-dashboard</code> directory remains the frontend source project. The Rust crate embeds its built application output but excludes the external media, background, and aircraft-icon assets.</p>
 </blockquote>
 <h2 id="security-notes"><a class="header" href="#security-notes">Security Notes</a></h2>
 <ul>
@@ -428,63 +456,89 @@ nssm install "DCS Web Dashboard"
 <li><strong>TLS &amp; HTTPS</strong>: TLS termination and websockets are intentionally out of scope for the binary. It serves plain HTTP. For secure public access, you must put a reverse proxy (like Nginx, Caddy, or Cloudflare Tunnels) in front to handle HTTPS, and the dashboard uses Server-Sent Events (SSE) instead of websockets for live data.</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div>
-<h1 id="rest-api-swagger-ui"><a href="#rest-api-swagger-ui" class="header">REST API (Swagger UI)</a></h1>
-
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Swagger UI</title>
-    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
-    <style>
-      html
-      {
-        box-sizing: border-box;
-        overflow: -moz-scrollbars-vertical;
-        overflow-y: scroll;
-      }
-<pre><code>  *,
-  *:before,
-  *:after
-  {
-    box-sizing: inherit;
-  }
-
-  body
-  {
-    margin:0;
-    background: #fafafa;
-  }
-&lt;/style&gt;
-</code></pre>
-
-<body>
-    
-<div id="swagger-ui"></div>
-
-<pre><code>&lt;script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"&gt;&lt;/script&gt;
-&lt;script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-standalone-preset.js"&gt;&lt;/script&gt;
-&lt;script&gt;
-window.onload = function() {
-  const ui = SwaggerUIBundle({
-    url: "openapi.json",
-    dom_id: '#swagger-ui',
-    deepLinking: true,
-    presets: [
-      SwaggerUIBundle.presets.apis,
-      SwaggerUIStandalonePreset
-    ],
-    plugins: [
-      SwaggerUIBundle.plugins.DownloadUrl
-    ],
-    layout: "StandaloneLayout"
-  })
-  window.ui = ui
-}
-</code></pre>
-  
-</body>
-
-</style></head></html><div style="break-before: page; page-break-before: always;"></div>
+<h1 id="airboss-deck-tracking-implementation-plan"><a class="header" href="#airboss-deck-tracking-implementation-plan">Airboss Deck Tracking Implementation Plan</a></h1>
+<h2 id="objective"><a class="header" href="#objective">Objective</a></h2>
+<p>Keep aircraft stable in Carrier and Tarawa deck views while their ships move in
+DCS. Ship position, ship heading, and aircraft position must be transformed from
+one coherent DCS simulation frame before the canvas is redrawn.</p>
+<h2 id="evidence-baseline"><a class="header" href="#evidence-baseline">Evidence baseline</a></h2>
+<p>The initial live radar trace on 2026-08-24 showed synchronized carrier and
+parked-aircraft timestamps, but a later capture demonstrated that this is not a
+stable guarantee: four category streams produced 34 distinct timestamps in ten
+seconds. Ship and aircraft positions must therefore be synchronized by time and
+velocity in the dashboard rather than grouped only by exact timestamp.</p>
+<h2 id="phase-1-coherent-deck-snapshots"><a class="header" href="#phase-1-coherent-deck-snapshots">Phase 1: coherent deck snapshots</a></h2>
+<p>Status: corrected locally after live regression testing.</p>
+<ul>
+<li>Retain the <code>StreamUnitsResponse.time</code> value with every unit sample.</li>
+<li>Batch each short SSE arrival burst into one React state update.</li>
+<li>Project ship and aircraft positions to the newer of their two simulation times
+using the DCS velocity vectors before calculating deck-relative position.</li>
+<li>Prefer exact ship unit or group names and allow proximity fallback only for
+units in <code>GROUP_CATEGORY_SHIP</code>.</li>
+<li>Use the selected ship unit’s position and orientation from the same radar
+sample for the deck transform.</li>
+<li>Assign each aircraft to its nearest ship so it can be rendered on only one
+deck view.</li>
+<li>Render owned aircraft inside the physical deck envelope even when no parking
+definition is close enough to snap it to a spot.</li>
+<li>Calculate smoothing response from aircraft velocity relative to ship velocity.</li>
+<li>Share the same tracking implementation between Carrier and Tarawa.</li>
+<li>Return HTTP 502 when a world endpoint cannot complete its DCS-gRPC request.</li>
+</ul>
+<p>Acceptance criteria:</p>
+<ul>
+<li>Staggered ship and aircraft samples are projected to one simulation time before
+the deck transform.</li>
+<li>A nearby aircraft cannot be selected as the tracked carrier.</li>
+<li>One aircraft cannot appear in both Carrier and Tarawa deck views.</li>
+<li>An aircraft inheriting the ship’s world velocity has zero relative speed.</li>
+<li>Unit tests cover frame commits, departures, ship selection, coordinate
+transforms, and relative velocity.</li>
+</ul>
+<h2 id="phase-2-render-interpolation"><a class="header" href="#phase-2-render-interpolation">Phase 2: render interpolation</a></h2>
+<p>Status: planned after Phase 1 live validation.</p>
+<ul>
+<li>Retain the two latest complete radar snapshots.</li>
+<li>Render on <code>requestAnimationFrame</code> using a short interpolation delay.</li>
+<li>Interpolate world position and heading before converting to deck coordinates.</li>
+<li>Handle heading wraparound at 0/360 degrees and reset history on mission-time
+rollback or stream reconnect.</li>
+<li>Keep parking snap based on local deck distance and relative speed.</li>
+</ul>
+<p>Acceptance criteria:</p>
+<ul>
+<li>Taxiing aircraft move continuously between one-second DCS updates.</li>
+<li>A parked aircraft has no one-frame displacement when the carrier update arrives.</li>
+<li>Reconnects and mission restarts do not interpolate across unrelated snapshots.</li>
+</ul>
+<h2 id="phase-3-live-validation"><a class="header" href="#phase-3-live-validation">Phase 3: live validation</a></h2>
+<p>Status: pending deployment.</p>
+<ul>
+<li>Capture at least 60 seconds each on CVN-72 and Tarawa with a parked aircraft.</li>
+<li>Capture a taxi or launch sequence on each available deck type.</li>
+<li>Record DCS timestamp, ship ID, relative forward/right position, and rendered
+position without recording player names or authentication data.</li>
+<li>Compare raw relative-position variation with rendered variation.</li>
+</ul>
+<p>Acceptance criteria:</p>
+<ul>
+<li>No visible alternating displacement caused by partial radar frames.</li>
+<li>Parked-aircraft movement stays below one rendered pixel during steady sailing.</li>
+<li>Ship identity remains stable for the complete capture.</li>
+</ul>
+<h2 id="out-of-scope"><a class="header" href="#out-of-scope">Out of scope</a></h2>
+<ul>
+<li>Increasing the DCS-gRPC <code>poll_rate</code> before the synchronized-frame fix is
+validated.</li>
+<li>Changing DCS mission scripts or <code>.miz</code> files.</li>
+<li>Replacing hardcoded ship-local parking definitions in this iteration.</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="rest-api"><a class="header" href="#rest-api">REST API</a></h1>
+<p>The interactive Swagger UI below is generated from the dashboard’s OpenAPI specification.</p>
+<iframe src="swagger.html" title="DCS Web Dashboard REST API" style="width: 100%; height: 80vh; border: 0; background: #fff;"></iframe>
+<div style="break-before: page; page-break-before: always;"></div>
 <h1 id="grpc-api-documentation"><a class="header" href="#grpc-api-documentation">gRPC API Documentation</a></h1>
 <p><em>Note: This page is automatically generated from the <code>.proto</code> files by the GitHub Action deployment pipeline. If you are viewing this locally and it’s empty, it means the <code>protoc-gen-doc</code> tool hasn’t been run locally.</em></p>
 

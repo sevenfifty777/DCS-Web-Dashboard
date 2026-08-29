@@ -18,7 +18,12 @@ The absolute best way to run the dashboard in production is as a native Windows 
    - **Display name:** `DCS Web Dashboard`
    - **Startup type:** `Automatic`
 4. In the **Environment tab**, enter each variable on its own line (see the table below).
-5. Click **Install service**, then open `services.msc` to start it.
+5. In the **I/O tab**, configure the service output files:
+   - **Output (stdout):** `<dashboard-folder>\logs\dashboard.log`
+   - **Error (stderr):** `<dashboard-folder>\logs\dashboard-error.log`
+6. Click **Install service**, then open `services.msc` to start it.
+
+The release ZIP contains the empty `logs\` directory. NSSM creates and writes the two log files when the service starts; they are not included in the release archive.
 
 ## 2. Environment Variables
 
