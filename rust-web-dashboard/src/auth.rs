@@ -57,13 +57,24 @@ pub enum AuthError {
 
 impl IntoResponse for AuthError {
     fn into_response(self) -> Response {
-        let (status, message) = match self {
-            AuthError::Missing | AuthError::Invalid => (StatusCode::UNAUTHORIZED, "Unauthorized"),
-            AuthError::BadCredentials => (StatusCode::UNAUTHORIZED, "Invalid password"),
-            AuthError::NotConfigured => (StatusCode::SERVICE_UNAVAILABLE, "Not configured"),
-            AuthError::Internal => (StatusCode::INTERNAL_SERVER_ERROR, "Internal error"),
+        // `reason` lets the browser tell "this session is genuinely rejected" apart from
+        // any other 401, so it only discards a stored token when the token itself was
+        // refused. Without it, a single incidental 401 logs the user out and the real
+        // error is hidden behind a login prompt.
+        let (status, message, reason) = match self {
+            AuthError::Missing => (StatusCode::UNAUTHORIZED, "Unauthorized", "token_missing"),
+            AuthError::Invalid => (StatusCode::UNAUTHORIZED, "Unauthorized", "token_invalid"),
+            AuthError::BadCredentials => {
+                (StatusCode::UNAUTHORIZED, "Invalid password", "bad_credentials")
+            }
+            AuthError::NotConfigured => {
+                (StatusCode::SERVICE_UNAVAILABLE, "Not configured", "not_configured")
+            }
+            AuthError::Internal => {
+                (StatusCode::INTERNAL_SERVER_ERROR, "Internal error", "internal")
+            }
         };
-        (status, Json(json!({ "error": message }))).into_response()
+        (status, Json(json!({ "error": message, "reason": reason }))).into_response()
     }
 }
 
