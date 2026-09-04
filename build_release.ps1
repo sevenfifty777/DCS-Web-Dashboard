@@ -130,21 +130,9 @@ $ReleasesDir = if ($ReleasesDirectory) {
     Join-Path $RepoRoot "Releases"
 }
 
-$VideoExtensions = @(
-    ".avi",
-    ".m4v",
-    ".mkv",
-    ".mov",
-    ".mp4",
-    ".mpeg",
-    ".mpg",
-    ".webm",
-    ".wmv"
-)
 $AssetMappings = @(
     [pscustomobject]@{ Source = "icon"; Destination = "icon" },
-    [pscustomobject]@{ Source = "img"; Destination = "images" },
-    [pscustomobject]@{ Source = "media"; Destination = "media" }
+    [pscustomobject]@{ Source = "img"; Destination = "images" }
 )
 $ReleaseDirectories = @($AssetMappings.Destination) + "logs"
 
@@ -220,9 +208,8 @@ $PackagedAssetFiles = @{}
 foreach ($AssetMapping in $AssetMappings) {
     $SourceDirectory = Join-Path $FrontendOutputDirectory $AssetMapping.Source
     $DestinationDirectory = Join-Path $ReleaseFolder $AssetMapping.Destination
-    $ExcludedExtensions = if ($AssetMapping.Destination -eq "media") { $VideoExtensions } else { @() }
     $PackagedAssetFiles[$AssetMapping.Destination] = @(
-        Copy-DirectoryTree -Source $SourceDirectory -Destination $DestinationDirectory -ExcludedExtensions $ExcludedExtensions
+        Copy-DirectoryTree -Source $SourceDirectory -Destination $DestinationDirectory
     )
 }
 
@@ -231,14 +218,6 @@ foreach ($AssetMapping in $AssetMappings) {
 $LogsDirectory = Join-Path $ReleaseFolder "logs"
 New-Item -ItemType Directory -Force -Path $LogsDirectory | Out-Null
 $PackagedAssetFiles["logs"] = @()
-
-$PackagedVideos = @(
-    Get-ChildItem -LiteralPath (Join-Path $ReleaseFolder "media") -File -Force -Recurse |
-        Where-Object { $VideoExtensions -contains $_.Extension.ToLowerInvariant() }
-)
-if ($PackagedVideos.Count -ne 0) {
-    throw "The release media directory contains $($PackagedVideos.Count) excluded video file(s)."
-}
 
 foreach ($ReleaseDirectory in $ReleaseDirectories) {
     $DestinationDirectory = Join-Path $ReleaseFolder $ReleaseDirectory
@@ -284,16 +263,6 @@ try {
         }
     }
 
-    $ArchivedVideos = @(
-        $ArchiveEntries |
-            Where-Object {
-                $_.StartsWith("media/", [System.StringComparison]::OrdinalIgnoreCase) -and
-                ($VideoExtensions -contains [System.IO.Path]::GetExtension($_).ToLowerInvariant())
-            }
-    )
-    if ($ArchivedVideos.Count -ne 0) {
-        throw "The ZIP contains $($ArchivedVideos.Count) excluded video file(s)."
-    }
 } finally {
     $Archive.Dispose()
 }
@@ -302,4 +271,3 @@ Write-Information ""
 Write-Information "Release created successfully."
 Write-Information "Folder: $ReleaseFolder"
 Write-Information "Zip:    $ZipPath"
-Write-Information "Video files excluded from media: yes"

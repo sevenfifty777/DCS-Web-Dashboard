@@ -68,12 +68,6 @@ async fn main() -> anyhow::Result<()> {
 
     let app = routes::router()
         .route(
-            "/media/background.mp4",
-            axum::routing::get_service(ServeFile::new(
-                asset_root.join("media").join("background.mp4"),
-            )),
-        )
-        .route(
             "/img/background.png",
             axum::routing::get_service(ServeFile::new(
                 asset_root.join("images").join("background.png"),
