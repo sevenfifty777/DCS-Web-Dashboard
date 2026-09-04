@@ -398,6 +398,214 @@
         ]
       }
     },
+    "/api/lso/passes": {
+      "get": {
+        "tags": [
+          "lso"
+        ],
+        "operationId": "passes",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum rows to return (default 200, max 2000).",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            }
+          },
+          {
+            "name": "since_id",
+            "in": "query",
+            "description": "Only return passes with an id greater than this (incremental polling).",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recorded passes, newest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LsoPassesResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "LSO_DIR not configured or lso.db not created yet"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/lso/passes/{id}/chart": {
+      "get": {
+        "tags": [
+          "lso"
+        ],
+        "operationId": "chart",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Pass row id from /api/lso/passes",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Final-approach trap sheet PNG",
+            "content": {
+              "image/png": {}
+            }
+          },
+          "404": {
+            "description": "Pass or PNG not found"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/lso/passes/{id}/pattern": {
+      "get": {
+        "tags": [
+          "lso"
+        ],
+        "operationId": "pattern",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Pass row id from /api/lso/passes",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Overhead pattern chart PNG",
+            "content": {
+              "image/png": {}
+            }
+          },
+          "404": {
+            "description": "Pass or PNG not found"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/lso/pilots": {
+      "get": {
+        "tags": [
+          "lso"
+        ],
+        "operationId": "pilots",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Passes to keep per pilot, newest first (default 5, max 2000).",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            }
+          },
+          {
+            "name": "all",
+            "in": "query",
+            "description": "`true` returns every pass for every pilot and ignores `limit`.",
+            "required": false,
+            "schema": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Passes grouped by pilot, newest pilot first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LsoPilotsResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "LSO_DIR not configured or lso.db not created yet"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/lso/status": {
+      "get": {
+        "tags": [
+          "lso"
+        ],
+        "operationId": "status",
+        "responses": {
+          "200": {
+            "description": "Board availability and pass count",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LsoStatus"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
     "/api/mission": {
       "get": {
         "tags": [
@@ -1180,6 +1388,420 @@
           }
         }
       },
+      "LsoPass": {
+        "type": "object",
+        "description": "One recorded pass, mirroring the LSO client's `StoredPass` minus\n`pilot_ucid`. Field names match `/api/passes` of the LSO client so the page\nlogic ports one to one.",
+        "required": [
+          "id",
+          "timestamp",
+          "pilot_name",
+          "pass_grade",
+          "grade_date",
+          "mission_datetime",
+          "outcome"
+        ],
+        "properties": {
+          "actual_nearest_spot": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "aircraft_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "aircraft_type": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "arrest_evidence": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "carrier_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "carrier_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "carrier_type": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "cause": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "completeness": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "confidence": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "dcs_grading": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "distance_to_intended_spot_m": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "generation": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "grade_date": {
+            "type": "string"
+          },
+          "grade_points": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "grading_availability": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "grading_version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "hook_state": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "intended_spot": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lso_notes": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Plain-English translation of `dcs_grading`, computed at query time."
+          },
+          "map_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "max_sample_gap_ms": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "max_scoring_sample_gap_ms": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "max_skew_ms": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "mission_datetime": {
+            "type": "string"
+          },
+          "outcome": {
+            "type": "string"
+          },
+          "pass_grade": {
+            "type": "string"
+          },
+          "pilot_kind": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "pilot_name": {
+            "type": "string"
+          },
+          "points_awarded": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "recovery_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "recovery_mode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "session_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "spot": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "spot_distance_m": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "spot_grade": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "telemetry_health": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "File stem of the pass artifacts, `LSO-<date>-<pilot>-<recovery-id>`."
+          },
+          "wire": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "wire_dcs": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "wire_divergent": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "wire_estimated": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "wire_estimation_confidence": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "LsoPassesResponse": {
+        "type": "object",
+        "description": "`/api/lso/passes` payload.",
+        "required": [
+          "passes",
+          "total"
+        ],
+        "properties": {
+          "passes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LsoPass"
+            },
+            "description": "Newest first."
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Total rows in `lso.db`, independent of `limit`/`since_id`."
+          }
+        }
+      },
+      "LsoPilot": {
+        "type": "object",
+        "description": "One pilot's slice of the board for `/api/lso/pilots`.\n\nPilots are identified by their DCS UCID when the rows carry one, so a pilot\nwho renames keeps a single history; rows without a UCID (legacy databases,\nAI pilots) are grouped by name. The UCID itself never leaves the server.",
+        "required": [
+          "pilot_name",
+          "aliases",
+          "total_passes",
+          "graded_passes",
+          "last_pass_at",
+          "passes"
+        ],
+        "properties": {
+          "aliases": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Other names seen on this pilot's earlier passes (same UCID)."
+          },
+          "avg_points": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Mean project score over `graded_passes`, or null when none were scored."
+          },
+          "graded_passes": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Passes that carry a project score (`points_awarded` not false)."
+          },
+          "last_pass_at": {
+            "type": "string",
+            "description": "`grade_date` (UTC) of the pilot's newest pass."
+          },
+          "passes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LsoPass"
+            },
+            "description": "Newest first, truncated to the requested per-pilot limit."
+          },
+          "pilot_name": {
+            "type": "string",
+            "description": "Name on the pilot's newest pass."
+          },
+          "total_passes": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Every pass on record for this pilot, independent of the per-pilot limit."
+          }
+        }
+      },
+      "LsoPilotsResponse": {
+        "type": "object",
+        "description": "`/api/lso/pilots` payload. Pilots are ordered by their newest pass.",
+        "required": [
+          "pilots",
+          "total_passes"
+        ],
+        "properties": {
+          "per_pilot_limit": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Per-pilot cap that was applied; null means every pass was returned.",
+            "minimum": 0
+          },
+          "pilots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LsoPilot"
+            }
+          },
+          "total_passes": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "LsoStatus": {
+        "type": "object",
+        "description": "`/api/lso/status` payload.",
+        "required": [
+          "configured",
+          "db_present",
+          "pass_count"
+        ],
+        "properties": {
+          "configured": {
+            "type": "boolean",
+            "description": "`LSO_DIR` is set."
+          },
+          "db_path": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "db_present": {
+            "type": "boolean",
+            "description": "`lso.db` exists inside `LSO_DIR`."
+          },
+          "last_pass_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "`grade_date` of the newest pass."
+          },
+          "pass_count": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
       "MissionBody": {
         "type": "object",
         "properties": {
@@ -1388,6 +2010,10 @@
     {
       "name": "stream",
       "description": "SSE streaming endpoints"
+    },
+    {
+      "name": "lso",
+      "description": "DCS-gRPC-lso greenie board (file-backed, no DCS-gRPC calls)"
     }
   ]
 }

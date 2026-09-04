@@ -10,6 +10,7 @@ use crate::state::AppState;
 
 mod auth;
 mod dcs;
+mod lso;
 mod stream;
 mod system;
 pub mod srs;
@@ -63,7 +64,12 @@ use utoipa_swagger_ui::SwaggerUi;
         srs::post_settings,
         srs::get_clients,
         stream::events_stream,
-        stream::radar_stream
+        stream::radar_stream,
+        lso::status,
+        lso::passes,
+        lso::pilots,
+        lso::chart,
+        lso::pattern
     ),
     components(
         schemas(
@@ -72,7 +78,9 @@ use utoipa_swagger_ui::SwaggerUi;
             dcs::PlayerActionBody, dcs::AnnouncementBody,
             dcs::AirbossDataResponse, dcs::AirbossActionPayload,
             system::TaskActionBody, system::WeatherApplyBody, system::DcsProcessAction, system::SrsProcessAction,
-            system::WindowsServiceStatus, system::WindowsServiceAction
+            system::WindowsServiceStatus, system::WindowsServiceAction,
+            crate::lso::LsoPass, crate::lso::LsoPassesResponse, crate::lso::LsoStatus,
+            crate::lso::LsoPilot, crate::lso::LsoPilotsResponse
         )
     ),
     tags(
@@ -80,7 +88,8 @@ use utoipa_swagger_ui::SwaggerUi;
         (name = "dcs", description = "DCS-gRPC endpoints"),
         (name = "system", description = "OS and filesystem endpoints"),
         (name = "srs", description = "SRS server endpoints"),
-        (name = "stream", description = "SSE streaming endpoints")
+        (name = "stream", description = "SSE streaming endpoints"),
+        (name = "lso", description = "DCS-gRPC-lso greenie board (file-backed, no DCS-gRPC calls)")
     ),
     modifiers(&SecurityAddon)
 )]
@@ -171,6 +180,13 @@ pub fn router() -> Router<AppState> {
                 .route("/settings", get(srs::get_settings).post(srs::post_settings))
                 .route("/clients", get(srs::get_clients))
         )
+        // LSO greenie board, read from the LSO client's lso.db (session-protected,
+        // no DCS-gRPC traffic).
+        .route("/api/lso/status", get(lso::status))
+        .route("/api/lso/passes", get(lso::passes))
+        .route("/api/lso/pilots", get(lso::pilots))
+        .route("/api/lso/passes/{id}/chart", get(lso::chart))
+        .route("/api/lso/passes/{id}/pattern", get(lso::pattern))
         .route("/api/weather", get(system::weather_get))
         .route("/api/weather/apply", post(system::weather_apply))
         // Telemetry streams (public; an EventSource cannot send auth headers).

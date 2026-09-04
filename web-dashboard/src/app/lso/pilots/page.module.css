@@ -1,0 +1,151 @@
+.toggle {
+  display: inline-flex;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.toggleBtn {
+  background: var(--card-bg);
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+}
+
+.toggleBtn + .toggleBtn {
+  border-left: 1px solid var(--panel-border);
+}
+
+.toggleBtn:hover,
+.toggleBtn:focus-visible {
+  color: var(--foreground);
+  outline: none;
+}
+
+.toggleActive {
+  background: rgba(25, 199, 255, 0.18);
+  color: var(--primary);
+}
+
+.pilots {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.pilot {
+  display: flex;
+  flex-direction: column;
+}
+
+.pilotHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 2rem;
+  padding: 0.9rem 1rem;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.pilotName {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  color: var(--primary);
+  letter-spacing: 0.04em;
+}
+
+.aliases {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.5rem;
+  margin: 0;
+}
+
+.stats div {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.stats dt {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+}
+
+.stats dd {
+  margin: 0;
+  font-weight: 600;
+  color: var(--foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Greenie strip. Each square takes its colour from the shared grade classes
+   (`.uni`, `.ok`, ...) which set `color`; the square paints with currentColor. */
+.greenie {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.square {
+  width: 26px;
+  height: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+  background: currentColor;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-shadow: none;
+}
+
+.square:hover,
+.square:focus-visible {
+  outline: 2px solid var(--foreground);
+  outline-offset: 1px;
+}
+
+.squareUnknown {
+  color: rgba(129, 148, 163, 0.35);
+}
+
+.squareLabel {
+  font-size: 9px;
+  font-weight: 700;
+  color: #06131f;
+  line-height: 1;
+}
+
+.pilotTable {
+  max-height: none;
+}
+
+.more {
+  padding: 0.5rem 1rem;
+  font-size: 12px;
+  color: var(--text-dim);
+  border-top: 1px solid rgba(25, 199, 255, 0.1);
+}
+
+@media (max-width: 768px) {
+  .greenie {
+    margin-left: 0;
+  }
+}

@@ -108,6 +108,10 @@ pub struct Config {
     pub srs_scheduled_task: Option<String>,
     /// Optional path to the SRS server.cfg file.
     pub srs_cfg_path: Option<PathBuf>,
+    /// Optional DCS-gRPC-lso output directory (the LSO client's `--out-dir`)
+    /// holding `lso.db` and the per-pass trap-sheet PNGs. When unset, the
+    /// `/api/lso/*` routes report "not configured".
+    pub lso_dir: Option<PathBuf>,
 }
 
 impl Config {
@@ -182,7 +186,11 @@ impl Config {
             .map(PathBuf::from)
             .unwrap_or_else(|| dcs_saved_games_dir.join("Missions").join("Saves"));
 
+        let lso_dir = optional("LSO_DIR")
+            .map(|s| PathBuf::from(s.trim().trim_matches('"').trim_matches('\'')));
+
         Ok(Arc::new(Self {
+            lso_dir,
             foothold_saves_dir,
             jwt_secret: jwt_secret.into_bytes(),
             admin_password: optional("ADMIN_PASSWORD"),

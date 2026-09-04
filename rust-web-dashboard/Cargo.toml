@@ -55,6 +55,10 @@ mlua = { version = "0.10", default-features = false, features = [
     "vendored",
 ] }
 
+# Read-only access to the DCS-gRPC-lso `lso.db` greenie board history.
+# Same version as the LSO client so both link the same bundled SQLite.
+rusqlite = { version = "0.31", features = ["bundled"] }
+
 # Logging / diagnostics
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }

@@ -1,0 +1,403 @@
+.page {
+  padding: 1rem 0 0;
+  /* Fill the main column: the board is wide and every pixel helps. */
+  width: 100%;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.header h1 {
+  margin: 0 0 0.35rem;
+  font-size: 1.8rem;
+  color: var(--primary);
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Albatross LSO badge in the title; the source is round, so no clipping needed. */
+.logo {
+  width: 72px;
+  height: 72px;
+  flex: none;
+  filter: drop-shadow(0 0 6px rgba(25, 199, 255, 0.35));
+}
+
+/* The two LSO communities, shown at the title logo's height with captions. */
+.legend {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 0.75rem;
+}
+
+.legendItem {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.legendItem img {
+  height: 72px;
+  width: auto;
+  filter: drop-shadow(0 0 6px rgba(25, 199, 255, 0.25));
+}
+
+.legendItem figcaption {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* Service patch in the table: capped to the row's line height so rows stay
+   one line tall; width follows the patch's own aspect ratio. */
+.table tbody td.badgeCell {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+  line-height: 0;
+}
+
+.badge {
+  height: 24px;
+  width: auto;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.header p {
+  margin: 0;
+  color: var(--text-muted);
+  max-width: 60ch;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.search {
+  background: var(--card-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  color: var(--foreground);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  padding: 8px 12px;
+  min-width: 220px;
+}
+
+.search:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+.navLink {
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  color: var(--primary);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  white-space: nowrap;
+}
+
+.navLink:hover,
+.navLink:focus-visible {
+  background: rgba(25, 199, 255, 0.12);
+  outline: none;
+}
+
+.status {
+  color: var(--text-dim);
+  font-size: 12px;
+  font-family: var(--font-ui);
+  white-space: nowrap;
+}
+
+.statusError {
+  color: var(--danger);
+}
+
+.panel {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.tableWrap {
+  /* Scroll both ways inside the panel so the sticky header and the horizontal
+     scrollbar stay on screen no matter how many passes are listed. */
+  overflow: auto;
+  max-height: calc(100vh - 230px);
+}
+
+.table {
+  /* One line per row; the wrapper scrolls sideways when 14 columns do not fit. */
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.table thead th {
+  background: var(--card-bg);
+  color: var(--text-muted);
+  font-weight: 600;
+  padding: 0.55rem 0.6rem;
+  border-bottom: 1px solid var(--panel-border);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.table tbody td {
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid rgba(25, 199, 255, 0.1);
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+/* Free-text columns wrap inside a bounded block (min/max-width is not
+   reliable on table cells themselves). The selector must outrank
+   `.table tbody td` above, or the cell stays on one line and overflows. */
+.table tbody td.wrap {
+  white-space: normal;
+}
+
+.gradeText {
+  min-width: 12rem;
+  max-width: 20rem;
+}
+
+.row {
+  cursor: pointer;
+}
+
+.row:hover td,
+.row:focus-visible td {
+  background: rgba(25, 199, 255, 0.08);
+}
+
+.row:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+
+.index {
+  color: var(--text-dim);
+}
+
+.gdate {
+  color: #93c5fd;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.pts {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+}
+
+.notes {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.notesText {
+  min-width: 18rem;
+  max-width: 30rem;
+}
+
+.stamp {
+  color: var(--text-dim);
+  font-size: 0.78rem;
+}
+
+/* Grade colours: the greenie-board vocabulary carried over from the LSO page. */
+.grade {
+  font-weight: 700;
+}
+
+.uni {
+  color: #facc15;
+  text-shadow: 0 0 6px #fbbf24;
+}
+
+.ok {
+  color: var(--success);
+}
+
+.okp {
+  color: #86efac;
+  font-weight: 500;
+}
+
+.ng {
+  color: var(--warning);
+}
+
+.cut {
+  color: var(--danger);
+}
+
+.muted {
+  color: var(--text-dim);
+  font-weight: 500;
+}
+
+.empty {
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-dim);
+}
+
+.empty code {
+  color: var(--text-muted);
+  font-size: 0.85em;
+}
+
+/* Trap-sheet modal */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1000;
+}
+
+.modal {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  max-width: 1400px;
+  width: 100%;
+  max-height: 95vh;
+  overflow: auto;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.modalHeader h2 {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  color: var(--primary);
+}
+
+.modalMeta {
+  margin: 0.35rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+}
+
+.modalStem {
+  margin: 0.35rem 0 0;
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  font-family: monospace;
+  overflow-wrap: anywhere;
+}
+
+.close {
+  background: none;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 6px 12px;
+}
+
+.close:hover,
+.close:focus-visible {
+  color: var(--foreground);
+  border-color: var(--primary);
+  outline: none;
+}
+
+.charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 1rem;
+}
+
+.chart {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.chart h3 {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.chart img {
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+
+.chartMissing {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  padding: 2rem 0;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: 0;
+  }
+
+  .tableWrap {
+    max-height: calc(100vh - 280px);
+  }
+
+  .charts {
+    grid-template-columns: 1fr;
+  }
+}

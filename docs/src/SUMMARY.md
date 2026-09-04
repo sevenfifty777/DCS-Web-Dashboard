@@ -6,6 +6,7 @@
 - [Features & Admin Manual](./features.md)
 - [Architecture](./architecture.md)
 - [Airboss Deck Tracking Plan](./airboss_deck_tracking.md)
+- [LSO Greenie Board Page Plan](./lso_greenie_board_plan.md)
 
 ---
 

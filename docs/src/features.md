@@ -63,6 +63,14 @@ A dynamic toolkit for managing carrier operations on the server.
 - **Carrier Actions**: Remotely command the carrier to instantly turn into the wind for recovery operations, or resume its normal circuit, mirroring the in-game F10 radio menu functionality.
 - **Live Deck Views**: Track aircraft assigned to the Carrier and Tarawa decks with dedicated silhouettes for the F-14, F/A-18, AV-8B, A-4E-C, A-6E, E-2 Hawkeye, S-3B Viking, T-45C, AH-64D, CH-47F, Ka-50 III, OH-58D, SA342, and UH-1H families. Stationary fixed-wing aircraft face inward toward the deck centerline according to their port or starboard parking side, while helicopters face ship-forward and use `H1`–`H8` terminals on both ships. High-contrast cyan, magenta, and amber markers distinguish fixed-wing parking, helicopter parking, and launch positions; a white dashed ring identifies spots with no assigned taxi route by default. Click any parking marker to add the larger selection halo. Click a route-capable parking marker or aircraft to highlight its route to launch; a soft one-shot shimmer travels through the route line from parking to launch to show traffic flow. Click an amber catapult or STOVL launch marker to display every DCS-defined route connecting that launch point to its possible parking spots. Aircraft without a dedicated asset use the generic fallback marker.
 
+## 🛬 LSO Greenie Board
+Carrier recoveries graded by the [DCS-gRPC-lso](https://github.com/sevenfifty777/DCS-gRPC-lso) client, in the same 14-column layout as the client's former web page (timestamp, grade date, mission time, pilot, aircraft, map, grade, points, wire or spot, outcome, technical status, DCS grade, LSO notes).
+- Refreshes every 10 seconds from the client's `lso.db`, read directly from `LSO_DIR`. This tab never calls DCS-gRPC.
+- Grade colours follow greenie-board convention: `_OK_` gold, `OK` green, `(OK)` light green, `--` amber, `C` red, `B`/`WO` grey.
+- Filter the table by pilot name. Click a row to open the final-approach trap sheet and the overhead pattern chart the client saved for that pass.
+- Pilot UCIDs are never shown. The score is a project-derived training grade, not an official certification.
+- **By pilot** (`/lso/pilots`): one section per pilot with passes, average points, last pass, a greenie strip of recent grades, and a table of their last 5 passes (switch to All for the full history). Pilots are grouped by UCID on the server, so a renamed pilot keeps one history and earlier names are listed as aliases; the UCID itself is never sent to the browser.
+
 ## ⚙️ Settings
 
 A visual UI to edit the underlying `serverSettings.lua` file safely.
