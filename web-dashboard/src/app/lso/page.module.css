@@ -20,6 +20,63 @@
   font-family: var(--font-mono);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Albatross LSO badge in the title; the source is round, so no clipping needed. */
+.logo {
+  width: 72px;
+  height: 72px;
+  flex: none;
+  filter: drop-shadow(0 0 6px rgba(25, 199, 255, 0.35));
+}
+
+/* The two LSO communities, shown at the title logo's height with captions. */
+.legend {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 0.75rem;
+}
+
+.legendItem {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.legendItem img {
+  height: 72px;
+  width: auto;
+  filter: drop-shadow(0 0 6px rgba(25, 199, 255, 0.25));
+}
+
+.legendItem figcaption {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* Service patch in the table: capped to the row's line height so rows stay
+   one line tall; width follows the patch's own aspect ratio. */
+.table tbody td.badgeCell {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+  line-height: 0;
+}
+
+.badge {
+  height: 24px;
+  width: auto;
+  display: inline-block;
+  vertical-align: middle;
 }
 
 .header p {

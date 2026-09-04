@@ -7,6 +7,7 @@ import {
   gradeClass,
   matchesPilot,
   points,
+  serviceBranch,
   shortTimestamp,
   technicalStatus,
   wireOrSpot,
@@ -66,6 +67,15 @@ test('timestamp column shows the date and time from the file stem', () => {
   assert.equal(shortTimestamp('LSO-20260804-234613'), '2026-08-04 23:46:13');
   assert.equal(shortTimestamp('LSO-test'), 'LSO-test');
   assert.equal(shortTimestamp(''), '');
+});
+
+test('only the Harrier is graded by a USMC STOVL LSO', () => {
+  assert.equal(serviceBranch('AV-8B N/A Harrier'), 'usmc');
+  assert.equal(serviceBranch('AV8BNA'), 'usmc');
+  assert.equal(serviceBranch('F/A-18C Hornet'), 'usn');
+  assert.equal(serviceBranch('F-14B(U)'), 'usn');
+  assert.equal(serviceBranch('T-45C Goshawk'), 'usn');
+  assert.equal(serviceBranch(null), 'usn');
 });
 
 test('cell renders nulls as a dash and numbers as text', () => {

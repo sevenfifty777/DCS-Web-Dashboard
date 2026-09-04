@@ -23,6 +23,8 @@ import {
   type LsoPassesResponse,
   type LsoStatus,
 } from './lsoGrades';
+import { LsoLegend } from './LsoLegend';
+import { ServiceBadge } from './ServiceBadge';
 import { TrapSheetModal } from './TrapSheetModal';
 
 const REFRESH_MS = 10_000;
@@ -98,11 +100,16 @@ export default function LsoPage() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
-          <h1>✈️ LSO Greenie Board</h1>
+          <h1>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className={styles.logo} src="/icon/lso-logo.png" alt="" />
+            LSO Greenie Board
+          </h1>
           <p>
             Carrier recoveries graded by DCS-gRPC-lso. The grade is a project-derived training score
             at three gates, never an official USN/USMC certification.
           </p>
+          <LsoLegend />
         </div>
         <div className={styles.toolbar}>
           <Link href="/lso/pilots" className={styles.navLink}>
@@ -171,6 +178,7 @@ function PassTable({
             <th title="Recording time on the LSO server's local clock">Timestamp (server local)</th>
             <th title="Recovery time in UTC">Grade Date (UTC)</th>
             <th>Mission Time</th>
+            <th title="LSO community: USMC STOVL for the Harrier, US Navy otherwise">LSO</th>
             <th>Pilot</th>
             <th>Aircraft</th>
             <th>Map</th>
@@ -186,7 +194,7 @@ function PassTable({
         <tbody>
           {visible.length === 0 ? (
             <tr>
-              <td colSpan={14} className={styles.empty}>
+              <td colSpan={15} className={styles.empty}>
                 {passes.length === 0 ? 'No passes recorded yet.' : 'No passes match this pilot filter.'}
               </td>
             </tr>
@@ -214,6 +222,9 @@ function PassTable({
                   <td className={styles.stamp} title={p.timestamp}>{shortTimestamp(p.timestamp)}</td>
                   <td className={styles.gdate}>{cell(p.grade_date)}</td>
                   <td className={styles.gdate}>{cell(p.mission_datetime)}</td>
+                  <td className={styles.badgeCell}>
+                    <ServiceBadge aircraftType={p.aircraft_type} />
+                  </td>
                   <td>{cell(p.pilot_name)}</td>
                   <td>{cell(p.aircraft_type)}</td>
                   <td>{cell(p.map_name)}</td>

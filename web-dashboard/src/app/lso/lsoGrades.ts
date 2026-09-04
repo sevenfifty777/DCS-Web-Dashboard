@@ -164,6 +164,19 @@ export function shortTimestamp(stem: string): string {
   return `${m[1]}-${m[2]}-${m[3]} ${m[4]}:${m[5]}:${m[6]}`;
 }
 
+/** Which LSO community graded the pass: STOVL Harriers recover on Tarawa under USMC LSOs. */
+export type ServiceBranch = 'usmc' | 'usn';
+
+export function serviceBranch(aircraftType: string | null | undefined): ServiceBranch {
+  return /av-?8b|harrier/i.test(aircraftType ?? '') ? 'usmc' : 'usn';
+}
+
+/** Patch image and label for a service branch (served from `/icon`). */
+export const SERVICE_BADGE: Record<ServiceBranch, { src: string; label: string }> = {
+  usmc: { src: '/icon/lso-usmc.png', label: 'USMC STOVL LSO (AV-8B, Tarawa)' },
+  usn: { src: '/icon/lso-usn.png', label: 'US Navy LSO (carrier, arrested)' },
+};
+
 /** Cell text for nullable fields, matching the old page's `esc()` fallback. */
 export function cell(value: string | number | null | undefined): string {
   return value == null ? '-' : String(value);

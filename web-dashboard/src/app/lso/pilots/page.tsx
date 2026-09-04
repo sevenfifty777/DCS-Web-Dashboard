@@ -21,6 +21,8 @@ import {
   type LsoPilot,
   type LsoPilotsResponse,
 } from '../lsoGrades';
+import { LsoLegend } from '../LsoLegend';
+import { ServiceBadge } from '../ServiceBadge';
 import { TrapSheetModal } from '../TrapSheetModal';
 
 const REFRESH_MS = 15_000;
@@ -90,11 +92,16 @@ export default function LsoPilotsPage() {
     <div className={board.page}>
       <div className={board.header}>
         <div>
-          <h1>✈️ LSO Pilots</h1>
+          <h1>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className={board.logo} src="/icon/lso-logo.png" alt="" />
+            LSO Pilots
+          </h1>
           <p>
             Recoveries grouped by pilot, newest pilot first. Stats cover the whole history;
             the tables show the last {DEFAULT_LIMIT} passes unless you switch to all.
           </p>
+          <LsoLegend />
         </div>
         <div className={board.toolbar}>
           <Link href="/lso" className={board.navLink}>
@@ -204,6 +211,7 @@ function PilotSection({ pilot, onSelect }: { pilot: LsoPilot; onSelect: (pass: L
               <th>#</th>
               <th title="Recovery time in UTC">Grade Date (UTC)</th>
               <th>Mission Time</th>
+              <th title="LSO community: USMC STOVL for the Harrier, US Navy otherwise">LSO</th>
               <th>Aircraft</th>
               <th>Carrier</th>
               <th>Grade</th>
@@ -235,6 +243,9 @@ function PilotSection({ pilot, onSelect }: { pilot: LsoPilot; onSelect: (pass: L
                   <td className={board.index}>{pilot.total_passes - i}</td>
                   <td className={board.gdate}>{cell(p.grade_date)}</td>
                   <td className={board.gdate}>{cell(p.mission_datetime)}</td>
+                  <td className={board.badgeCell}>
+                    <ServiceBadge aircraftType={p.aircraft_type} />
+                  </td>
                   <td>{cell(p.aircraft_type)}</td>
                   <td>{cell(p.carrier_name ?? p.carrier_type)}</td>
                   <td className={`${board.grade} ${gc ? board[gc] : ''}`}>{cell(p.pass_grade)}</td>
