@@ -50,6 +50,23 @@
   outline-offset: 1px;
 }
 
+.navLink {
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  color: var(--primary);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  white-space: nowrap;
+}
+
+.navLink:hover,
+.navLink:focus-visible {
+  background: rgba(25, 199, 255, 0.12);
+  outline: none;
+}
+
 .status {
   color: var(--text-dim);
   font-size: 12px;

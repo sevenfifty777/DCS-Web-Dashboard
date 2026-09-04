@@ -12,9 +12,10 @@
 //! additive only and consumers may ignore unknown fields. Columns are therefore
 //! read by name and tolerated when absent, so a dashboard newer than the LSO
 //! client (or a legacy `lso.db`) still lists. The `pilot_ucid` column is a
-//! private identity key and is never read.
+//! private identity key: it is read only to group passes by pilot and is
+//! never serialised or logged.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 use std::time::Duration;
@@ -106,6 +107,38 @@ pub struct LsoPassesResponse {
     pub passes: Vec<LsoPass>,
     /// Total rows in `lso.db`, independent of `limit`/`since_id`.
     pub total: i64,
+}
+
+/// One pilot's slice of the board for `/api/lso/pilots`.
+///
+/// Pilots are identified by their DCS UCID when the rows carry one, so a pilot
+/// who renames keeps a single history; rows without a UCID (legacy databases,
+/// AI pilots) are grouped by name. The UCID itself never leaves the server.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct LsoPilot {
+    /// Name on the pilot's newest pass.
+    pub pilot_name: String,
+    /// Other names seen on this pilot's earlier passes (same UCID).
+    pub aliases: Vec<String>,
+    /// Every pass on record for this pilot, independent of the per-pilot limit.
+    pub total_passes: i64,
+    /// Passes that carry a project score (`points_awarded` not false).
+    pub graded_passes: i64,
+    /// Mean project score over `graded_passes`, or null when none were scored.
+    pub avg_points: Option<f64>,
+    /// `grade_date` (UTC) of the pilot's newest pass.
+    pub last_pass_at: String,
+    /// Newest first, truncated to the requested per-pilot limit.
+    pub passes: Vec<LsoPass>,
+}
+
+/// `/api/lso/pilots` payload. Pilots are ordered by their newest pass.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct LsoPilotsResponse {
+    pub pilots: Vec<LsoPilot>,
+    /// Per-pilot cap that was applied; null means every pass was returned.
+    pub per_pilot_limit: Option<usize>,
+    pub total_passes: i64,
 }
 
 /// `/api/lso/status` payload.
@@ -211,27 +244,177 @@ pub fn list_passes(
 ) -> Result<LsoPassesResponse, LsoError> {
     let limit = limit.clamp(1, MAX_LIMIT) as i64;
     let total = count_passes(conn)?;
-
-    let sql = match since_id {
-        Some(_) => "SELECT * FROM passes WHERE id > ?2 ORDER BY id DESC LIMIT ?1",
-        None => "SELECT * FROM passes ORDER BY id DESC LIMIT ?1",
+    let passes = match since_id {
+        Some(since) => query_passes(
+            conn,
+            "SELECT * FROM passes WHERE id > ?2 ORDER BY id DESC LIMIT ?1",
+            params![limit, since],
+        )?,
+        None => query_passes(
+            conn,
+            "SELECT * FROM passes ORDER BY id DESC LIMIT ?1",
+            params![limit],
+        )?,
     };
+    Ok(LsoPassesResponse { passes, total })
+}
+
+/// Group every pass by pilot, newest pilot first, keeping at most `per_pilot`
+/// passes each (`None` keeps them all). Stats always cover the full history.
+///
+/// The whole table is read in one pass: `lso.db` grows by one row per trap, so
+/// even a busy server stays at a few thousand rows.
+pub fn list_by_pilot(
+    conn: &Connection,
+    per_pilot: Option<usize>,
+) -> Result<LsoPilotsResponse, LsoError> {
+    let rows = query_keyed_passes(conn, "SELECT * FROM passes ORDER BY id DESC", params![])?;
+    let total_passes = rows.len() as i64;
+
+    // Names that belong to exactly one UCID: a legacy row without a UCID but
+    // with such a name joins that pilot instead of forming a second group.
+    let mut name_to_ucid: HashMap<String, Option<String>> = HashMap::new();
+    for row in &rows {
+        if let Some(ucid) = row.ucid.as_deref() {
+            name_to_ucid
+                .entry(row.pass.pilot_name.clone())
+                .and_modify(|known| {
+                    if known.as_deref() != Some(ucid) {
+                        *known = None; // ambiguous: several UCIDs used this name
+                    }
+                })
+                .or_insert_with(|| Some(ucid.to_owned()));
+        }
+    }
+
+    let mut pilots: Vec<LsoPilot> = Vec::new();
+    let mut index: HashMap<GroupKey, usize> = HashMap::new();
+    let mut point_sums: Vec<f64> = Vec::new();
+
+    for KeyedPass { ucid, pass } in rows {
+        let key = match ucid {
+            Some(ucid) => GroupKey::Ucid(ucid),
+            None => match name_to_ucid.get(pass.pilot_name.as_str()) {
+                Some(Some(ucid)) => GroupKey::Ucid(ucid.clone()),
+                _ => GroupKey::Name(pass.pilot_name.clone()),
+            },
+        };
+        let slot = match index.get(&key) {
+            Some(&slot) => slot,
+            None => {
+                index.insert(key, pilots.len());
+                pilots.push(LsoPilot {
+                    pilot_name: pass.pilot_name.clone(),
+                    aliases: Vec::new(),
+                    total_passes: 0,
+                    graded_passes: 0,
+                    avg_points: None,
+                    // Rows arrive newest first, so the first row is the last pass.
+                    last_pass_at: pass.grade_date.clone(),
+                    passes: Vec::new(),
+                });
+                point_sums.push(0.0);
+                pilots.len() - 1
+            }
+        };
+        let pilot = &mut pilots[slot];
+        if pass.pilot_name != pilot.pilot_name && !pilot.aliases.contains(&pass.pilot_name) {
+            pilot.aliases.push(pass.pilot_name.clone());
+        }
+        pilot.total_passes += 1;
+        if let Some(points) = pass_points(&pass) {
+            pilot.graded_passes += 1;
+            point_sums[slot] += points;
+        }
+        if per_pilot.map_or(true, |cap| pilot.passes.len() < cap) {
+            pilot.passes.push(pass);
+        }
+    }
+
+    for (pilot, sum) in pilots.iter_mut().zip(point_sums) {
+        if pilot.graded_passes > 0 {
+            pilot.avg_points = Some(sum / pilot.graded_passes as f64);
+        }
+    }
+
+    Ok(LsoPilotsResponse {
+        pilots,
+        per_pilot_limit: per_pilot,
+        total_passes,
+    })
+}
+
+/// Project score of a pass, mirroring the board's display rule: an explicit
+/// `points_awarded = false` means no score, otherwise the stored value, and
+/// for rows older than migration 3 the legacy per-grade table.
+fn pass_points(pass: &LsoPass) -> Option<f64> {
+    if pass.points_awarded == Some(false) {
+        return None;
+    }
+    if let Some(points) = pass.grade_points {
+        return Some(points);
+    }
+    match pass.pass_grade.as_str() {
+        "_OK_" => Some(5.0),
+        "OK" => Some(4.0),
+        "(OK)" => Some(3.0),
+        "--" => Some(2.0),
+        "C" => Some(0.0),
+        "B" => Some(2.5),
+        "WO" => Some(1.0),
+        _ => None,
+    }
+}
+
+/// How passes are grouped into one pilot on `/api/lso/pilots`.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+enum GroupKey {
+    Ucid(String),
+    Name(String),
+}
+
+/// A pass plus the private UCID of its row. The UCID stays inside this
+/// module: it drives grouping and is dropped before anything is serialised.
+struct KeyedPass {
+    ucid: Option<String>,
+    pass: LsoPass,
+}
+
+/// Run a `SELECT * FROM passes ...` statement and map every row, tolerating
+/// columns this build knows about but the database does not have yet.
+fn query_passes(
+    conn: &Connection,
+    sql: &str,
+    params: &[&dyn rusqlite::ToSql],
+) -> rusqlite::Result<Vec<LsoPass>> {
+    Ok(query_keyed_passes(conn, sql, params)?
+        .into_iter()
+        .map(|keyed| keyed.pass)
+        .collect())
+}
+
+fn query_keyed_passes(
+    conn: &Connection,
+    sql: &str,
+    params: &[&dyn rusqlite::ToSql],
+) -> rusqlite::Result<Vec<KeyedPass>> {
     let mut stmt = conn.prepare(sql)?;
     let columns: HashSet<String> = stmt
         .column_names()
         .into_iter()
         .map(str::to_owned)
         .collect();
-    let map_row = |row: &Row<'_>| row_to_pass(row, &columns);
-    let passes = match since_id {
-        Some(since) => stmt
-            .query_map(params![limit, since], map_row)?
-            .collect::<rusqlite::Result<Vec<_>>>()?,
-        None => stmt
-            .query_map(params![limit], map_row)?
-            .collect::<rusqlite::Result<Vec<_>>>()?,
-    };
-    Ok(LsoPassesResponse { passes, total })
+    let rows = stmt
+        .query_map(params, |row| {
+            let ucid: Option<String> = col(row, &columns, "pilot_ucid")?
+                .filter(|value: &String| !value.trim().is_empty());
+            Ok(KeyedPass {
+                ucid,
+                pass: row_to_pass(row, &columns)?,
+            })
+        })?
+        .collect::<rusqlite::Result<Vec<_>>>()?;
+    Ok(rows)
 }
 
 /// Read the PNG bytes for a pass. The file name is derived from the row's own
@@ -507,6 +690,87 @@ mod tests {
         assert!(conn
             .execute("INSERT INTO passes(timestamp, pilot_name, pass_grade) VALUES ('x','y','z')", [])
             .is_err());
+    }
+
+    #[test]
+    fn pilots_are_grouped_newest_first_with_full_history_stats() {
+        let dir = TempLsoDir::new("pilots");
+        {
+            let conn = dir.writer();
+            create_current_schema(&conn);
+            for (pilot, grade, points, awarded, date) in [
+                ("Alpha", "OK", 4.0, 1, "2026-09-01 10:00:00"),
+                ("Bravo", "--", 2.0, 1, "2026-09-01 10:05:00"),
+                ("Alpha", "NC", 0.0, 0, "2026-09-01 10:10:00"),
+                ("Alpha", "(OK)", 3.0, 1, "2026-09-01 10:15:00"),
+                ("Alpha", "B", 2.5, 1, "2026-09-01 10:20:00"),
+            ] {
+                conn.execute(
+                    "INSERT INTO passes(timestamp, pilot_name, pass_grade, grade_points, points_awarded, grade_date)
+                     VALUES ('LSO-x', ?1, ?2, ?3, ?4, ?5)",
+                    params![pilot, grade, points, awarded, date],
+                )
+                .unwrap();
+            }
+        }
+        let conn = open_read_only(dir.path()).unwrap();
+
+        let limited = list_by_pilot(&conn, Some(2)).unwrap();
+        assert_eq!(limited.total_passes, 5);
+        assert_eq!(limited.per_pilot_limit, Some(2));
+        assert_eq!(limited.pilots.len(), 2);
+        let alpha = &limited.pilots[0];
+        assert_eq!(alpha.pilot_name, "Alpha", "pilot with the newest pass comes first");
+        assert_eq!(alpha.total_passes, 4);
+        assert_eq!(alpha.graded_passes, 3, "the NC pass carries no points");
+        assert!((alpha.avg_points.unwrap() - (4.0 + 3.0 + 2.5) / 3.0).abs() < 1e-9);
+        assert_eq!(alpha.last_pass_at, "2026-09-01 10:20:00");
+        assert_eq!(alpha.passes.len(), 2, "capped per pilot");
+        assert_eq!(alpha.passes[0].pass_grade, "B", "newest first");
+        assert_eq!(limited.pilots[1].pilot_name, "Bravo");
+        assert_eq!(limited.pilots[1].passes.len(), 1);
+
+        let all = list_by_pilot(&conn, None).unwrap();
+        assert_eq!(all.per_pilot_limit, None);
+        assert_eq!(all.pilots[0].passes.len(), 4);
+    }
+
+    #[test]
+    fn pilots_are_keyed_by_ucid_without_exposing_it() {
+        let dir = TempLsoDir::new("ucid");
+        {
+            let conn = dir.writer();
+            create_current_schema(&conn);
+            for (pilot, ucid, grade, date) in [
+                // Legacy row without UCID, same name as a UCID pilot below: joins it.
+                ("Viper", None, "OK", "2026-08-01 10:00:00"),
+                ("Viper", Some("ucid-A"), "(OK)", "2026-08-02 10:00:00"),
+                ("Hawk", Some("ucid-B"), "B", "2026-08-03 10:00:00"),
+                // Same UCID as Viper after a rename: one pilot, name from the newest row.
+                ("Viper | 501st", Some("ucid-A"), "OK", "2026-08-04 10:00:00"),
+                // Name without UCID that nobody with a UCID uses: its own group.
+                ("AI Wingman", None, "--", "2026-08-05 10:00:00"),
+            ] {
+                conn.execute(
+                    "INSERT INTO passes(timestamp, pilot_name, pilot_ucid, pass_grade, grade_points, points_awarded, grade_date)
+                     VALUES ('LSO-x', ?1, ?2, ?3, 1.0, 1, ?4)",
+                    params![pilot, ucid, grade, date],
+                )
+                .unwrap();
+            }
+        }
+        let conn = open_read_only(dir.path()).unwrap();
+        let result = list_by_pilot(&conn, None).unwrap();
+
+        let names: Vec<&str> = result.pilots.iter().map(|p| p.pilot_name.as_str()).collect();
+        assert_eq!(names, ["AI Wingman", "Viper | 501st", "Hawk"], "newest pilot first");
+        let viper = &result.pilots[1];
+        assert_eq!(viper.total_passes, 3, "rename and legacy row merged into one pilot");
+        assert_eq!(viper.aliases, vec!["Viper".to_string()]);
+        assert_eq!(result.pilots[0].aliases, Vec::<String>::new());
+
+        let json = serde_json::to_string(&result).unwrap();
+        assert!(!json.contains("ucid"), "UCID must never leave the server: {json}");
     }
 
     #[test]

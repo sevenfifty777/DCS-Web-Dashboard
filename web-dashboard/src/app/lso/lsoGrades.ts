@@ -58,6 +58,26 @@ export interface LsoPassesResponse {
   total: number;
 }
 
+/** One pilot's slice of `/api/lso/pilots`; mirrors `LsoPilot` in `rust-web-dashboard/src/lso.rs`. */
+export interface LsoPilot {
+  /** Name on the pilot's newest pass. Pilots are grouped by UCID server-side; the UCID is never sent. */
+  pilot_name: string;
+  /** Other names seen on earlier passes of the same pilot. */
+  aliases: string[];
+  total_passes: number;
+  graded_passes: number;
+  avg_points: number | null;
+  last_pass_at: string;
+  /** Newest first, truncated to the requested per-pilot limit. */
+  passes: LsoPass[];
+}
+
+export interface LsoPilotsResponse {
+  pilots: LsoPilot[];
+  per_pilot_limit: number | null;
+  total_passes: number;
+}
+
 export interface LsoStatus {
   configured: boolean;
   db_present: boolean;
@@ -149,9 +169,13 @@ export function cell(value: string | number | null | undefined): string {
   return value == null ? '-' : String(value);
 }
 
-/** Case-insensitive pilot filter. */
-export function matchesPilot(pass: Pick<LsoPass, 'pilot_name'>, query: string): boolean {
+/** Case-insensitive pilot filter; a pilot's aliases match too. */
+export function matchesPilot(
+  pass: Pick<LsoPass, 'pilot_name'> & { aliases?: string[] },
+  query: string,
+): boolean {
   const needle = query.trim().toLowerCase();
   if (!needle) return true;
-  return pass.pilot_name.toLowerCase().includes(needle);
+  if (pass.pilot_name.toLowerCase().includes(needle)) return true;
+  return (pass.aliases ?? []).some((alias) => alias.toLowerCase().includes(needle));
 }

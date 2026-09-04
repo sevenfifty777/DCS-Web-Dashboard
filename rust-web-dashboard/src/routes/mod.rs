@@ -67,6 +67,7 @@ use utoipa_swagger_ui::SwaggerUi;
         stream::radar_stream,
         lso::status,
         lso::passes,
+        lso::pilots,
         lso::chart,
         lso::pattern
     ),
@@ -78,7 +79,8 @@ use utoipa_swagger_ui::SwaggerUi;
             dcs::AirbossDataResponse, dcs::AirbossActionPayload,
             system::TaskActionBody, system::WeatherApplyBody, system::DcsProcessAction, system::SrsProcessAction,
             system::WindowsServiceStatus, system::WindowsServiceAction,
-            crate::lso::LsoPass, crate::lso::LsoPassesResponse, crate::lso::LsoStatus
+            crate::lso::LsoPass, crate::lso::LsoPassesResponse, crate::lso::LsoStatus,
+            crate::lso::LsoPilot, crate::lso::LsoPilotsResponse
         )
     ),
     tags(
@@ -182,6 +184,7 @@ pub fn router() -> Router<AppState> {
         // no DCS-gRPC traffic).
         .route("/api/lso/status", get(lso::status))
         .route("/api/lso/passes", get(lso::passes))
+        .route("/api/lso/pilots", get(lso::pilots))
         .route("/api/lso/passes/{id}/chart", get(lso::chart))
         .route("/api/lso/passes/{id}/pattern", get(lso::pattern))
         .route("/api/weather", get(system::weather_get))

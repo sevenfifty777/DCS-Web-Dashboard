@@ -16,7 +16,7 @@ use serde_json::json;
 use utoipa::IntoParams;
 
 use crate::auth::AuthUser;
-use crate::lso::{self, ChartKind, LsoError, LsoPassesResponse, LsoStatus};
+use crate::lso::{self, ChartKind, LsoError, LsoPassesResponse, LsoPilotsResponse, LsoStatus};
 use crate::state::AppState;
 
 /// Query string for `/api/lso/passes`.
@@ -27,6 +27,18 @@ pub struct PassesQuery {
     /// Only return passes with an id greater than this (incremental polling).
     pub since_id: Option<i64>,
 }
+
+/// Query string for `/api/lso/pilots`.
+#[derive(Debug, Deserialize, IntoParams)]
+pub struct PilotsQuery {
+    /// Passes to keep per pilot, newest first (default 5, max 2000).
+    pub limit: Option<usize>,
+    /// `true` returns every pass for every pilot and ignores `limit`.
+    pub all: Option<bool>,
+}
+
+/// Default per-pilot cap for `/api/lso/pilots`.
+pub const DEFAULT_PER_PILOT: usize = 5;
 
 fn error_response(err: LsoError) -> Response {
     let status = match &err {
@@ -93,6 +105,42 @@ pub async fn passes(
     let result = tokio::task::spawn_blocking(move || {
         let conn = lso::open_read_only(&dir)?;
         lso::list_passes(&conn, limit, since_id)
+    })
+    .await;
+    match result {
+        Ok(Ok(page)) => Json(page).into_response(),
+        Ok(Err(err)) => error_response(err),
+        Err(err) => join_error(err),
+    }
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/lso/pilots",
+    tags = ["lso"],
+    params(PilotsQuery),
+    security(("jwt" = [])),
+    responses(
+        (status = 200, description = "Passes grouped by pilot, newest pilot first", body = LsoPilotsResponse),
+        (status = 404, description = "LSO_DIR not configured or lso.db not created yet")
+    )
+)]
+pub async fn pilots(
+    _user: AuthUser,
+    State(state): State<AppState>,
+    Query(query): Query<PilotsQuery>,
+) -> Response {
+    let Some(dir) = state.config.lso_dir.clone() else {
+        return error_response(LsoError::NotConfigured);
+    };
+    let per_pilot = if query.all.unwrap_or(false) {
+        None
+    } else {
+        Some(query.limit.unwrap_or(DEFAULT_PER_PILOT).clamp(1, lso::MAX_LIMIT))
+    };
+    let result = tokio::task::spawn_blocking(move || {
+        let conn = lso::open_read_only(&dir)?;
+        lso::list_by_pilot(&conn, per_pilot)
     })
     .await;
     match result {

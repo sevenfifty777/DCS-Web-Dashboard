@@ -79,4 +79,6 @@ test('pilot filter is case-insensitive and ignores surrounding whitespace', () =
   assert.equal(matchesPilot({ pilot_name: 'Meteor 8-6 | Phenex' }, '  phenex '), true);
   assert.equal(matchesPilot({ pilot_name: 'Meteor 8-6 | Phenex' }, 'viper'), false);
   assert.equal(matchesPilot({ pilot_name: 'Anyone' }, ''), true);
+  assert.equal(matchesPilot({ pilot_name: 'Viper | 501st', aliases: ['Viper', 'Old Callsign'] }, 'old call'), true);
+  assert.equal(matchesPilot({ pilot_name: 'Viper | 501st', aliases: [] }, 'old call'), false);
 });

@@ -526,6 +526,61 @@
         ]
       }
     },
+    "/api/lso/pilots": {
+      "get": {
+        "tags": [
+          "lso"
+        ],
+        "operationId": "pilots",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Passes to keep per pilot, newest first (default 5, max 2000).",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            }
+          },
+          {
+            "name": "all",
+            "in": "query",
+            "description": "`true` returns every pass for every pilot and ignores `limit`.",
+            "required": false,
+            "schema": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Passes grouped by pilot, newest pilot first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LsoPilotsResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "LSO_DIR not configured or lso.db not created yet"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
     "/api/lso/status": {
       "get": {
         "tags": [
@@ -1626,6 +1681,88 @@
             "type": "integer",
             "format": "int64",
             "description": "Total rows in `lso.db`, independent of `limit`/`since_id`."
+          }
+        }
+      },
+      "LsoPilot": {
+        "type": "object",
+        "description": "One pilot's slice of the board for `/api/lso/pilots`.\n\nPilots are identified by their DCS UCID when the rows carry one, so a pilot\nwho renames keeps a single history; rows without a UCID (legacy databases,\nAI pilots) are grouped by name. The UCID itself never leaves the server.",
+        "required": [
+          "pilot_name",
+          "aliases",
+          "total_passes",
+          "graded_passes",
+          "last_pass_at",
+          "passes"
+        ],
+        "properties": {
+          "aliases": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Other names seen on this pilot's earlier passes (same UCID)."
+          },
+          "avg_points": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Mean project score over `graded_passes`, or null when none were scored."
+          },
+          "graded_passes": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Passes that carry a project score (`points_awarded` not false)."
+          },
+          "last_pass_at": {
+            "type": "string",
+            "description": "`grade_date` (UTC) of the pilot's newest pass."
+          },
+          "passes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LsoPass"
+            },
+            "description": "Newest first, truncated to the requested per-pilot limit."
+          },
+          "pilot_name": {
+            "type": "string",
+            "description": "Name on the pilot's newest pass."
+          },
+          "total_passes": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Every pass on record for this pilot, independent of the per-pilot limit."
+          }
+        }
+      },
+      "LsoPilotsResponse": {
+        "type": "object",
+        "description": "`/api/lso/pilots` payload. Pilots are ordered by their newest pass.",
+        "required": [
+          "pilots",
+          "total_passes"
+        ],
+        "properties": {
+          "per_pilot_limit": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Per-pilot cap that was applied; null means every pass was returned.",
+            "minimum": 0
+          },
+          "pilots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LsoPilot"
+            }
+          },
+          "total_passes": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },

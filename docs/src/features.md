@@ -69,6 +69,7 @@ Carrier recoveries graded by the [DCS-gRPC-lso](https://github.com/sevenfifty777
 - Grade colours follow greenie-board convention: `_OK_` gold, `OK` green, `(OK)` light green, `--` amber, `C` red, `B`/`WO` grey.
 - Filter the table by pilot name. Click a row to open the final-approach trap sheet and the overhead pattern chart the client saved for that pass.
 - Pilot UCIDs are never shown. The score is a project-derived training grade, not an official certification.
+- **By pilot** (`/lso/pilots`): one section per pilot with passes, average points, last pass, a greenie strip of recent grades, and a table of their last 5 passes (switch to All for the full history). Pilots are grouped by UCID on the server, so a renamed pilot keeps one history and earlier names are listed as aliases; the UCID itself is never sent to the browser.
 
 ## ⚙️ Settings
 
