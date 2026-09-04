@@ -15,6 +15,7 @@ import {
   formatPoints,
   gradeClass,
   matchesPilot,
+  shortTimestamp,
   technicalStatus,
   wireOrSpot,
   type LsoPass,
@@ -162,8 +163,8 @@ function PassTable({
         <thead>
           <tr>
             <th>#</th>
-            <th>Timestamp</th>
-            <th>Grade Date</th>
+            <th title="Recording time on the LSO server's local clock">Timestamp (server local)</th>
+            <th title="Recovery time in UTC">Grade Date (UTC)</th>
             <th>Mission Time</th>
             <th>Pilot</th>
             <th>Aircraft</th>
@@ -205,7 +206,7 @@ function PassTable({
                   title="Open trap sheet"
                 >
                   <td className={styles.index}>{index}</td>
-                  <td>{cell(p.timestamp)}</td>
+                  <td className={styles.stamp} title={p.timestamp}>{shortTimestamp(p.timestamp)}</td>
                   <td className={styles.gdate}>{cell(p.grade_date)}</td>
                   <td className={styles.gdate}>{cell(p.mission_datetime)}</td>
                   <td>{cell(p.pilot_name)}</td>
@@ -216,8 +217,12 @@ function PassTable({
                   <td>{wireOrSpot(p)}</td>
                   <td>{cell(p.outcome)}</td>
                   <td>{technicalStatus(p)}</td>
-                  <td>{cell(p.dcs_grading)}</td>
-                  <td className={styles.notes}>{cell(p.lso_notes)}</td>
+                  <td className={styles.wrap}>
+                    <div className={styles.gradeText}>{cell(p.dcs_grading)}</div>
+                  </td>
+                  <td className={`${styles.notes} ${styles.wrap}`}>
+                    <div className={styles.notesText}>{cell(p.lso_notes)}</div>
+                  </td>
                 </tr>
               );
             })
@@ -228,11 +233,19 @@ function PassTable({
   );
 }
 
-type ChartState = { kind: 'loading' } | { kind: 'ready'; url: string } | { kind: 'missing' };
+type ChartState =
+  | { kind: 'loading' }
+  | { kind: 'ready'; url: string }
+  /** The server answered 404: the pass exists but its PNG is not on disk. */
+  | { kind: 'missing' }
+  /** Anything else: server down, proxy 502, network error. Worth a retry. */
+  | { kind: 'error'; message: string };
 
 /** Fetch a PNG through `apiFetch` (an `<img src>` cannot carry the JWT header). */
-function useChart(passId: number, kind: 'chart' | 'pattern'): ChartState {
-  const key = `${passId}/${kind}`;
+function useChart(passId: number, kind: 'chart' | 'pattern'): [ChartState, () => void] {
+  const [attempt, setAttempt] = useState(0);
+  const key = `${passId}/${kind}#${attempt}`;
+  const path = `/api/lso/passes/${passId}/${kind}`;
   // The result is tagged with the request it belongs to, so switching pass
   // reads as "loading" without resetting state inside the effect.
   const [loaded, setLoaded] = useState<{ key: string; state: ChartState } | null>(null);
@@ -243,14 +256,20 @@ function useChart(passId: number, kind: 'chart' | 'pattern'): ChartState {
 
     (async () => {
       try {
-        const res = await apiFetch(`/api/lso/passes/${key}`);
+        const res = await apiFetch(path);
+        if (res.status === 404) {
+          if (!cancelled) setLoaded({ key, state: { kind: 'missing' } });
+          return;
+        }
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const blob = await res.blob();
         if (cancelled) return;
         objectUrl = URL.createObjectURL(blob);
         setLoaded({ key, state: { kind: 'ready', url: objectUrl } });
-      } catch {
-        if (!cancelled) setLoaded({ key, state: { kind: 'missing' } });
+      } catch (e: unknown) {
+        if (!cancelled) {
+          setLoaded({ key, state: { kind: 'error', message: errorMessage(e, 'network error') } });
+        }
       }
     })();
 
@@ -258,18 +277,37 @@ function useChart(passId: number, kind: 'chart' | 'pattern'): ChartState {
       cancelled = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [key]);
+  }, [key, path]);
 
-  return loaded?.key === key ? loaded.state : { kind: 'loading' };
+  const retry = useCallback(() => setAttempt((n) => n + 1), []);
+  return [loaded?.key === key ? loaded.state : { kind: 'loading' }, retry];
 }
 
-function ChartPanel({ title, state, alt }: { title: string; state: ChartState; alt: string }) {
+function ChartPanel({
+  title,
+  state,
+  alt,
+  onRetry,
+}: {
+  title: string;
+  state: ChartState;
+  alt: string;
+  onRetry: () => void;
+}) {
   return (
     <div className={styles.chart}>
       <h3>{title}</h3>
       {state.kind === 'loading' && <div className={styles.chartMissing}>Loading…</div>}
       {state.kind === 'missing' && (
         <div className={styles.chartMissing}>No PNG on disk for this pass.</div>
+      )}
+      {state.kind === 'error' && (
+        <div className={styles.chartMissing}>
+          Could not load the chart ({state.message}). The dashboard may be restarting.{' '}
+          <button type="button" className={styles.close} onClick={onRetry}>
+            Retry
+          </button>
+        </div>
       )}
       {/* Blob URL of unknown dimensions from an authenticated fetch; next/image adds nothing here. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -279,8 +317,8 @@ function ChartPanel({ title, state, alt }: { title: string; state: ChartState; a
 }
 
 function TrapSheetModal({ pass, onClose }: { pass: LsoPass; onClose: () => void }) {
-  const approach = useChart(pass.id, 'chart');
-  const pattern = useChart(pass.id, 'pattern');
+  const [approach, retryApproach] = useChart(pass.id, 'chart');
+  const [pattern, retryPattern] = useChart(pass.id, 'pattern');
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -310,20 +348,31 @@ function TrapSheetModal({ pass, onClose }: { pass: LsoPass; onClose: () => void 
             <p className={styles.modalMeta}>
               <span>{cell(pass.aircraft_type)}</span>
               <span>{cell(pass.carrier_name ?? pass.carrier_type)}</span>
-              <span>{cell(pass.grade_date)}</span>
+              <span>{cell(pass.grade_date)} UTC</span>
               <span>Wire/Spot {wireOrSpot(pass)}</span>
               <span>Pts {formatPoints(pass)}</span>
               <span>{cell(pass.outcome)}</span>
               {pass.lso_notes && <span>{pass.lso_notes}</span>}
             </p>
+            <p className={styles.modalStem}>{pass.timestamp}</p>
           </div>
           <button type="button" className={styles.close} onClick={onClose}>
             Close
           </button>
         </div>
         <div className={styles.charts}>
-          <ChartPanel title="Final approach" state={approach} alt={`Trap sheet ${pass.timestamp}`} />
-          <ChartPanel title="Overhead pattern" state={pattern} alt={`Pattern chart ${pass.timestamp}`} />
+          <ChartPanel
+            title="Final approach"
+            state={approach}
+            alt={`Trap sheet ${pass.timestamp}`}
+            onRetry={retryApproach}
+          />
+          <ChartPanel
+            title="Overhead pattern"
+            state={pattern}
+            alt={`Pattern chart ${pass.timestamp}`}
+            onRetry={retryPattern}
+          />
         </div>
       </div>
     </div>

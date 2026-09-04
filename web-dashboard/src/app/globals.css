@@ -99,6 +99,10 @@ h1, h2, h3, h4 {
 
 .main-content {
   flex: 1;
+  /* A flex item defaults to min-width:auto, so a wide table (e.g. the LSO
+     board) would push this column past the viewport and get cropped by
+     overflow-x:hidden. min-width:0 lets the page's own scroll containers work. */
+  min-width: 0;
   padding: 2rem;
   overflow-x: hidden;
   max-width: 100vw;

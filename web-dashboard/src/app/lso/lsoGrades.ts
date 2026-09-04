@@ -133,6 +133,17 @@ export function technicalStatus(pass: Pick<LsoPass, 'completeness'>): string {
   return `Unavailable — ${pass.completeness ?? '-'}`;
 }
 
+/**
+ * Readable form of the pass file stem `LSO-YYYYMMDD-HHMMSS-<pilot>-<recovery-id>`:
+ * `YYYY-MM-DD HH:MM:SS`. Anything that does not follow that shape (test rows,
+ * older clients) is returned unchanged so nothing is hidden.
+ */
+export function shortTimestamp(stem: string): string {
+  const m = /^LSO-(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})(?:-|$)/.exec(stem);
+  if (!m) return stem;
+  return `${m[1]}-${m[2]}-${m[3]} ${m[4]}:${m[5]}:${m[6]}`;
+}
+
 /** Cell text for nullable fields, matching the old page's `esc()` fallback. */
 export function cell(value: string | number | null | undefined): string {
   return value == null ? '-' : String(value);

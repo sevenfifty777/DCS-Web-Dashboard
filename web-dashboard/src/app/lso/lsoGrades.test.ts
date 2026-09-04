@@ -7,6 +7,7 @@ import {
   gradeClass,
   matchesPilot,
   points,
+  shortTimestamp,
   technicalStatus,
   wireOrSpot,
 } from './lsoGrades.ts';
@@ -54,6 +55,17 @@ test('technical status reads Available only for complete observations', () => {
   assert.equal(technicalStatus({ completeness: 'complete' }), 'Available');
   assert.equal(technicalStatus({ completeness: 'partial' }), 'Unavailable — partial');
   assert.equal(technicalStatus({ completeness: null }), 'Unavailable — -');
+});
+
+test('timestamp column shows the date and time from the file stem', () => {
+  assert.equal(
+    shortTimestamp('LSO-20260903-123104-Ghost72TT-s1788429469-g1-p9-c5-t2101520'),
+    '2026-09-03 12:31:04',
+  );
+  assert.equal(shortTimestamp('LSO-20260804-234613-Meteor86Phenex'), '2026-08-04 23:46:13');
+  assert.equal(shortTimestamp('LSO-20260804-234613'), '2026-08-04 23:46:13');
+  assert.equal(shortTimestamp('LSO-test'), 'LSO-test');
+  assert.equal(shortTimestamp(''), '');
 });
 
 test('cell renders nulls as a dash and numbers as text', () => {

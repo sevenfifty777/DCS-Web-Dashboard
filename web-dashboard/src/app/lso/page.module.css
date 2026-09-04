@@ -1,7 +1,7 @@
 .page {
-  padding: 2rem;
-  max-width: 1600px;
-  margin: 0 auto;
+  padding: 1rem 0 0;
+  /* Fill the main column: the board is wide and every pixel helps. */
+  width: 100%;
 }
 
 .header {
@@ -69,11 +69,16 @@
 }
 
 .tableWrap {
-  overflow-x: auto;
+  /* Scroll both ways inside the panel so the sticky header and the horizontal
+     scrollbar stay on screen no matter how many passes are listed. */
+  overflow: auto;
+  max-height: calc(100vh - 230px);
 }
 
 .table {
-  width: 100%;
+  /* One line per row; the wrapper scrolls sideways when 14 columns do not fit. */
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
   text-align: left;
   font-size: 0.85rem;
@@ -84,18 +89,31 @@
   background: var(--card-bg);
   color: var(--text-muted);
   font-weight: 600;
-  padding: 0.6rem 0.75rem;
+  padding: 0.55rem 0.6rem;
   border-bottom: 1px solid var(--panel-border);
   white-space: nowrap;
   position: sticky;
   top: 0;
+  z-index: 1;
 }
 
 .table tbody td {
-  padding: 0.45rem 0.75rem;
+  padding: 0.4rem 0.6rem;
   border-bottom: 1px solid rgba(25, 199, 255, 0.1);
-  white-space: nowrap;
   vertical-align: top;
+  white-space: nowrap;
+}
+
+/* Free-text columns wrap inside a bounded block (min/max-width is not
+   reliable on table cells themselves). The selector must outrank
+   `.table tbody td` above, or the cell stays on one line and overflows. */
+.table tbody td.wrap {
+  white-space: normal;
+}
+
+.gradeText {
+  min-width: 12rem;
+  max-width: 20rem;
 }
 
 .row {
@@ -119,6 +137,7 @@
 .gdate {
   color: #93c5fd;
   font-size: 0.8rem;
+  white-space: nowrap;
 }
 
 .pts {
@@ -129,8 +148,16 @@
 .notes {
   color: var(--text-muted);
   font-size: 0.8rem;
-  max-width: 28rem;
-  white-space: normal !important;
+}
+
+.notesText {
+  min-width: 18rem;
+  max-width: 30rem;
+}
+
+.stamp {
+  color: var(--text-dim);
+  font-size: 0.78rem;
 }
 
 /* Grade colours: the greenie-board vocabulary carried over from the LSO page. */
@@ -225,6 +252,14 @@
   gap: 0.25rem 1.25rem;
 }
 
+.modalStem {
+  margin: 0.35rem 0 0;
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  font-family: monospace;
+  overflow-wrap: anywhere;
+}
+
 .close {
   background: none;
   border: 1px solid var(--panel-border);
@@ -281,7 +316,11 @@
 
 @media (max-width: 768px) {
   .page {
-    padding: 1rem;
+    padding: 0;
+  }
+
+  .tableWrap {
+    max-height: calc(100vh - 280px);
   }
 
   .charts {
