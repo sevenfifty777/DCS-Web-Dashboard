@@ -57,6 +57,11 @@ Enter these variables in the NSSM Environment tab, one per line (e.g., `JWT_SECR
 | `DCS_DYNAMIC_WEATHER_DIR` | Path to the DCS-Dynamic-Weather generator folder. Required for the Weather tab. Example: `C:\Users\admin\Saved Games\DCS.openbeta_server\Missions\Dynamic_Weather_mission` |
 | `PYTHON_EXE` | Python interpreter used by the weather generator. Example: `C:\Users\admin\AppData\Local\Programs\Python\Python312\python.exe` |
 
+### LSO Greenie Board
+| Variable | Purpose |
+| --- | --- |
+| `LSO_DIR` | Output directory of the [DCS-gRPC-lso](https://github.com/sevenfifty777/DCS-gRPC-lso) client (its `--out-dir`, the folder holding `lso.db` and the trap-sheet PNGs). Required for the **LSO** tab. The dashboard opens `lso.db` read-only and never calls DCS-gRPC for it. Run an LSO client build that enables WAL journaling (0.4.0 or later) so both processes can use the file at the same time. Example: `C:\LSO\recordings` |
+
 ### Discord OAuth Integration
 | Variable | Purpose |
 | --- | --- |

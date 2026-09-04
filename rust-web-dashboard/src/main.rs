@@ -17,6 +17,8 @@ mod telemetry;
 mod win_session;
 
 mod foothold;
+mod lso;
+mod lso_notation;
 
 use std::{net::SocketAddr, path::PathBuf};
 

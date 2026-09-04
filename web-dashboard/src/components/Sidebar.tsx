@@ -165,6 +165,7 @@ export default function Sidebar() {
           <Link href="/access-logs" className={`${styles.link} ${pathname === '/access-logs' ? styles.active : ''}`}>Access Logs</Link>
           <Link href="/foothold" className={`${styles.link} ${pathname === '/foothold' ? styles.active : ''}`}>Foothold</Link>
           <Link href="/airboss" className={`${styles.link} ${pathname === '/airboss' ? styles.active : ''}`}>Airboss Planner</Link>
+          <Link href="/lso" className={`${styles.link} ${pathname === '/lso' ? styles.active : ''}`}>LSO</Link>
           <Link href="/tasks" className={`${styles.link} ${pathname === '/tasks' ? styles.active : ''}`}>Tasks</Link>
           <button 
             onClick={() => {
