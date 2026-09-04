@@ -39,13 +39,11 @@ The final executable will be located in `rust-web-dashboard/target/release/rust-
 ├── rust-web-dashboard.exe
 ├── icon\
 │   └── *.png
-├── images\
-│   └── background.png
-└── media\
-    └── background.mp4
+└── images\
+    └── background.png
 ```
 
-The root folder can have any name and can be placed anywhere. The server resolves `/icon/*`, `/img/background.png`, and `/media/background.mp4` from folders beside the executable, regardless of the process working directory. When using NSSM, setting **Startup directory** to the executable folder remains recommended for the dashboard's other relative runtime files.
+The root folder can have any name and can be placed anywhere. The server resolves `/icon/*` and `/img/background.png` from folders beside the executable, regardless of the process working directory. When using NSSM, setting **Startup directory** to the executable folder remains recommended for the dashboard's other relative runtime files.
 
 ### Create a Release ZIP
 
@@ -55,7 +53,7 @@ From the repository root, run the release script:
 .\build_release.ps1
 ```
 
-The script installs the exact frontend dependencies from `package-lock.json`, builds the static frontend, refreshes the frontend embedded in the Rust executable, performs a locked Rust release build, and creates `Releases\DCS-Web-Dashboard-<version>.zip`. The ZIP contains `rust-web-dashboard.exe`, complete `icon\`, `images\`, and `media\` asset trees, plus an empty `logs\` directory reserved for the dashboard service's stdout and stderr files. Video files are deliberately excluded from `media\`; the static background image remains available as the fallback.
+The script installs the exact frontend dependencies from `package-lock.json`, builds the static frontend, refreshes the frontend embedded in the Rust executable, performs a locked Rust release build, and creates `Releases\DCS-Web-Dashboard-<version>.zip`. The ZIP contains `rust-web-dashboard.exe`, complete `icon\` and `images\` asset trees, plus an empty `logs\` directory reserved for the dashboard service's stdout and stderr files.
 
 To test into an isolated directory without replacing the normal `Releases` output, or to reuse an already installed `node_modules` tree, use:
 

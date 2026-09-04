@@ -31,21 +31,6 @@ export default function RootLayout({
           backgroundPosition: 'center',
           zIndex: -2,
         }} />
-        <video 
-          autoPlay loop muted playsInline 
-          style={{
-            position: 'fixed',
-            inset: 0,
-            width: '100vw',
-            height: '100vh',
-            objectFit: 'cover',
-            zIndex: -1,
-            opacity: 0.15,
-            pointerEvents: 'none'
-          }}
-        >
-          <source src="/media/background.mp4" type="video/mp4" />
-        </video>
         <AuthGate>
           <Sidebar />
           <div className="main-content">

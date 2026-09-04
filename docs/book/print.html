@@ -37,7 +37,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-d38d79f9.js";
+            window.path_to_searchindex_js = "searchindex-cbd1aaa9.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-1c680d0f.js"></script>
@@ -216,17 +216,15 @@ cargo build --release
 ├── rust-web-dashboard.exe
 ├── icon\
 │   └── *.png
-├── images\
-│   └── background.png
-└── media\
-    └── background.mp4
+└── images\
+    └── background.png
 </code></pre>
-<p>The root folder can have any name and can be placed anywhere. The server resolves <code>/icon/*</code>, <code>/img/background.png</code>, and <code>/media/background.mp4</code> from folders beside the executable, regardless of the process working directory. When using NSSM, setting <strong>Startup directory</strong> to the executable folder remains recommended for the dashboard’s other relative runtime files.</p>
+<p>The root folder can have any name and can be placed anywhere. The server resolves <code>/icon/*</code> and <code>/img/background.png</code> from folders beside the executable, regardless of the process working directory. When using NSSM, setting <strong>Startup directory</strong> to the executable folder remains recommended for the dashboard’s other relative runtime files.</p>
 <h3 id="create-a-release-zip"><a class="header" href="#create-a-release-zip">Create a Release ZIP</a></h3>
 <p>From the repository root, run the release script:</p>
 <pre><code class="language-powershell">.\build_release.ps1
 </code></pre>
-<p>The script installs the exact frontend dependencies from <code>package-lock.json</code>, builds the static frontend, refreshes the frontend embedded in the Rust executable, performs a locked Rust release build, and creates <code>Releases\DCS-Web-Dashboard-&lt;version&gt;.zip</code>. The ZIP contains <code>rust-web-dashboard.exe</code>, complete <code>icon\</code>, <code>images\</code>, and <code>media\</code> asset trees, plus an empty <code>logs\</code> directory reserved for the dashboard service’s stdout and stderr files. Video files are deliberately excluded from <code>media\</code>; the static background image remains available as the fallback.</p>
+<p>The script installs the exact frontend dependencies from <code>package-lock.json</code>, builds the static frontend, refreshes the frontend embedded in the Rust executable, performs a locked Rust release build, and creates <code>Releases\DCS-Web-Dashboard-&lt;version&gt;.zip</code>. The ZIP contains <code>rust-web-dashboard.exe</code>, complete <code>icon\</code> and <code>images\</code> asset trees, plus an empty <code>logs\</code> directory reserved for the dashboard service’s stdout and stderr files.</p>
 <p>To test into an isolated directory without replacing the normal <code>Releases</code> output, or to reuse an already installed <code>node_modules</code> tree, use:</p>
 <pre><code class="language-powershell">.\build_release.ps1 -ReleasesDirectory "$env:TEMP\DCS-Web-Dashboard-release-check"
 .\build_release.ps1 -SkipDependencyInstall
@@ -377,14 +375,8 @@ nssm install "DCS Web Dashboard"
 <li><strong>Presets List</strong>: Displays all available weather presets (CAVOK, Stormy, etc.) including temperature, QNH, and wind speed.</li>
 <li><strong>Apply &amp; Restart</strong>: Seamlessly injects a new weather preset and restarts the mission, safely handling A/B mission swapping.</li>
 </ul>
-<h2 id="-radar--orbat"><a class="header" href="#-radar--orbat">📡 Radar &amp; ORBAT</a></h2>
+<h2 id="-triggers--console"><a class="header" href="#-triggers--console">📅 Triggers &amp; Console</a></h2>
 <ul>
-<li><strong>Radar</strong>: A live, dynamic radar plot of all active units in the server. Airplanes, helicopters, ships, and ground units have distinct shapes. Human players are highlighted with glowing borders.</li>
-<li><strong>ORBAT (Order of Battle)</strong>: View the hierarchical structure of all spawned groups and units on both coalitions.</li>
-</ul>
-<h2 id="-events-triggers--console"><a class="header" href="#-events-triggers--console">📅 Events, Triggers &amp; Console</a></h2>
-<ul>
-<li><strong>Events</strong>: Streams live kill-feeds, takeoffs, landings, and crashes.</li>
 <li><strong>Triggers</strong>: Read and write DCS mission flags live (e.g., to manually trigger in-game events or scripts).</li>
 <li><strong>Console</strong>: Execute raw Lua scripts directly into the DCS mission environment for advanced debugging and administration.</li>
 </ul>
@@ -395,8 +387,6 @@ nssm install "DCS Web Dashboard"
 <li><strong>Connected Clients</strong>: See a live table of connected players, their coalition, and the radio frequencies they are currently tuned to. The table refreshes every five seconds, preserves the last successful result during a temporary DCS-gRPC outage, and clears its warning automatically after recovery.</li>
 <li><strong>Configuration</strong>: A complete, categorized visual editor for your SRS <code>server.cfg</code>.</li>
 </ul>
-<h2 id="-atmosphere"><a class="header" href="#-atmosphere">🌬️ Atmosphere</a></h2>
-<p>Live weather conditions, wind, and atmospheric data straight from the running mission.</p>
 <h2 id="-players--chat"><a class="header" href="#-players--chat">👥 Players &amp; Chat</a></h2>
 <ul>
 <li><strong>Players</strong>: See exactly who is online, their ping, coalition, and what aircraft they are flying.</li>
@@ -406,7 +396,7 @@ nssm install "DCS Web Dashboard"
 <p>Specific integrations for servers running the dynamic “Foothold” campaign.</p>
 <ul>
 <li><strong>Leaderboard</strong>: A persistent leaderboard tracking live player statistics from the Foothold save file.</li>
-<li><strong>Foothold</strong>: Track the status of the campaign including active zones, ongoing attacks, side ownership, and ejected pilots.</li>
+<li><strong>Foothold</strong>: Track the status of the campaign: zone ownership counts, active missions, ejected-pilot count, and the player economy.</li>
 <li><strong>Config</strong>: View and modify Foothold gameplay variables and configuration directly from the browser.</li>
 </ul>
 <h2 id="-airboss-planner"><a class="header" href="#-airboss-planner">⚓ Airboss Planner</a></h2>
@@ -416,8 +406,6 @@ nssm install "DCS Web Dashboard"
 <li><strong>Carrier Actions</strong>: Remotely command the carrier to instantly turn into the wind for recovery operations, or resume its normal circuit, mirroring the in-game F10 radio menu functionality.</li>
 <li><strong>Live Deck Views</strong>: Track aircraft assigned to the Carrier and Tarawa decks with dedicated silhouettes for the F-14, F/A-18, AV-8B, A-4E-C, A-6E, E-2 Hawkeye, S-3B Viking, T-45C, AH-64D, CH-47F, Ka-50 III, OH-58D, SA342, and UH-1H families. Stationary fixed-wing aircraft face inward toward the deck centerline according to their port or starboard parking side, while helicopters face ship-forward and use <code>H1</code>–<code>H8</code> terminals on both ships. High-contrast cyan, magenta, and amber markers distinguish fixed-wing parking, helicopter parking, and launch positions; a white dashed ring identifies spots with no assigned taxi route by default. Click any parking marker to add the larger selection halo. Click a route-capable parking marker or aircraft to highlight its route to launch; a soft one-shot shimmer travels through the route line from parking to launch to show traffic flow. Click an amber catapult or STOVL launch marker to display every DCS-defined route connecting that launch point to its possible parking spots. Aircraft without a dedicated asset use the generic fallback marker.</li>
 </ul>
-<h2 id="-warehouse-wip"><a class="header" href="#-warehouse-wip">📦 Warehouse (WIP)</a></h2>
-<p>View and manage the inventory of airbases across the map. You can dynamically add items or liquids to airbase warehouses mid-mission.</p>
 <h2 id="-settings"><a class="header" href="#-settings">⚙️ Settings</a></h2>
 <p>A visual UI to edit the underlying <code>serverSettings.lua</code> file safely.</p>
 <ul>
@@ -427,12 +415,11 @@ nssm install "DCS Web Dashboard"
 <h2 id="-logs--tasks"><a class="header" href="#-logs--tasks">🛡️ Logs &amp; Tasks</a></h2>
 <ul>
 <li><strong>Access Logs</strong>: A security audit trail. Every dashboard login attempt is secretly logged (SUCCESS/REJECTED).</li>
-<li><strong>DCS Logs</strong>: A live, streaming tail of the <code>dcs.log</code> file straight from the server’s hard drive to help you debug crashes or script errors.</li>
 <li><strong>Tasks</strong>: A remote control for your Windows Server’s Task Scheduler and Processes. Fetch live status of background bots and cleanly Start/Stop/Restart them with safety guardrails.</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="architecture-overview"><a class="header" href="#architecture-overview">Architecture Overview</a></h1>
-<p>DCS-Web-Dashboard is composed of two primary components compiled into one executable (<code>rust-web-dashboard.exe</code>). There is no Node.js runtime or separate web server. Large replaceable assets are kept outside the executable in <code>media</code>, <code>images</code>, and <code>icon</code> folders beside it to keep the binary smaller.</p>
+<p>DCS-Web-Dashboard is composed of two primary components compiled into one executable (<code>rust-web-dashboard.exe</code>). There is no Node.js runtime or separate web server. Large replaceable assets are kept outside the executable in <code>images</code> and <code>icon</code> folders beside it to keep the binary smaller.</p>
 <h2 id="1-the-rust-backend-rust-web-dashboard"><a class="header" href="#1-the-rust-backend-rust-web-dashboard">1. The Rust Backend (<code>rust-web-dashboard</code>)</a></h2>
 <p>This is a standalone binary that acts as the core controller.</p>
 <ul>
@@ -445,10 +432,10 @@ nssm install "DCS Web Dashboard"
 <ul>
 <li><strong>Embedded SPA</strong>: During the build process, the Next.js application is statically exported (<code>output: 'export'</code>) as HTML, CSS, and JS. This output is copied into the Rust crate’s <code>static/</code> folder and baked directly into the binary using <code>rust-embed</code>.</li>
 <li><strong>Routing</strong>: Deep links (e.g., <code>/weather</code>) and hashed <code>/_next/</code> assets are served by the Rust backend with the correct MIME types. Unknown paths fall back to the SPA shell.</li>
-<li><strong>External Assets</strong>: <code>/media/background.mp4</code>, <code>/img/background.png</code>, and <code>/icon/*</code> are served from the <code>media</code>, <code>images</code>, and <code>icon</code> folders beside <code>rust-web-dashboard.exe</code>. Paths are resolved from the executable itself, so the parent folder can have any name and the process working directory does not affect asset loading.</li>
+<li><strong>External Assets</strong>: <code>/img/background.png</code> and <code>/icon/*</code> are served from the <code>images</code> and <code>icon</code> folders beside <code>rust-web-dashboard.exe</code>. Paths are resolved from the executable itself, so the parent folder can have any name and the process working directory does not affect asset loading.</li>
 </ul>
 <blockquote>
-<p><strong>Note:</strong> The <code>web-dashboard</code> directory remains the frontend source project. The Rust crate embeds its built application output but excludes the external media, background, and aircraft-icon assets.</p>
+<p><strong>Note:</strong> The <code>web-dashboard</code> directory remains the frontend source project. The Rust crate embeds its built application output but excludes the external background and aircraft-icon assets.</p>
 </blockquote>
 <h2 id="security-notes"><a class="header" href="#security-notes">Security Notes</a></h2>
 <ul>

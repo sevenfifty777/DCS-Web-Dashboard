@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { apiFetch, getToken } from '@/lib/api';
-import ServerPerformance from './ServerPerformance';
 import styles from './Sidebar.module.css';
 
 export default function Sidebar() {
@@ -156,22 +155,16 @@ export default function Sidebar() {
           <Link href="/" className={`${styles.link} ${pathname === '/' ? styles.active : ''}`}>Server Status</Link>
           <Link href="/mission" className={`${styles.link} ${pathname === '/mission' ? styles.active : ''}`}>Mission</Link>
           <Link href="/weather" className={`${styles.link} ${pathname === '/weather' ? styles.active : ''}`}>Weather</Link>
-          <Link href="/radar" className={`${styles.link} ${pathname === '/radar' ? styles.active : ''}`}>Radar</Link>
-          <Link href="/orbat" className={`${styles.link} ${pathname === '/orbat' ? styles.active : ''}`}>ORBAT</Link>
-          <Link href="/events" className={`${styles.link} ${pathname === '/events' ? styles.active : ''}`}>Events</Link>
           <Link href="/triggers" className={`${styles.link} ${pathname === '/triggers' ? styles.active : ''}`}>Triggers</Link>
           <Link href="/srs" className={`${styles.link} ${pathname === '/srs' ? styles.active : ''}`}>SRS</Link>
           <Link href="/console" className={`${styles.link} ${pathname === '/console' ? styles.active : ''}`}>Console</Link>
-          <Link href="/atmosphere" className={`${styles.link} ${pathname === '/atmosphere' ? styles.active : ''}`}>Atmosphere</Link>
           <Link href="/players" className={`${styles.link} ${pathname === '/players' ? styles.active : ''}`}>Players</Link>
           <Link href="/chat" className={`${styles.link} ${pathname === '/chat' ? styles.active : ''}`}>Chat</Link>
           <Link href="/leaderboard" className={`${styles.link} ${pathname === '/leaderboard' ? styles.active : ''}`}>Leaderboard</Link>
           <Link href="/settings" className={`${styles.link} ${pathname === '/settings' ? styles.active : ''}`}>Settings</Link>
           <Link href="/access-logs" className={`${styles.link} ${pathname === '/access-logs' ? styles.active : ''}`}>Access Logs</Link>
           <Link href="/foothold" className={`${styles.link} ${pathname === '/foothold' ? styles.active : ''}`}>Foothold</Link>
-          <Link href="/warehouse" className={`${styles.link} ${pathname === '/warehouse' ? styles.active : ''}`}>Warehouse</Link>
           <Link href="/airboss" className={`${styles.link} ${pathname === '/airboss' ? styles.active : ''}`}>Airboss Planner</Link>
-          <Link href="/logs/dcs" className={`${styles.link} ${pathname === '/logs/dcs' ? styles.active : ''}`}>DCS Logs</Link>
           <Link href="/tasks" className={`${styles.link} ${pathname === '/tasks' ? styles.active : ''}`}>Tasks</Link>
           <button 
             onClick={() => {
@@ -193,8 +186,6 @@ export default function Sidebar() {
             Logout
           </button>
         </div>
-        
-        <ServerPerformance />
       </nav>
       
       {/* Mobile Overlay (Click to close) */}

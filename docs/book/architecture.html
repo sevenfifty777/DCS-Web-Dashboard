@@ -36,7 +36,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-d38d79f9.js";
+            window.path_to_searchindex_js = "searchindex-cbd1aaa9.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-1c680d0f.js"></script>
@@ -182,7 +182,7 @@
                 <div id="mdbook-content" class="content">
                     <main>
                         <h1 id="architecture-overview"><a class="header" href="#architecture-overview">Architecture Overview</a></h1>
-<p>DCS-Web-Dashboard is composed of two primary components compiled into one executable (<code>rust-web-dashboard.exe</code>). There is no Node.js runtime or separate web server. Large replaceable assets are kept outside the executable in <code>media</code>, <code>images</code>, and <code>icon</code> folders beside it to keep the binary smaller.</p>
+<p>DCS-Web-Dashboard is composed of two primary components compiled into one executable (<code>rust-web-dashboard.exe</code>). There is no Node.js runtime or separate web server. Large replaceable assets are kept outside the executable in <code>images</code> and <code>icon</code> folders beside it to keep the binary smaller.</p>
 <h2 id="1-the-rust-backend-rust-web-dashboard"><a class="header" href="#1-the-rust-backend-rust-web-dashboard">1. The Rust Backend (<code>rust-web-dashboard</code>)</a></h2>
 <p>This is a standalone binary that acts as the core controller.</p>
 <ul>
@@ -195,10 +195,10 @@
 <ul>
 <li><strong>Embedded SPA</strong>: During the build process, the Next.js application is statically exported (<code>output: 'export'</code>) as HTML, CSS, and JS. This output is copied into the Rust crate’s <code>static/</code> folder and baked directly into the binary using <code>rust-embed</code>.</li>
 <li><strong>Routing</strong>: Deep links (e.g., <code>/weather</code>) and hashed <code>/_next/</code> assets are served by the Rust backend with the correct MIME types. Unknown paths fall back to the SPA shell.</li>
-<li><strong>External Assets</strong>: <code>/media/background.mp4</code>, <code>/img/background.png</code>, and <code>/icon/*</code> are served from the <code>media</code>, <code>images</code>, and <code>icon</code> folders beside <code>rust-web-dashboard.exe</code>. Paths are resolved from the executable itself, so the parent folder can have any name and the process working directory does not affect asset loading.</li>
+<li><strong>External Assets</strong>: <code>/img/background.png</code> and <code>/icon/*</code> are served from the <code>images</code> and <code>icon</code> folders beside <code>rust-web-dashboard.exe</code>. Paths are resolved from the executable itself, so the parent folder can have any name and the process working directory does not affect asset loading.</li>
 </ul>
 <blockquote>
-<p><strong>Note:</strong> The <code>web-dashboard</code> directory remains the frontend source project. The Rust crate embeds its built application output but excludes the external media, background, and aircraft-icon assets.</p>
+<p><strong>Note:</strong> The <code>web-dashboard</code> directory remains the frontend source project. The Rust crate embeds its built application output but excludes the external background and aircraft-icon assets.</p>
 </blockquote>
 <h2 id="security-notes"><a class="header" href="#security-notes">Security Notes</a></h2>
 <ul>

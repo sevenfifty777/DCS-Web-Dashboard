@@ -36,7 +36,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-d38d79f9.js";
+            window.path_to_searchindex_js = "searchindex-cbd1aaa9.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-1c680d0f.js"></script>
@@ -214,17 +214,15 @@ cargo build --release
 ├── rust-web-dashboard.exe
 ├── icon\
 │   └── *.png
-├── images\
-│   └── background.png
-└── media\
-    └── background.mp4
+└── images\
+    └── background.png
 </code></pre>
-<p>The root folder can have any name and can be placed anywhere. The server resolves <code>/icon/*</code>, <code>/img/background.png</code>, and <code>/media/background.mp4</code> from folders beside the executable, regardless of the process working directory. When using NSSM, setting <strong>Startup directory</strong> to the executable folder remains recommended for the dashboard’s other relative runtime files.</p>
+<p>The root folder can have any name and can be placed anywhere. The server resolves <code>/icon/*</code> and <code>/img/background.png</code> from folders beside the executable, regardless of the process working directory. When using NSSM, setting <strong>Startup directory</strong> to the executable folder remains recommended for the dashboard’s other relative runtime files.</p>
 <h3 id="create-a-release-zip"><a class="header" href="#create-a-release-zip">Create a Release ZIP</a></h3>
 <p>From the repository root, run the release script:</p>
 <pre><code class="language-powershell">.\build_release.ps1
 </code></pre>
-<p>The script installs the exact frontend dependencies from <code>package-lock.json</code>, builds the static frontend, refreshes the frontend embedded in the Rust executable, performs a locked Rust release build, and creates <code>Releases\DCS-Web-Dashboard-&lt;version&gt;.zip</code>. The ZIP contains <code>rust-web-dashboard.exe</code>, complete <code>icon\</code>, <code>images\</code>, and <code>media\</code> asset trees, plus an empty <code>logs\</code> directory reserved for the dashboard service’s stdout and stderr files. Video files are deliberately excluded from <code>media\</code>; the static background image remains available as the fallback.</p>
+<p>The script installs the exact frontend dependencies from <code>package-lock.json</code>, builds the static frontend, refreshes the frontend embedded in the Rust executable, performs a locked Rust release build, and creates <code>Releases\DCS-Web-Dashboard-&lt;version&gt;.zip</code>. The ZIP contains <code>rust-web-dashboard.exe</code>, complete <code>icon\</code> and <code>images\</code> asset trees, plus an empty <code>logs\</code> directory reserved for the dashboard service’s stdout and stderr files.</p>
 <p>To test into an isolated directory without replacing the normal <code>Releases</code> output, or to reuse an already installed <code>node_modules</code> tree, use:</p>
 <pre><code class="language-powershell">.\build_release.ps1 -ReleasesDirectory "$env:TEMP\DCS-Web-Dashboard-release-check"
 .\build_release.ps1 -SkipDependencyInstall

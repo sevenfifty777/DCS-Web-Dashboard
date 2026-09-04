@@ -9,13 +9,12 @@ A powerful, standalone web dashboard and remote administration tool for DCS Worl
 The dashboard provides a massive array of features to help you run your DCS server effortlessly directly from your web browser:
 
 - **Mission Management**: View the mission queue, instantly run new missions, or browse your server's filesystem to load new `.miz` files.
-- **Live Radar & ORBAT**: Real-time radar plot of all units (Planes, Helis, Ships, Ground) and a complete hierarchical Order of Battle.
 - **Foothold Campaign**: Built-in support for the dynamic Foothold campaign, including a persistent leaderboard, zone capture status, and real-time configuration tuning.
 - **Airboss Planner**: A dynamic toolkit for managing carrier operations, automatically syncing Wind Over Deck (WOD) and Base Recovery Course (BRC). Command your carrier to turn into the wind remotely!
 - **Weather Injection**: Edit weather settings on-the-fly and seamlessly inject new presets into the active mission using the `DCS-Dynamic-Weather` script.
 - **SRS Integration**: Visual configuration editor for `server.cfg`, process management, and live client frequency tracking.
 - **Player Management & Chat**: See who is online, read the live chat, send broadcast messages to players, and issue kicks/bans.
-- **Server Administration**: Remote access to `serverSettings.lua`, DCS engine crash logs, and background Windows task control for maintenance bots.
+- **Server Administration**: Remote access to `serverSettings.lua`, the login audit trail, and background Windows task control for maintenance bots.
 
 ## 📚 Documentation
 

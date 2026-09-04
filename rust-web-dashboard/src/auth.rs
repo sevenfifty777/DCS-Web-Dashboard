@@ -7,7 +7,7 @@
 //! keep the existing mobile client working during the migration.
 
 use axum::{
-    extract::{FromRequestParts, Query},
+    extract::FromRequestParts,
     http::{header, request::Parts, StatusCode},
     response::{IntoResponse, Response},
     Json,
@@ -136,50 +136,6 @@ impl FromRequestParts<AppState> for AuthUser {
             AuthError::Invalid
         })?;
         Ok(AuthUser {
-            subject: claims.sub,
-            kind: claims.kind,
-        })
-    }
-}
-
-/// Authenticated principal produced by the [`AuthQueryUser`] extractor,
-/// for endpoints that cannot send Authorization headers (like SSE `EventSource`).
-#[allow(dead_code)]
-pub struct AuthQueryUser {
-    pub subject: String,
-    pub kind: String,
-}
-
-#[derive(Deserialize)]
-struct AuthQuery {
-    token: String,
-}
-
-impl FromRequestParts<AppState> for AuthQueryUser {
-    type Rejection = AuthError;
-
-    async fn from_request_parts(
-        parts: &mut Parts,
-        state: &AppState,
-    ) -> Result<Self, Self::Rejection> {
-        let Query(query) = Query::<AuthQuery>::from_request_parts(parts, state)
-            .await
-            .map_err(|_| AuthError::Missing)?;
-
-        // Legacy static mobile key (constant-time compare).
-        if let Some(key) = state.config.mobile_api_key.as_deref() {
-            if constant_time_eq(query.token.as_bytes(), key.as_bytes()) {
-                return Ok(AuthQueryUser {
-                    subject: "mobile".to_string(),
-                    kind: "mobile".to_string(),
-                });
-            }
-        }
-
-        let claims = verify_token(&state.config.jwt_secret, &query.token)
-            .map_err(|_| AuthError::Invalid)?;
-        
-        Ok(AuthQueryUser {
             subject: claims.sub,
             kind: claims.kind,
         })
