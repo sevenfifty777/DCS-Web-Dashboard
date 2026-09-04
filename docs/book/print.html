@@ -37,7 +37,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-d38d79f9.js";
+            window.path_to_searchindex_js = "searchindex-c8412aab.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-1c680d0f.js"></script>
@@ -377,14 +377,8 @@ nssm install "DCS Web Dashboard"
 <li><strong>Presets List</strong>: Displays all available weather presets (CAVOK, Stormy, etc.) including temperature, QNH, and wind speed.</li>
 <li><strong>Apply &amp; Restart</strong>: Seamlessly injects a new weather preset and restarts the mission, safely handling A/B mission swapping.</li>
 </ul>
-<h2 id="-radar--orbat"><a class="header" href="#-radar--orbat">📡 Radar &amp; ORBAT</a></h2>
+<h2 id="-triggers--console"><a class="header" href="#-triggers--console">📅 Triggers &amp; Console</a></h2>
 <ul>
-<li><strong>Radar</strong>: A live, dynamic radar plot of all active units in the server. Airplanes, helicopters, ships, and ground units have distinct shapes. Human players are highlighted with glowing borders.</li>
-<li><strong>ORBAT (Order of Battle)</strong>: View the hierarchical structure of all spawned groups and units on both coalitions.</li>
-</ul>
-<h2 id="-events-triggers--console"><a class="header" href="#-events-triggers--console">📅 Events, Triggers &amp; Console</a></h2>
-<ul>
-<li><strong>Events</strong>: Streams live kill-feeds, takeoffs, landings, and crashes.</li>
 <li><strong>Triggers</strong>: Read and write DCS mission flags live (e.g., to manually trigger in-game events or scripts).</li>
 <li><strong>Console</strong>: Execute raw Lua scripts directly into the DCS mission environment for advanced debugging and administration.</li>
 </ul>
@@ -395,8 +389,6 @@ nssm install "DCS Web Dashboard"
 <li><strong>Connected Clients</strong>: See a live table of connected players, their coalition, and the radio frequencies they are currently tuned to. The table refreshes every five seconds, preserves the last successful result during a temporary DCS-gRPC outage, and clears its warning automatically after recovery.</li>
 <li><strong>Configuration</strong>: A complete, categorized visual editor for your SRS <code>server.cfg</code>.</li>
 </ul>
-<h2 id="-atmosphere"><a class="header" href="#-atmosphere">🌬️ Atmosphere</a></h2>
-<p>Live weather conditions, wind, and atmospheric data straight from the running mission.</p>
 <h2 id="-players--chat"><a class="header" href="#-players--chat">👥 Players &amp; Chat</a></h2>
 <ul>
 <li><strong>Players</strong>: See exactly who is online, their ping, coalition, and what aircraft they are flying.</li>
@@ -406,7 +398,7 @@ nssm install "DCS Web Dashboard"
 <p>Specific integrations for servers running the dynamic “Foothold” campaign.</p>
 <ul>
 <li><strong>Leaderboard</strong>: A persistent leaderboard tracking live player statistics from the Foothold save file.</li>
-<li><strong>Foothold</strong>: Track the status of the campaign including active zones, ongoing attacks, side ownership, and ejected pilots.</li>
+<li><strong>Foothold</strong>: Track the status of the campaign: zone ownership counts, active missions, ejected-pilot count, and the player economy.</li>
 <li><strong>Config</strong>: View and modify Foothold gameplay variables and configuration directly from the browser.</li>
 </ul>
 <h2 id="-airboss-planner"><a class="header" href="#-airboss-planner">⚓ Airboss Planner</a></h2>
@@ -416,8 +408,6 @@ nssm install "DCS Web Dashboard"
 <li><strong>Carrier Actions</strong>: Remotely command the carrier to instantly turn into the wind for recovery operations, or resume its normal circuit, mirroring the in-game F10 radio menu functionality.</li>
 <li><strong>Live Deck Views</strong>: Track aircraft assigned to the Carrier and Tarawa decks with dedicated silhouettes for the F-14, F/A-18, AV-8B, A-4E-C, A-6E, E-2 Hawkeye, S-3B Viking, T-45C, AH-64D, CH-47F, Ka-50 III, OH-58D, SA342, and UH-1H families. Stationary fixed-wing aircraft face inward toward the deck centerline according to their port or starboard parking side, while helicopters face ship-forward and use <code>H1</code>–<code>H8</code> terminals on both ships. High-contrast cyan, magenta, and amber markers distinguish fixed-wing parking, helicopter parking, and launch positions; a white dashed ring identifies spots with no assigned taxi route by default. Click any parking marker to add the larger selection halo. Click a route-capable parking marker or aircraft to highlight its route to launch; a soft one-shot shimmer travels through the route line from parking to launch to show traffic flow. Click an amber catapult or STOVL launch marker to display every DCS-defined route connecting that launch point to its possible parking spots. Aircraft without a dedicated asset use the generic fallback marker.</li>
 </ul>
-<h2 id="-warehouse-wip"><a class="header" href="#-warehouse-wip">📦 Warehouse (WIP)</a></h2>
-<p>View and manage the inventory of airbases across the map. You can dynamically add items or liquids to airbase warehouses mid-mission.</p>
 <h2 id="-settings"><a class="header" href="#-settings">⚙️ Settings</a></h2>
 <p>A visual UI to edit the underlying <code>serverSettings.lua</code> file safely.</p>
 <ul>
@@ -427,7 +417,6 @@ nssm install "DCS Web Dashboard"
 <h2 id="-logs--tasks"><a class="header" href="#-logs--tasks">🛡️ Logs &amp; Tasks</a></h2>
 <ul>
 <li><strong>Access Logs</strong>: A security audit trail. Every dashboard login attempt is secretly logged (SUCCESS/REJECTED).</li>
-<li><strong>DCS Logs</strong>: A live, streaming tail of the <code>dcs.log</code> file straight from the server’s hard drive to help you debug crashes or script errors.</li>
 <li><strong>Tasks</strong>: A remote control for your Windows Server’s Task Scheduler and Processes. Fetch live status of background bots and cleanly Start/Stop/Restart them with safety guardrails.</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div>

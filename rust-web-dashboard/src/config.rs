@@ -223,12 +223,6 @@ impl Config {
         self.missions_dir().join("Uploads")
     }
 
-    /// Absolute path to `Logs/dcs.log` under the DCS saved-games directory.
-    pub fn dcs_log_path(&self) -> PathBuf {
-        self.dcs_saved_games_dir.join("Logs").join("dcs.log")
-    }
-
-
 }
 
 /// Read an environment variable, treating empty/whitespace values as absent.

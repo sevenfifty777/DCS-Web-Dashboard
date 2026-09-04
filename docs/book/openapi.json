@@ -10,139 +10,25 @@
     "version": "0.1.0"
   },
   "paths": {
-    "/api/airbases": {
-      "get": {
-        "tags": [
-          "dcs"
-        ],
-        "summary": "`GET /api/airbases` → current airbases (WorldService.GetAirbases).",
-        "operationId": "get_airbases",
-        "responses": {
-          "200": {
-            "description": "List of airbases"
-          }
-        },
-        "security": [
-          {
-            "jwt": []
-          }
-        ]
-      }
-    },
-    "/api/airbases/{name}/coalition": {
-      "post": {
-        "tags": [
-          "world"
-        ],
-        "operationId": "set_coalition",
-        "parameters": [
-          {
-            "name": "name",
-            "in": "path",
-            "description": "Airbase name",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SetCoalitionPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Airbase coalition set"
-          }
-        },
-        "security": [
-          {
-            "jwt": []
-          }
-        ]
-      }
-    },
-    "/api/airbases/{name}/parking": {
-      "get": {
-        "tags": [
-          "world"
-        ],
-        "operationId": "parking",
-        "parameters": [
-          {
-            "name": "name",
-            "in": "path",
-            "description": "Airbase name",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "available",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": [
-                "boolean",
-                "null"
-              ]
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Airbase parking spots"
-          }
-        },
-        "security": [
-          {
-            "jwt": []
-          }
-        ]
-      }
-    },
-    "/api/airbases/{name}/runways": {
-      "get": {
-        "tags": [
-          "world"
-        ],
-        "operationId": "runways",
-        "parameters": [
-          {
-            "name": "name",
-            "in": "path",
-            "description": "Airbase name",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Airbase runways"
-          }
-        },
-        "security": [
-          {
-            "jwt": []
-          }
-        ]
-      }
-    },
     "/api/airboss": {
       "get": {
         "tags": [
           "dcs"
         ],
         "operationId": "airboss_data",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Current Airboss data from DCS",
@@ -209,63 +95,6 @@
         "responses": {
           "200": {
             "description": "Announcement sent"
-          }
-        },
-        "security": [
-          {
-            "jwt": []
-          }
-        ]
-      }
-    },
-    "/api/atmosphere": {
-      "get": {
-        "tags": [
-          "dcs"
-        ],
-        "summary": "`GET /api/atmosphere?lat=&lon=&alt=` → wind + temperature/pressure\n(AtmosphereService). `alt` defaults to 0, matching the source.",
-        "operationId": "atmosphere",
-        "parameters": [
-          {
-            "name": "lat",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": [
-                "number",
-                "null"
-              ],
-              "format": "double"
-            }
-          },
-          {
-            "name": "lon",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": [
-                "number",
-                "null"
-              ],
-              "format": "double"
-            }
-          },
-          {
-            "name": "alt",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": [
-                "number",
-                "null"
-              ],
-              "format": "double"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Atmosphere data"
           }
         },
         "security": [
@@ -422,131 +251,6 @@
         ]
       }
     },
-    "/api/coalition/bullseye": {
-      "get": {
-        "tags": [
-          "coalition"
-        ],
-        "operationId": "bullseye",
-        "parameters": [
-          {
-            "name": "coalition",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Coalition bullseye"
-          }
-        },
-        "security": [
-          {
-            "jwt": []
-          }
-        ]
-      }
-    },
-    "/api/coalition/groups": {
-      "get": {
-        "tags": [
-          "coalition"
-        ],
-        "operationId": "groups",
-        "parameters": [
-          {
-            "name": "coalition",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "category",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Coalition groups"
-          }
-        },
-        "security": [
-          {
-            "jwt": []
-          }
-        ]
-      }
-    },
-    "/api/coalition/players": {
-      "get": {
-        "tags": [
-          "coalition"
-        ],
-        "operationId": "player_units",
-        "parameters": [
-          {
-            "name": "coalition",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Player units"
-          }
-        },
-        "security": [
-          {
-            "jwt": []
-          }
-        ]
-      }
-    },
-    "/api/coalition/statics": {
-      "get": {
-        "tags": [
-          "coalition"
-        ],
-        "operationId": "statics",
-        "parameters": [
-          {
-            "name": "coalition",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Static objects"
-          }
-        },
-        "security": [
-          {
-            "jwt": []
-          }
-        ]
-      }
-    },
     "/api/console": {
       "post": {
         "tags": [
@@ -657,25 +361,6 @@
         ]
       }
     },
-    "/api/graveyard": {
-      "get": {
-        "tags": [
-          "system"
-        ],
-        "summary": "`GET /api/graveyard` -> Returns the current live graveyard JSON",
-        "operationId": "graveyard_get",
-        "responses": {
-          "200": {
-            "description": "Graveyard state"
-          }
-        },
-        "security": [
-          {
-            "jwt": []
-          }
-        ]
-      }
-    },
     "/api/health": {
       "get": {
         "tags": [
@@ -704,44 +389,6 @@
         "responses": {
           "200": {
             "description": "Audit log data"
-          }
-        },
-        "security": [
-          {
-            "jwt": []
-          }
-        ]
-      }
-    },
-    "/api/logs/dcs/stream": {
-      "get": {
-        "tags": [
-          "system"
-        ],
-        "summary": "`GET /api/logs/dcs/stream` → tail DCS log using SSE.",
-        "operationId": "dcs_log_stream",
-        "responses": {
-          "200": {
-            "description": "SSE stream of DCS log"
-          }
-        },
-        "security": [
-          {
-            "jwt": []
-          }
-        ]
-      }
-    },
-    "/api/marks": {
-      "get": {
-        "tags": [
-          "dcs"
-        ],
-        "summary": "`GET /api/marks` → current mark panels (WorldService.GetMarkPanels).",
-        "operationId": "get_marks",
-        "responses": {
-          "200": {
-            "description": "List of mark panels"
           }
         },
         "security": [
@@ -1241,65 +888,6 @@
         ]
       }
     },
-    "/api/spawn/ground": {
-      "post": {
-        "tags": [
-          "spawner"
-        ],
-        "operationId": "spawn_ground",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SpawnGroundPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Ground group spawned"
-          }
-        },
-        "security": [
-          {
-            "jwt": []
-          }
-        ]
-      }
-    },
-    "/api/spots/{id}": {
-      "delete": {
-        "tags": [
-          "dcs"
-        ],
-        "operationId": "destroy_spot",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "Spot ID",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "minimum": 0
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Spot destroyed"
-          }
-        },
-        "security": [
-          {
-            "jwt": []
-          }
-        ]
-      }
-    },
     "/api/srs/clients": {
       "get": {
         "tags": [
@@ -1355,93 +943,6 @@
         "responses": {
           "200": {
             "description": "SRS configuration updated"
-          }
-        },
-        "security": [
-          {
-            "jwt": []
-          }
-        ]
-      }
-    },
-    "/api/trigger/effect": {
-      "post": {
-        "tags": [
-          "trigger"
-        ],
-        "operationId": "trigger_effect",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EffectPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Effect triggered"
-          }
-        },
-        "security": [
-          {
-            "jwt": []
-          }
-        ]
-      }
-    },
-    "/api/trigger/mark": {
-      "post": {
-        "tags": [
-          "trigger"
-        ],
-        "operationId": "create_mark",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/MarkPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Mark created"
-          }
-        },
-        "security": [
-          {
-            "jwt": []
-          }
-        ]
-      }
-    },
-    "/api/trigger/mark/{id}": {
-      "delete": {
-        "tags": [
-          "trigger"
-        ],
-        "operationId": "remove_mark",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "Mark ID",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "minimum": 0
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Mark removed"
           }
         },
         "security": [
@@ -1510,346 +1011,6 @@
         ]
       }
     },
-    "/api/units/{name}": {
-      "get": {
-        "tags": [
-          "dcs"
-        ],
-        "operationId": "get_unit_details",
-        "parameters": [
-          {
-            "name": "name",
-            "in": "path",
-            "description": "Unit name",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Unit details"
-          }
-        },
-        "security": [
-          {
-            "jwt": []
-          }
-        ]
-      }
-    },
-    "/api/units/{name}/alarm-state": {
-      "post": {
-        "tags": [
-          "dcs"
-        ],
-        "operationId": "set_group_alarm_state",
-        "parameters": [
-          {
-            "name": "name",
-            "in": "path",
-            "description": "Unit name",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AlarmStatePayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Alarm state set"
-          }
-        },
-        "security": [
-          {
-            "jwt": []
-          }
-        ]
-      }
-    },
-    "/api/units/{name}/destroy": {
-      "post": {
-        "tags": [
-          "dcs"
-        ],
-        "operationId": "destroy_unit_group",
-        "parameters": [
-          {
-            "name": "name",
-            "in": "path",
-            "description": "Unit name",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Unit destroyed"
-          }
-        },
-        "security": [
-          {
-            "jwt": []
-          }
-        ]
-      }
-    },
-    "/api/units/{name}/emission": {
-      "post": {
-        "tags": [
-          "dcs"
-        ],
-        "operationId": "set_unit_emission",
-        "parameters": [
-          {
-            "name": "name",
-            "in": "path",
-            "description": "Unit name",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EmissionPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Emission set"
-          }
-        },
-        "security": [
-          {
-            "jwt": []
-          }
-        ]
-      }
-    },
-    "/api/units/{name}/ir-point": {
-      "post": {
-        "tags": [
-          "dcs"
-        ],
-        "operationId": "ir_pointer",
-        "parameters": [
-          {
-            "name": "name",
-            "in": "path",
-            "description": "Unit name",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/IrPointerPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Point IR"
-          }
-        },
-        "security": [
-          {
-            "jwt": []
-          }
-        ]
-      }
-    },
-    "/api/units/{name}/lase": {
-      "post": {
-        "tags": [
-          "dcs"
-        ],
-        "operationId": "lase",
-        "parameters": [
-          {
-            "name": "name",
-            "in": "path",
-            "description": "Unit name",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LasePayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Lase target"
-          }
-        },
-        "security": [
-          {
-            "jwt": []
-          }
-        ]
-      }
-    },
-    "/api/units/{name}/roe": {
-      "post": {
-        "tags": [
-          "dcs"
-        ],
-        "operationId": "set_group_roe",
-        "parameters": [
-          {
-            "name": "name",
-            "in": "path",
-            "description": "Unit name",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ROEPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "ROE set"
-          }
-        },
-        "security": [
-          {
-            "jwt": []
-          }
-        ]
-      }
-    },
-    "/api/warehouse/inventory": {
-      "get": {
-        "tags": [
-          "warehouse"
-        ],
-        "summary": "`GET /api/warehouse/inventory`",
-        "operationId": "get_inventory",
-        "parameters": [
-          {
-            "name": "airbase_name",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Airbase inventory"
-          }
-        },
-        "security": [
-          {
-            "jwt": []
-          }
-        ]
-      }
-    },
-    "/api/warehouse/item/add": {
-      "post": {
-        "tags": [
-          "warehouse"
-        ],
-        "summary": "`POST /api/warehouse/item/add`",
-        "operationId": "add_item",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AddItemBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Item added to inventory"
-          }
-        },
-        "security": [
-          {
-            "jwt": []
-          }
-        ]
-      }
-    },
-    "/api/warehouse/liquid/add": {
-      "post": {
-        "tags": [
-          "warehouse"
-        ],
-        "summary": "`POST /api/warehouse/liquid/add`",
-        "operationId": "add_liquid",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AddLiquidBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Liquid added to inventory"
-          }
-        },
-        "security": [
-          {
-            "jwt": []
-          }
-        ]
-      }
-    },
     "/api/weather": {
       "get": {
         "tags": [
@@ -1897,89 +1058,10 @@
           }
         ]
       }
-    },
-    "/api/zones": {
-      "get": {
-        "tags": [
-          "dcs"
-        ],
-        "summary": "`GET /api/zones` → current mission editor zones (CustomService.Eval).",
-        "operationId": "get_zones",
-        "responses": {
-          "200": {
-            "description": "List of zones"
-          }
-        },
-        "security": [
-          {
-            "jwt": []
-          }
-        ]
-      }
-    },
-    "/api/zones/foothold": {
-      "get": {
-        "tags": [
-          "dcs"
-        ],
-        "summary": "`GET /api/zones/foothold` → Foothold-specific zones (CustomService.Eval).",
-        "operationId": "get_foothold_zones",
-        "responses": {
-          "200": {
-            "description": "List of foothold zones"
-          }
-        },
-        "security": [
-          {
-            "jwt": []
-          }
-        ]
-      }
     }
   },
   "components": {
     "schemas": {
-      "AddItemBody": {
-        "type": "object",
-        "required": [
-          "airbase_name",
-          "item_name",
-          "count"
-        ],
-        "properties": {
-          "airbase_name": {
-            "type": "string"
-          },
-          "count": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "item_name": {
-            "type": "string"
-          }
-        }
-      },
-      "AddLiquidBody": {
-        "type": "object",
-        "required": [
-          "airbase_name",
-          "liquid_type",
-          "amount"
-        ],
-        "properties": {
-          "airbase_name": {
-            "type": "string"
-          },
-          "amount": {
-            "type": "number",
-            "format": "double"
-          },
-          "liquid_type": {
-            "type": "integer",
-            "format": "int32"
-          }
-        }
-      },
       "AirbossActionPayload": {
         "type": "object",
         "required": [
@@ -2020,18 +1102,6 @@
           "tw_spd": {
             "type": "number",
             "format": "double"
-          }
-        }
-      },
-      "AlarmStatePayload": {
-        "type": "object",
-        "required": [
-          "alarm_state"
-        ],
-        "properties": {
-          "alarm_state": {
-            "type": "integer",
-            "format": "int32"
           }
         }
       },
@@ -2099,83 +1169,6 @@
           }
         }
       },
-      "EffectPayload": {
-        "type": "object",
-        "required": [
-          "effect",
-          "lat",
-          "lon",
-          "color"
-        ],
-        "properties": {
-          "color": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "effect": {
-            "type": "string"
-          },
-          "lat": {
-            "type": "number",
-            "format": "double"
-          },
-          "lon": {
-            "type": "number",
-            "format": "double"
-          }
-        }
-      },
-      "EmissionPayload": {
-        "type": "object",
-        "required": [
-          "emitting"
-        ],
-        "properties": {
-          "emitting": {
-            "type": "boolean"
-          }
-        }
-      },
-      "IrPointerPayload": {
-        "type": "object",
-        "required": [
-          "target_x",
-          "target_z"
-        ],
-        "properties": {
-          "target_x": {
-            "type": "number",
-            "format": "double"
-          },
-          "target_z": {
-            "type": "number",
-            "format": "double"
-          }
-        }
-      },
-      "LasePayload": {
-        "type": "object",
-        "required": [
-          "target_x",
-          "target_z",
-          "code"
-        ],
-        "properties": {
-          "code": {
-            "type": "integer",
-            "format": "int32",
-            "minimum": 0
-          },
-          "target_x": {
-            "type": "number",
-            "format": "double"
-          },
-          "target_z": {
-            "type": "number",
-            "format": "double"
-          }
-        }
-      },
       "LoginRequest": {
         "type": "object",
         "required": [
@@ -2184,74 +1177,6 @@
         "properties": {
           "password": {
             "type": "string"
-          }
-        }
-      },
-      "MarkPayload": {
-        "type": "object",
-        "required": [
-          "shape",
-          "lat1",
-          "lon1",
-          "r",
-          "g",
-          "b",
-          "a"
-        ],
-        "properties": {
-          "a": {
-            "type": "number",
-            "format": "double"
-          },
-          "b": {
-            "type": "number",
-            "format": "double"
-          },
-          "g": {
-            "type": "number",
-            "format": "double"
-          },
-          "lat1": {
-            "type": "number",
-            "format": "double"
-          },
-          "lat2": {
-            "type": [
-              "number",
-              "null"
-            ],
-            "format": "double"
-          },
-          "lon1": {
-            "type": "number",
-            "format": "double"
-          },
-          "lon2": {
-            "type": [
-              "number",
-              "null"
-            ],
-            "format": "double"
-          },
-          "r": {
-            "type": "number",
-            "format": "double"
-          },
-          "radius": {
-            "type": [
-              "number",
-              "null"
-            ],
-            "format": "double"
-          },
-          "shape": {
-            "type": "string"
-          },
-          "text": {
-            "type": [
-              "string",
-              "null"
-            ]
           }
         }
       },
@@ -2289,12 +1214,12 @@
       },
       "PlayerActionBody": {
         "type": "object",
-        "required": [
-          "id"
-        ],
         "properties": {
           "id": {
-            "type": "integer",
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int32",
             "minimum": 0
           },
@@ -2320,30 +1245,6 @@
           }
         }
       },
-      "ROEPayload": {
-        "type": "object",
-        "required": [
-          "roe"
-        ],
-        "properties": {
-          "roe": {
-            "type": "integer",
-            "format": "int32"
-          }
-        }
-      },
-      "SetCoalitionPayload": {
-        "type": "object",
-        "required": [
-          "coalition"
-        ],
-        "properties": {
-          "coalition": {
-            "type": "integer",
-            "format": "int32"
-          }
-        }
-      },
       "SetFlagBody": {
         "type": "object",
         "required": [
@@ -2356,48 +1257,6 @@
           },
           "value": {
             "type": "object"
-          }
-        }
-      },
-      "SpawnGroundPayload": {
-        "type": "object",
-        "required": [
-          "country",
-          "name",
-          "unit_type",
-          "lat",
-          "lon",
-          "heading",
-          "count"
-        ],
-        "properties": {
-          "count": {
-            "type": "integer",
-            "format": "int32",
-            "minimum": 0
-          },
-          "country": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "heading": {
-            "type": "integer",
-            "format": "int32",
-            "minimum": 0
-          },
-          "lat": {
-            "type": "number",
-            "format": "double"
-          },
-          "lon": {
-            "type": "number",
-            "format": "double"
-          },
-          "name": {
-            "type": "string"
-          },
-          "unit_type": {
-            "type": "string"
           }
         }
       },
@@ -2527,28 +1386,8 @@
       "description": "SRS server endpoints"
     },
     {
-      "name": "warehouse",
-      "description": "Airbase inventory endpoints"
-    },
-    {
-      "name": "coalition",
-      "description": "Coalition object endpoints"
-    },
-    {
-      "name": "world",
-      "description": "World and environment endpoints"
-    },
-    {
-      "name": "trigger",
-      "description": "Trigger marks and effects endpoints"
-    },
-    {
       "name": "stream",
       "description": "SSE streaming endpoints"
-    },
-    {
-      "name": "spawner",
-      "description": "Unit spawning endpoints"
     }
   ]
 }

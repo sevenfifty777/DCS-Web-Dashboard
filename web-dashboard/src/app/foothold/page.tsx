@@ -1,25 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import dynamic from 'next/dynamic';
 import { apiFetch } from '@/lib/api';
 import styles from './page.module.css';
 import { errorMessage } from '@/lib/errors';
-
-const DynamicCSARMap = dynamic(() => import('../../components/CSARMap'), { 
-    ssr: false,
-    loading: () => <div className={styles.loading}>Initializing CSAR Uplink...</div>
-});
-
-const DynamicZoneDetailsMap = dynamic(() => import('../../components/ZoneDetailsMap'), { 
-    ssr: false,
-    loading: () => <div className={styles.loading}>Loading Zone Map...</div>
-});
-
-const DynamicRedAttacksMap = dynamic(() => import('../../components/RedAttacksMap'), { 
-    ssr: false,
-    loading: () => <div className={styles.loading}>Loading Tactical Map...</div>
-});
 
 interface FootholdPlayer {
     name: string;
@@ -45,29 +29,12 @@ interface FootholdEjectedPilot {
     id: number;
     coalition: number;
     player_name: string;
-    lat: number;
-    lon: number;
-    alt: number;
-    timestamp: number;
-}
-
-interface FootholdAttack {
-    group_name: string;
-    origin_zone: string;
-    target_zone: string;
-    side: number;
-    mission_type: string;
-    alive_count: number;
-    unit_types: string[];
 }
 
 interface FootholdZone {
     name: string;
     side: number;
     level: number;
-    lat: number;
-    lon: number;
-    units: string[];
 }
 
 interface FootholdData {
@@ -75,14 +42,13 @@ interface FootholdData {
     missions: FootholdMission[];
     ejected_pilots: FootholdEjectedPilot[];
     zones: FootholdZone[];
-    attacks: FootholdAttack[];
 }
 
 export default function FootholdPage() {
     const [data, setData] = useState<FootholdData | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'overview' | 'missions' | 'csar' | 'economy' | 'zones' | 'attacks'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'missions' | 'economy'>('overview');
 
     const fetchData = async () => {
         try {
@@ -137,26 +103,6 @@ export default function FootholdPage() {
                     >
                         <span>Active Missions</span>
                         {activeMissions.length > 0 && <span className={styles.badge}>{activeMissions.length}</span>}
-                    </button>
-                    <button 
-                        onClick={() => setActiveTab('csar')}
-                        className={`nav-btn ${styles.navBtn} ${activeTab === 'csar' ? styles.navBtnActive : ''}`}
-                    >
-                        <span>CSAR Board</span>
-                        {data.ejected_pilots.length > 0 && <span className={styles.badge}>{data.ejected_pilots.length}</span>}
-                    </button>
-                    <button 
-                        onClick={() => setActiveTab('zones')}
-                        className={`nav-btn ${styles.navBtn} ${activeTab === 'zones' ? styles.navBtnActive : ''}`}
-                    >
-                        <span>Zone Details</span>
-                    </button>
-                    <button 
-                        onClick={() => setActiveTab('attacks')}
-                        className={`nav-btn ${styles.navBtn} ${activeTab === 'attacks' ? styles.navBtnActive : ''}`}
-                    >
-                        <span>Live AI Activity</span>
-                        {data.attacks && data.attacks.length > 0 && <span className={styles.badge}>{data.attacks.length}</span>}
                     </button>
                     <button 
                         onClick={() => setActiveTab('economy')}
@@ -233,48 +179,6 @@ export default function FootholdPage() {
                     </div>
                 )}
 
-                {/* CSAR TAB */}
-                {activeTab === 'csar' && (
-                    <div className={styles.panel}>
-                        <h2 className={styles.panelTitle}>CSAR Board</h2>
-                        <div style={{ marginBottom: '2rem' }}>
-                            <DynamicCSARMap pilots={data.ejected_pilots} />
-                        </div>
-                        <div style={{ flex: 1 }}>
-                            {data.ejected_pilots.length === 0 ? (
-                                <p style={{ color: 'var(--text-muted)', textAlign: 'center' }}>No pilots need rescue right now.</p>
-                            ) : (
-                                <div className={styles.tableWrapper}>
-                                    <table className={styles.table}>
-                                        <thead>
-                                            <tr>
-                                                <th>Pilot</th>
-                                                <th>Coalition</th>
-                                                <th style={{ textAlign: 'right' }}>Coordinates</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {data.ejected_pilots.map((p, idx) => (
-                                                <tr key={idx}>
-                                                    <td style={{ fontWeight: 'bold' }}>{p.player_name || "Unknown"}</td>
-                                                    <td>
-                                                        <span className={styles.badge} style={{ background: p.coalition === 2 ? 'rgba(0, 204, 255, 0.1)' : 'rgba(255, 68, 68, 0.1)', color: p.coalition === 2 ? '#00ccff' : '#ff4444' }}>
-                                                            {p.coalition === 2 ? 'BLUE' : 'RED'}
-                                                        </span>
-                                                    </td>
-                                                    <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
-                                                        {p.lat.toFixed(4)}, {p.lon.toFixed(4)}
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
-
                 {/* ECONOMY TAB */}
                 {activeTab === 'economy' && (
                     <div className={styles.panel}>
@@ -313,26 +217,6 @@ export default function FootholdPage() {
                                     Showing top 50 of {data.players.length} players.
                                 </div>
                             )}
-                        </div>
-                    </div>
-                )}
-
-                {/* ZONES TAB */}
-                {activeTab === 'zones' && (
-                    <div className={styles.panel}>
-                        <h2 className={styles.panelTitle}>Zone Details</h2>
-                        <div style={{ flex: 1 }}>
-                            <DynamicZoneDetailsMap zones={data.zones} />
-                        </div>
-                    </div>
-                )}
-
-                {/* ATTACKS TAB */}
-                {activeTab === 'attacks' && (
-                    <div className={styles.panel}>
-                        <h2 className={styles.panelTitle}>Live AI Activity</h2>
-                        <div style={{ flex: 1 }}>
-                            <DynamicRedAttacksMap attacks={data.attacks || []} zones={data.zones} />
                         </div>
                     </div>
                 )}

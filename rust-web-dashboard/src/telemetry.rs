@@ -38,9 +38,8 @@ pub fn spawn(
     channel: Channel,
     events_tx: broadcast::Sender<String>,
     units_tx: broadcast::Sender<String>,
-    config: std::sync::Arc<crate::config::Config>,
 ) {
-    tokio::spawn(run_events(channel.clone(), events_tx, config));
+    tokio::spawn(run_events(channel.clone(), events_tx));
 
     use dcs::common::v0::GroupCategory::{Airplane, Ground, Helicopter, Ship};
     for category in [Airplane, Helicopter, Ground, Ship] {
@@ -50,9 +49,8 @@ pub fn spawn(
 
 /// Hold `Mission.StreamEvents`, publishing each event as JSON. Reconnects with
 /// backoff when the stream ends or errors.
-async fn run_events(channel: Channel, tx: broadcast::Sender<String>, config: std::sync::Arc<crate::config::Config>) {
+async fn run_events(channel: Channel, tx: broadcast::Sender<String>) {
     let mut backoff = BACKOFF_START;
-    let graveyard_path = config.dcs_saved_games_dir.join("Logs").join("graveyard.json");
 
     loop {
         match grpc::stream_events(channel.clone()).await {
@@ -60,60 +58,15 @@ async fn run_events(channel: Channel, tx: broadcast::Sender<String>, config: std
                 backoff = BACKOFF_START;
                 loop {
                     match stream.next().await {
-                        Some(Ok(msg)) => {
-                            use crate::pb::dcs::mission::v0::stream_events_response::Event;
-                            use crate::pb::dcs::common::v0::{Target, Initiator};
-                            
-                            if let Some(event) = &msg.event {
-                                match event {
-                                    Event::Dead(dead_event) => {
-                                        if let Some(Initiator { initiator: Some(crate::pb::dcs::common::v0::initiator::Initiator::Unit(unit)) }) = &dead_event.initiator {
-                                            if let Some(pos) = &unit.position {
-                                                let wreck = crate::graveyard::Wreck {
-                                                    id: unit.id,
-                                                    lat: pos.lat,
-                                                    lon: pos.lon,
-                                                    alt: pos.alt,
-                                                    coalition: unit.coalition,
-                                                    unit_type: unit.r#type.clone().unwrap_or_default(),
-                                                    time: msg.time,
-                                                };
-                                                let mut graveyard = crate::graveyard::Graveyard::load_or_default(&graveyard_path);
-                                                let _ = graveyard.add_wreck(&graveyard_path, wreck);
-                                            }
-                                        }
-                                    },
-                                    Event::Kill(kill_event) => {
-                                        if let Some(Target { target: Some(crate::pb::dcs::common::v0::target::Target::Unit(unit)) }) = &kill_event.target {
-                                            if let Some(pos) = &unit.position {
-                                                let wreck = crate::graveyard::Wreck {
-                                                    id: unit.id,
-                                                    lat: pos.lat,
-                                                    lon: pos.lon,
-                                                    alt: pos.alt,
-                                                    coalition: unit.coalition,
-                                                    unit_type: unit.r#type.clone().unwrap_or_default(),
-                                                    time: msg.time,
-                                                };
-                                                let mut graveyard = crate::graveyard::Graveyard::load_or_default(&graveyard_path);
-                                                let _ = graveyard.add_wreck(&graveyard_path, wreck);
-                                            }
-                                        }
-                                    },
-                                    _ => {}
-                                }
+                        Some(Ok(msg)) => match proto_json::to_sse_json(&msg, EVENTS_TYPE) {
+                            Ok(json) => {
+                                // Err == no subscribers; dropping is intentional.
+                                let _ = tx.send(json);
                             }
-
-                            match proto_json::to_sse_json(&msg, EVENTS_TYPE) {
-                                Ok(json) => {
-                                    // Err == no subscribers; dropping is intentional.
-                                    let _ = tx.send(json);
-                                }
-                                Err(err) => {
-                                    tracing::warn!(%err, "failed to encode StreamEvents message");
-                                }
+                            Err(err) => {
+                                tracing::warn!(%err, "failed to encode StreamEvents message");
                             }
-                        }
+                        },
                         Some(Err(status)) => {
                             tracing::warn!(%status, "StreamEvents stream error; reconnecting");
                             break;

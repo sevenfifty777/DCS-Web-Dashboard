@@ -47,23 +47,11 @@ pub struct FootholdZone {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct FootholdAttack {
-    pub group_name: String,
-    pub origin_zone: String,
-    pub target_zone: String,
-    pub side: i64,
-    pub mission_type: String,
-    pub alive_count: i64,
-    pub unit_types: Vec<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct FootholdData {
     pub players: Vec<FootholdPlayer>,
     pub missions: Vec<FootholdMission>,
     pub ejected_pilots: Vec<FootholdEjectedPilot>,
     pub zones: Vec<FootholdZone>,
-    pub attacks: Vec<FootholdAttack>,
 }
 
 fn parse_foothold_ranks(lua: &Lua, path: &Path) -> Result<std::collections::HashMap<String, FootholdPlayer>> {
@@ -178,41 +166,6 @@ fn parse_foothold_ca(lua: &Lua, path: &Path, player_map: &mut std::collections::
         }
     }
 
-    // Parse Attacks
-    let mut attacks = Vec::new();
-    let parse_attacks = |attacks_vec: &mut Vec<FootholdAttack>, parent_table: &Table| {
-        for table_name in ["active", "inair", "spawnNowTakeoff"] {
-            if let Ok(attack_table) = parent_table.get::<Table>(table_name) {
-                for (_, attack) in attack_table.pairs::<String, Table>().flatten() {
-                    let mut unit_types = Vec::new();
-                    if let Ok(alive_types) = attack.get::<Table>("aliveUnitTypes") {
-                        for (_, unit_name) in alive_types.pairs::<i64, String>().flatten() {
-                            unit_types.push(unit_name);
-                        }
-                    } else if let Ok(template_name) = attack.get::<String>("templateName") {
-                        unit_types.push(template_name);
-                    }
-                    attacks_vec.push(FootholdAttack {
-                        group_name: attack.get("groupName").unwrap_or_default(),
-                        origin_zone: attack.get::<String>("originZone").unwrap_or_else(|_| attack.get::<String>("zoneName").unwrap_or_default()),
-                        target_zone: attack.get::<String>("targetZone").unwrap_or_else(|_| attack.get::<String>("dynamicTargetZone").unwrap_or_default()),
-                        side: attack.get("side").unwrap_or(0),
-                        mission_type: attack.get::<String>("missionType").unwrap_or_else(|_| attack.get::<String>("mission").unwrap_or_default()),
-                        alive_count: attack.get("aliveCount").unwrap_or(0),
-                        unit_types,
-                    });
-                }
-            }
-        }
-    };
-
-    if let Ok(surface_ai) = zone_persistance.get::<Table>("surfaceAiPersistence") {
-        parse_attacks(&mut attacks, &surface_ai);
-    }
-    if let Ok(air_ai) = zone_persistance.get::<Table>("airAiPersistence") {
-        parse_attacks(&mut attacks, &air_ai);
-    }
-
     let mut players_vec: Vec<FootholdPlayer> = player_map.values().cloned().collect();
     // Sort by credits
     players_vec.sort_by(|a, b| b.credits.partial_cmp(&a.credits).unwrap_or(std::cmp::Ordering::Equal));
@@ -222,7 +175,6 @@ fn parse_foothold_ca(lua: &Lua, path: &Path, player_map: &mut std::collections::
         missions,
         ejected_pilots,
         zones,
-        attacks,
     })
 }
 
@@ -267,7 +219,6 @@ pub fn get_foothold_data(saves_dir: &Path) -> Result<FootholdData> {
             missions: vec![],
             ejected_pilots: vec![],
             zones: vec![],
-            attacks: vec![],
         })
     }
 }

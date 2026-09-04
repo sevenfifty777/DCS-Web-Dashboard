@@ -11,19 +11,15 @@
 //! require a valid session (the [`AuthUser`] extractor). Lua parsing and
 //! byte-faithful serialization live in [`crate::settings_lua`].
 
-use std::convert::Infallible;
 use std::path::Path;
 use std::time::Duration;
-use std::io::SeekFrom;
 
 use axum::{
     extract::{Multipart, State},
     http::StatusCode,
-    response::{IntoResponse, Response, sse::{Event, KeepAlive, Sse}},
+    response::{IntoResponse, Response},
     Json,
 };
-use tokio::io::{AsyncReadExt, AsyncSeekExt};
-use tokio_stream::{Stream, wrappers::ReceiverStream};
 use serde::Deserialize;
 use serde_json::{json, Value};
 use tokio::process::Command;
@@ -1040,83 +1036,6 @@ pub async fn windows_services_post(
     }
 
     (axum::http::StatusCode::BAD_REQUEST, Json(serde_json::json!({ "error": "Invalid action" }))).into_response()
-}
-
-// --- /api/logs/dcs/stream ---------------------------------------------------
-
-/// `GET /api/logs/dcs/stream` → tail DCS log using SSE.
-#[utoipa::path(
-    get,
-    path = "/api/logs/dcs/stream",
-    tags = ["system"],
-    security(("jwt" = [])),
-    responses((status = 200, description = "SSE stream of DCS log"))
-)]
-pub async fn dcs_log_stream(
-    _user: auth::AuthQueryUser,
-    State(state): State<AppState>,
-) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
-    let (tx, rx) = tokio::sync::mpsc::channel(16);
-    let log_path = state.config.dcs_log_path();
-
-    tokio::spawn(async move {
-        let mut file = match tokio::fs::File::open(&log_path).await {
-            Ok(f) => f,
-            Err(_) => {
-                let _ = tx.send(Ok(Event::default().data(json!({"text": "DCS log file not found.\n"}).to_string()))).await;
-                return;
-            }
-        };
-
-        // Try to seek to end minus 64KB to provide initial context
-        let meta = file.metadata().await;
-        let file_size = meta.map(|m| m.len()).unwrap_or(0);
-        let start_pos = file_size.saturating_sub(64 * 1024);
-        let _ = file.seek(SeekFrom::Start(start_pos)).await;
-
-        let mut buf = vec![0; 8192];
-        loop {
-            match file.read(&mut buf).await {
-                Ok(0) => {
-                    // EOF reached, wait and try again
-                    tokio::time::sleep(Duration::from_millis(500)).await;
-                }
-                Ok(n) => {
-                    let text = String::from_utf8_lossy(&buf[..n]);
-                    let msg = json!({ "text": text }).to_string();
-                    if tx.send(Ok(Event::default().data(msg))).await.is_err() {
-                        break; // Client disconnected
-                    }
-                }
-                Err(_) => {
-                    tokio::time::sleep(Duration::from_millis(1000)).await;
-                }
-            }
-        }
-    });
-
-    Sse::new(ReceiverStream::new(rx)).keep_alive(KeepAlive::default())
-}
-
-
-
-// --- /api/graveyard ---------------------------------------------------------
-
-/// `GET /api/graveyard` -> Returns the current live graveyard JSON
-#[utoipa::path(
-    get,
-    path = "/api/graveyard",
-    tags = ["system"],
-    security(("jwt" = [])),
-    responses((status = 200, description = "Graveyard state"))
-)]
-pub async fn graveyard_get(
-    _user: auth::AuthUser,
-    State(state): State<AppState>,
-) -> impl IntoResponse {
-    let path = state.config.dcs_saved_games_dir.join("Logs").join("graveyard.json");
-    let board = crate::graveyard::Graveyard::load_or_default(&path);
-    Json(board).into_response()
 }
 
 #[utoipa::path(

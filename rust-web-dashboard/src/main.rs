@@ -17,7 +17,6 @@ mod telemetry;
 mod win_session;
 
 mod foothold;
-mod graveyard;
 
 use std::{net::SocketAddr, path::PathBuf};
 
@@ -50,7 +49,6 @@ async fn main() -> anyhow::Result<()> {
         app_state.grpc.clone(),
         app_state.events_tx.clone(),
         app_state.units_tx.clone(),
-        app_state.config.clone(),
     );
 
     let addr: SocketAddr = std::env::var("DASHBOARD_ADDR")

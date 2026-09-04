@@ -62,16 +62,6 @@ export interface UserFlagResponse {
   value: number;
 }
 
-export interface WindResponse {
-  heading: number;
-  strength: number;
-}
-
-export interface TemperatureAndPressureResponse {
-  temperature: number;
-  pressure: number;
-}
-
 function loadService(protoPath: string, servicePath: string[]): grpc.ServiceClientConstructor {
   const definition = protoLoader.loadSync(path.join(PROTO_PATH, protoPath), LOADER_OPTIONS);
   let current: grpc.GrpcObject | grpc.ServiceClientConstructor | grpc.ProtobufTypeDefinition =
@@ -154,10 +144,6 @@ export const customClient = createClient(
   'dcs/custom/v0/custom.proto',
   ['dcs', 'custom', 'v0', 'CustomService'],
 );
-export const atmosphereClient = createClient(
-  'dcs/atmosphere/v0/atmosphere.proto',
-  ['dcs', 'atmosphere', 'v0', 'AtmosphereService'],
-);
 
 export const getHealth = (): Promise<HealthResponse> =>
   unaryRequest(metadataClient, 'GetHealth', {});
@@ -194,17 +180,6 @@ export const setUserFlag = (flag: string, value: number): Promise<Record<string,
 
 export const customEval = (lua: string): Promise<EvalResponse> =>
   unaryRequest(customClient, 'Eval', { lua });
-
-export const getWind = (lat: number, lon: number, alt: number): Promise<WindResponse> =>
-  unaryRequest(atmosphereClient, 'GetWind', { position: { lat, lon, alt } });
-export const getTemperatureAndPressure = (
-  lat: number,
-  lon: number,
-  alt: number,
-): Promise<TemperatureAndPressureResponse> =>
-  unaryRequest(atmosphereClient, 'GetTemperatureAndPressure', {
-    position: { lat, lon, alt },
-  });
 
 export const streamMissionEvents = (): grpc.ClientReadableStream<unknown> =>
   serverStreamingRequest(missionClient, 'StreamEvents', {});
