@@ -1,6 +1,9 @@
 # LSO Greenie Board Page Plan
 
-Status: proposed 2026-09-04, branch `lso`. Nothing below is implemented yet.
+Status: proposed 2026-09-04, branch `lso`. Phases 0 to 3 were implemented the same day (LSO repo
+branch `webpage-rm`, LSO version 0.4.0). Beyond the plan, the dashboard also gained a per-pilot
+subpage (`/lso/pilots`, backed by `/api/lso/pilots` with UCID-keyed grouping that never exposes the
+UCID). Phase 4 (release) remains.
 
 ## Goal
 
