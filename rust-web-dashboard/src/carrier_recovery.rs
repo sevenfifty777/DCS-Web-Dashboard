@@ -18,7 +18,7 @@
 pub const LUA_MODULE: &str = include_str!("../lua/carrier_recovery.lua");
 
 /// Must match `CarrierRecovery.VERSION` in the Lua file (checked by a test).
-pub const MODULE_VERSION: &str = "1.1.2";
+pub const MODULE_VERSION: &str = "1.1.3";
 
 /// Default carrier group when the client does not name one.
 pub const DEFAULT_GROUP: &str = "CVN-72";
@@ -819,6 +819,10 @@ end
               attributes = { ["Ships"] = true, ["Cruisers"] = true, ["HelicopterCarrier"] = true } })
             Sim.addShip({ groupName = "HMS Invincible", typeName = "hms_invincible_mod", coalition = 2,
               attributes = { ["Ships"] = true, ["Heavy armed ships"] = true } })
+            Sim.addShip({ groupName = "Essex", typeName = "Essex", coalition = 2,
+              attributes = { ["Aircraft Carriers"] = true, ["AircraftCarrier"] = true, ["Arresting Gear"] = true, ["ski_jump"] = true } })
+            Sim.addShip({ groupName = "Conveyor", typeName = "atconveyor", coalition = 2,
+              attributes = { ["Aircraft Carriers"] = true, ["AircraftCarrier"] = true, ["HelicopterCarrier"] = true } })
             Sim.addShip({ groupName = "Sunk", typeName = "CVN_73", coalition = 2, exists = false,
               attributes = { ["AircraftCarrier With Catapult"] = true } })
             -- Foothold's late-activated spawn placeholder: exists for scripting, not in the world.
@@ -843,9 +847,15 @@ end
         assert_eq!(class(r#"{ attributes = { ["Ships"] = true, ["Cruisers"] = true, ["HelicopterCarrier"] = true } }"#, "MOSCOW"), None, "a helipad is not a carrier");
         assert_eq!(class(r#"{ attributes = { ["Ships"] = true, ["Cruisers"] = true, ["HelicopterCarrier"] = true } }"#, "USS_Arleigh_Burke_IIa"), None);
         assert_eq!(class(r#"{ attributes = { ["Ships"] = true, ["Frigates"] = true } }"#, "REZKY"), None);
-        // Expected sets for hulls not in that mission.
-        assert_eq!(class(r#"{ attributes = { ["AircraftCarrier"] = true, ["AircraftCarrier With Tramplin"] = true, ["AircraftCarrier With Arresting Gear"] = true } }"#, "KUZNECOW").as_deref(), Some("stobar"));
-        assert_eq!(class(r#"{ attributes = { ["AircraftCarrier With Catapult"] = true } }"#, "Forrestal").as_deref(), Some("catobar"));
+        // Live sets from a mission with every stock and modded carrier (2026-09-05).
+        assert_eq!(class(r#"{ attributes = { ["Aircraft Carriers"] = true, ["AircraftCarrier"] = true, ["AircraftCarrier With Arresting Gear"] = true, ["AircraftCarrier With Tramplin"] = true, ["Arresting Gear"] = true, ["Straight_in_approach_type"] = true, ["ski_jump"] = true } }"#, "CV_1143_5").as_deref(), Some("stobar"), "Kuznetsov");
+        assert_eq!(class(r#"{ attributes = { ["Aircraft Carriers"] = true, ["AircraftCarrier"] = true, ["AircraftCarrier With Arresting Gear"] = true, ["AircraftCarrier With Catapult"] = true } }"#, "Forrestal").as_deref(), Some("catobar"));
+        assert_eq!(class(r#"{ attributes = { ["Aircraft Carriers"] = true, ["AircraftCarrier"] = true, ["Arresting Gear"] = true, ["ski_jump"] = true } }"#, "Essex").as_deref(), Some("stobar"), "short-form wires attribute");
+        assert_eq!(class(r#"{ attributes = { ["Aircraft Carriers"] = true, ["AircraftCarrier"] = true, ["AircraftCarrier With Arresting Gear"] = true, ["AircraftCarrier With Catapult"] = true } }"#, "ara_vdm").as_deref(), Some("catobar"), "ARA Veinticinco de Mayo");
+        assert_eq!(class(r#"{ attributes = { ["Aircraft Carriers"] = true, ["AircraftCarrier"] = true, ["HelicopterCarrier"] = true, ["Straight_in_approach_type"] = true } }"#, "atconveyor"), None, "Atlantic Conveyor is excluded by type");
+        assert!(eval::<bool>(&lua, "return CarrierRecovery.typeNameIsExcluded('ATCONVEYOR') and not CarrierRecovery.typeNameIsExcluded('CVN_72')"));
+        assert_eq!(eval::<f64>(&lua, "return CarrierRecovery.deckOffsetForType('Essex', nil, 'stobar')"), 0.0, "Essex has an axial deck");
+        assert_eq!(eval::<f64>(&lua, "return CarrierRecovery.deckOffsetForType('CV_1143_5', nil, 'stobar')"), 9.14);
         assert_eq!(class(r#"{ attributes = { ["AircraftCarrier"] = true } }"#, "hms_invincible_mod").as_deref(), Some("vstol"), "bare fixed-wing deck without wires");
         assert_eq!(class(r#"{ attributes = { "Ships", "Landing Ships" } }"#, "Type_071").as_deref(), Some("vstol"), "list-form attributes plus a type hint");
         assert_eq!(class(r#"{ attributes = { ["HelicopterCarrier"] = true } }"#, "L61_Juan_Carlos").as_deref(), Some("vstol"), "helipad flag plus a type hint");
@@ -877,19 +887,23 @@ end
             rows,
             vec![
                 ("CVN-71".into(), "CVN_71".into(), "catobar".into(), 2, 9.14, "standalone".into()),
+                // Wires but an axial deck: stobar with a zero offset from the straight-deck list.
+                ("Essex".into(), "Essex".into(), "stobar".into(), 2, 0.0, "standalone".into()),
                 ("HMS Invincible".into(), "hms_invincible_mod".into(), "unknown".into(), 2, 9.14, "standalone".into()),
                 ("Kuznetsov".into(), "KUZNECOW".into(), "stobar".into(), 1, 9.14, "standalone".into()),
                 ("Tarawa".into(), "LHA_Tarawa".into(), "vstol".into(), 2, 0.0, "standalone".into()),
             ]
         );
-        // The Escort and Moskva (helipad only, no type hint), the sunk CVN and the
-        // late-activated FOB ALPHA are absent.
+        // The Escort and Moskva (helipad only, no type hint), the excluded Atlantic
+        // Conveyor, the sunk CVN and the late-activated FOB ALPHA are absent.
+        let conveyor: Table = eval(&lua, "return CarrierRecovery.windReport('Conveyor')");
+        assert!(matches!(conveyor.get::<Value>("deck_class").unwrap(), Value::Nil), "excluded hull reports no class");
         assert!(matches!(eval::<Value>(&lua, "return CarrierRecovery.windData('FOB ALPHA')"), Value::Nil), "inactive ships report no telemetry");
         let placeholder: Table = eval(&lua, "return CarrierRecovery.windReport('FOB ALPHA')");
         assert!(text(&placeholder, "error").contains("not available"));
         // Once the mission activates it, the next scan lists it.
         lua.load("Sim.fleet['FOB ALPHA'].spec.active = true").exec().unwrap();
-        assert_eq!(eval::<Table>(&lua, "return CarrierRecovery.listCarriers().carriers").len().unwrap(), 5);
+        assert_eq!(eval::<Table>(&lua, "return CarrierRecovery.listCarriers().carriers").len().unwrap(), 6);
         lua.load("Sim.fleet['FOB ALPHA'].spec.active = false").exec().unwrap();
         let first: Table = carriers.get(1).unwrap();
         assert_eq!(text(&first, "unit"), "CVN-71-1");
@@ -898,7 +912,7 @@ end
         // The scripts the backend sends compile and answer the same.
         let scripts = list_carriers_scripts();
         let via_probe: Table = eval(&lua, &scripts.probe);
-        assert_eq!(via_probe.get::<Table>("carriers").unwrap().len().unwrap(), 4);
+        assert_eq!(via_probe.get::<Table>("carriers").unwrap().len().unwrap(), 5);
     }
 
     #[test]

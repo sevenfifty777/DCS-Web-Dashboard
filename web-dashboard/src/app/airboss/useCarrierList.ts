@@ -62,14 +62,27 @@ export function useCarrierList(radarUnits: Record<string, RadarUnit>): CarrierLi
   }, [refresh]);
 
   const knownGroups = useMemo(() => new Set(carriers.map((carrier) => carrier.group)), [carriers]);
+  // Hinted groups that a refresh did not return (hulls the controller excludes
+  // or classifies as non-carriers): remembered so they do not re-trigger a
+  // refresh every 30 s for the rest of the session.
+  const rejectedGroups = useRef<Set<string>>(new Set());
 
   // A ship whose type hints at a carrier but whose group is not in the list
   // means something spawned since the last fetch: refresh once per 30 s at most.
   useEffect(() => {
-    if (unknownCarrierGroupsInRadar(radarUnits, knownGroups).length === 0) return;
+    const unknown = unknownCarrierGroupsInRadar(radarUnits, knownGroups)
+      .filter((group) => !rejectedGroups.current.has(group));
+    if (unknown.length === 0) return;
     if (Date.now() - lastAttemptAt.current < CARRIER_REFRESH_MIN_INTERVAL_MS) return;
-    void refresh();
+    void refresh().then(() => {
+      for (const group of unknown) rejectedGroups.current.add(group);
+    });
   }, [radarUnits, knownGroups, refresh]);
+
+  // A group that later shows up in the list is no longer rejected.
+  useEffect(() => {
+    for (const group of knownGroups) rejectedGroups.current.delete(group);
+  }, [knownGroups]);
 
   return { carriers, loading, error, refreshedAt, refresh };
 }

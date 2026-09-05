@@ -27,7 +27,7 @@ export interface DetectedCarrier {
 export const CARRIER_TYPE_HINTS = [
   'CVN', 'CV_', 'CV-', 'LHA', 'LHD', 'Carrier', 'Invincible', 'Essex', 'Ark',
   'Kuznetsov', 'KUZNECOW', '1143', 'Stennis', 'Forrestal', 'Tarawa', 'Juan_Carlos',
-  'Type_071', 'Hermes', 'Clemenceau', 'Charles', 'Wasp', 'America',
+  'Type_071', 'Hermes', 'Clemenceau', 'Charles', 'Wasp', 'America', 'ara_vdm',
 ] as const;
 
 /** Minimum spacing between radar-triggered list refreshes. */

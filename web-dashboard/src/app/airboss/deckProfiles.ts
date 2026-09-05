@@ -20,7 +20,9 @@ import {
 /** Classification produced by `CarrierRecovery.classifyDeck` in the Lua controller. */
 export type DeckClass = 'catobar' | 'stobar' | 'vstol' | 'unknown';
 
-export type DeckProfileKey = 'nimitz' | 'tarawa' | 'generic-catobar' | 'generic-vstol';
+export type DeckProfileKey =
+  | 'nimitz' | 'forrestal' | 'kuznetsov' | 'essex' | 'invincible' | 'ara-vdm' | 'tarawa'
+  | 'generic-catobar' | 'generic-vstol';
 
 export interface DeckProfile {
   key: DeckProfileKey;
@@ -67,6 +69,54 @@ export const NIMITZ_PROFILE: DeckProfile = {
   routesByLaunch: NIMITZ_ROUTES_BY_LAUNCH,
   deckOffsetDeg: 9.14,
 };
+
+/**
+ * Image-only profile (no parking spots or routes yet). All the top views below
+ * were captured with the bow to the left, like the Nimitz one.
+ */
+function imageOnlyProfile(
+  key: DeckProfileKey,
+  label: string,
+  imageSrc: string,
+  lengthMeters: number,
+  beamMeters: number,
+  deckCanvasWidth: number,
+  deckOffsetDeg: number,
+): DeckProfile {
+  return {
+    key,
+    label,
+    imageSrc,
+    imageRotation: Math.PI / 2,
+    imageBowHeadingDeg: 270,
+    lengthMeters,
+    beamMeters,
+    deckCanvasWidth,
+    deckCanvasHeight: 1100,
+    spots: [],
+    launchRoutes: [],
+    routeById: NO_ROUTES,
+    routeByStart: NO_ROUTES,
+    routesByLaunch: NO_ROUTE_GROUPS,
+    deckOffsetDeg,
+  };
+}
+
+export const FORRESTAL_PROFILE = imageOnlyProfile(
+  'forrestal', 'FORRESTAL CLASS', '/img/forrestal-top-transp.png', 325, 76, 500, 9.14,
+);
+export const KUZNETSOV_PROFILE = imageOnlyProfile(
+  'kuznetsov', 'KUZNETSOV CLASS', '/img/kuznetsov-top-transp.png', 305, 72, 500, 9.14,
+);
+export const ESSEX_PROFILE = imageOnlyProfile(
+  'essex', 'ESSEX CLASS (1944)', '/img/essex-top-transp.png', 266, 45, 400, 0,
+);
+export const INVINCIBLE_PROFILE = imageOnlyProfile(
+  'invincible', 'INVINCIBLE CLASS', '/img/invincible-top-transp.png', 209, 36, 400, 0,
+);
+export const ARA_VDM_PROFILE = imageOnlyProfile(
+  'ara-vdm', 'ARA VEINTICINCO DE MAYO', '/img/ara-vdm-top-transp.png', 212, 40, 400, 9.14,
+);
 
 export const TARAWA_PROFILE: DeckProfile = {
   key: 'tarawa',
@@ -125,6 +175,11 @@ export const GENERIC_VSTOL_PROFILE: DeckProfile = {
 
 export const DECK_PROFILES: Readonly<Record<DeckProfileKey, DeckProfile>> = {
   nimitz: NIMITZ_PROFILE,
+  forrestal: FORRESTAL_PROFILE,
+  kuznetsov: KUZNETSOV_PROFILE,
+  essex: ESSEX_PROFILE,
+  invincible: INVINCIBLE_PROFILE,
+  'ara-vdm': ARA_VDM_PROFILE,
   tarawa: TARAWA_PROFILE,
   'generic-catobar': GENERIC_CATOBAR_PROFILE,
   'generic-vstol': GENERIC_VSTOL_PROFILE,
@@ -137,6 +192,12 @@ const PROFILE_BY_TYPE: Readonly<Record<string, DeckProfileKey>> = {
   cvn_73: 'nimitz',
   cvn_75: 'nimitz',
   stennis: 'nimitz',
+  forrestal: 'forrestal',
+  cv_1143_5: 'kuznetsov',
+  kuznecow: 'kuznetsov',
+  essex: 'essex',
+  hms_invincible: 'invincible',
+  ara_vdm: 'ara-vdm',
   lha_tarawa: 'tarawa',
 };
 

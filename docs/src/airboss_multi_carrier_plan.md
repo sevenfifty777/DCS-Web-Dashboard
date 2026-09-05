@@ -12,7 +12,7 @@ Where things landed:
 | --- | --- |
 | Lua: `classifyDeck`, `listCarriers`, `windReports`, `groupOverrides` / `setGroupOverrides`, `config(groupName)`, `phase` | `rust-web-dashboard/lua/carrier_recovery.lua`, version `1.1.0` |
 | Rust routes | `GET /api/airboss/carriers`, `GET /api/airboss?names=`, `POST /api/airboss/config` in `rust-web-dashboard/src/routes/dcs.rs`; script builders and 9 new Lua tests in `src/carrier_recovery.rs` (`cargo test carrier_recovery`, 27 tests) |
-| Deck profiles | `web-dashboard/src/app/airboss/deckProfiles.ts` (`nimitz`, `tarawa`, `generic-catobar`, `generic-vstol`) |
+| Deck profiles | `web-dashboard/src/app/airboss/deckProfiles.ts` (`nimitz`, `tarawa` with spots and routes; `forrestal`, `kuznetsov`, `essex`, `invincible`, `ara-vdm` image-only from `public/img/*-top-transp.png`, bow left like the Nimitz view, cropped to the hull so the image width is the ship length; `generic-catobar`, `generic-vstol` outlines) |
 | Renderers | `deckRenderer.ts` (`drawDeckView`, `drawDeckRouteFlow`) and `wheelRenderer.ts` (`drawWindWheel`), smoke-tested against a stub 2D context in `deckRenderer.test.ts` |
 | Panels | `CarrierPanel.tsx` (per ship), `PlannerPanel.tsx` (manual planner), `useCarrierList.ts` (detection + radar-triggered refresh), `carrierDetection.ts`, `carrierPersistence.ts`, `airbossApi.ts`; `page.tsx` is the coordinator (radar stream, batched poll, layout persistence) |
 | Tests | `node --test "src/app/airboss/*.test.ts"` (48 tests) |
@@ -27,6 +27,10 @@ Deviations from the plan text below:
   | CVN-72 `CVN_72`, CVN-74 `Stennis` | `Aircraft Carriers`, `AircraftCarrier`, `AircraftCarrier With Catapult`, `AircraftCarrier With Arresting Gear`, `catapult`, `Arresting Gear`, `ACLS`, `Link4` |
   | LHA-1 Tarawa `LHA_Tarawa` | `Aircraft Carriers`, `AircraftCarrier`, `AircraftCarrier With Tramplin`, `ski_jump` (no helicopter attribute at all) |
   | HMS Invincible mod `hms_invincible` | identical to the Tarawa set (the mod copied it), so it classifies `vstol` on attributes alone |
+  | Forrestal `Forrestal`, ARA Veinticinco de Mayo `ara_vdm` | same set as a CVN (catapult and wires), `catobar` |
+  | Kuznetsov `CV_1143_5` | `AircraftCarrier With Arresting Gear`, `Arresting Gear`, `AircraftCarrier With Tramplin`, `ski_jump`, `Straight_in_approach_type`: `stobar` |
+  | Essex 1944 `Essex` | `Aircraft Carriers`, `AircraftCarrier`, `Arresting Gear` (short form only), `ski_jump`: `stobar`; its deck is axial, so `Essex` is in `straightDeckTypes` for a 0 degree offset |
+  | SS Atlantic Conveyor `atconveyor` | `Aircraft Carriers`, `AircraftCarrier`, `HelicopterCarrier`, `Straight_in_approach_type`: DCS calls it a carrier but it only takes helicopters, so it is on the `CarrierRecovery.excludedTypes` list (module 1.1.3) and never listed or steered |
   | Moskva `MOSCOW`, Neustrashimy `NEUSTRASH`, Arleigh Burke `USS_Arleigh_Burke_IIa`, Perry `PERRY`, HMS Ariadne `leander-gun-ariadne` | `HelicopterCarrier` (a helipad flag), `Cruisers` / `Frigates` |
   | Rezky, Molniya, Grisha, La Combattante, Type 021, speedboats | nothing carrier-related |
 
@@ -34,6 +38,11 @@ Deviations from the plan text below:
   the two CVNs, the Tarawa and the HMS Invincible were listed, with the right classes, and every
   helipad-only warship was excluded. That mission names the Invincible group "Tarawa", which the
   old hard-coded page would have drawn with the Tarawa deck; the profile now follows the type name.
+- **Deck offset per hull is still class-based** apart from the straight-deck list: the Kuznetsov
+  keeps the 9.14 degree angled-deck offset of the mission config. Its landing strip is angled to
+  port but not by the Nimitz value; a per-type offset table belongs to Phase E. The page's
+  `useCarrierList` also remembers hinted hulls that a scan did not return (the Atlantic Conveyor)
+  so they do not trigger a refresh Eval every 30 s.
 - **Late-activated placeholders** (module 1.1.2): the Foothold Syria mission carries an LHA-1
   Tarawa group named "FOB ALPHA" that Foothold may spawn later. For the scripting engine it
   exists (`isExist()` true, it has a position and a life value) but `Unit.isActive()` is false and
@@ -270,8 +279,10 @@ Out of scope now, listed so the interfaces above leave room for it:
   lower target wind over deck and a preference for wind slightly off the port bow for the Harrier
   pattern. Proposed shape: a per-`deck_class` solver profile in the Lua module
   (`targetWodKt`, `offsetDeg`, `minSpeedKt`) with a fixture section per class.
-- Deck images, spots and launch routes for Forrestal, Kuznetsov, Invincible and Essex as new rows
-  in `deckProfiles.ts` and `deckSpots.ts`.
+- Spots and launch routes for Forrestal, Kuznetsov, Invincible, Essex and ARA Veinticinco de Mayo
+  (their top-view images landed on 2026-09-05; the `RunwaysAndRoutes.lua` tables in the DCS
+  CoreMods are the source, as for the Nimitz and Tarawa) as new rows in `deckSpots.ts` and
+  `deckRoutes.ts`.
 
 ## Validation checklist
 

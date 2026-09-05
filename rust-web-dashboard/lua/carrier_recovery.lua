@@ -30,7 +30,7 @@
 CarrierRecovery = CarrierRecovery or {}
 local M = CarrierRecovery
 
-M.VERSION = "1.1.2"
+M.VERSION = "1.1.3"
 
 -- Active recoveries keyed by group name. Preserved across a re-injection of a
 -- newer module version so a running recovery is not orphaned.
@@ -62,7 +62,7 @@ M.defaults = {
   angledDeckMinWindKt = 3,
   angledDeckOffsetDeg = 9.14,
   -- Unit type name patterns (string.find, plain) that identify a straight deck.
-  straightDeckTypes = { "Tarawa", "LHA", "Type_071", "Juan_Carlos", "L61" },
+  straightDeckTypes = { "Tarawa", "LHA", "Type_071", "Juan_Carlos", "L61", "Essex" },
 }
 
 -- Global names read from the mission (Foothold config compatibility).
@@ -172,8 +172,21 @@ end
 M.carrierTypeHints = {
   "CVN", "CV_", "CV-", "LHA", "LHD", "Carrier", "Invincible", "Essex", "Ark",
   "Kuznetsov", "KUZNECOW", "1143", "Stennis", "Forrestal", "Tarawa", "Juan_Carlos",
-  "Type_071", "Hermes", "Clemenceau", "Charles", "Wasp", "America",
+  "Type_071", "Hermes", "Clemenceau", "Charles", "Wasp", "America", "ara_vdm",
 }
+
+-- Hulls DCS marks as aircraft carriers but that only take helicopters in
+-- practice (the SS Atlantic Conveyor ferried Harriers without recovering
+-- them). Type-name fragments, case-insensitive; never listed or steered.
+M.excludedTypes = { "atconveyor" }
+
+function M.typeNameIsExcluded(typeName)
+  local name = string.lower(tostring(typeName or ""))
+  for _, fragment in ipairs(M.excludedTypes) do
+    if name:find(string.lower(fragment), 1, true) then return true end
+  end
+  return false
+end
 
 -- DCS `Unit.getDesc().attributes` strings used for classification, verified
 -- on a live server (2026-09-05): a CVN carries `Aircraft Carriers`,
@@ -242,8 +255,9 @@ end
 function M.classifyDeck(desc, typeName)
   desc = type(desc) == "table" and desc or {}
   typeName = typeName or desc.typeName
-  local set = attributeSet(desc.attributes)
   local matched = {}
+  if M.typeNameIsExcluded(typeName) then return nil, matched end
+  local set = attributeSet(desc.attributes)
   local attrs = M.deckAttributes
   if anyAttribute(set, attrs.catapult, matched) then
     anyAttribute(set, attrs.arrestingGear, matched)

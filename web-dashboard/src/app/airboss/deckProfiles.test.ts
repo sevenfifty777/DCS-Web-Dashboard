@@ -2,10 +2,15 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  ARA_VDM_PROFILE,
   DECK_PROFILE_IMAGES,
   DECK_PROFILES,
+  ESSEX_PROFILE,
+  FORRESTAL_PROFILE,
   GENERIC_CATOBAR_PROFILE,
   GENERIC_VSTOL_PROFILE,
+  INVINCIBLE_PROFILE,
+  KUZNETSOV_PROFILE,
   NIMITZ_PROFILE,
   TARAWA_PROFILE,
   deckProfileForType,
@@ -21,10 +26,29 @@ test('looks up dedicated profiles by DCS type name, case-insensitively', () => {
   assert.equal(deckProfileForType('LHA_Tarawa', 'catobar'), TARAWA_PROFILE, 'type wins over class');
 });
 
+test('maps the image-only hulls to their own profiles', () => {
+  assert.equal(deckProfileForType('Forrestal', 'catobar'), FORRESTAL_PROFILE);
+  assert.equal(deckProfileForType('CV_1143_5', 'stobar'), KUZNETSOV_PROFILE);
+  assert.equal(deckProfileForType('KUZNECOW', 'stobar'), KUZNETSOV_PROFILE);
+  assert.equal(deckProfileForType('Essex', 'stobar'), ESSEX_PROFILE);
+  assert.equal(deckProfileForType('hms_invincible', 'vstol'), INVINCIBLE_PROFILE);
+  assert.equal(deckProfileForType('ara_vdm', 'catobar'), ARA_VDM_PROFILE);
+  for (const profile of [FORRESTAL_PROFILE, KUZNETSOV_PROFILE, ESSEX_PROFILE, INVINCIBLE_PROFILE, ARA_VDM_PROFILE]) {
+    // Captured bow-left like the Nimitz view; no spots or routes yet.
+    assert.equal(profile.imageRotation, Math.PI / 2, profile.key);
+    assert.equal(profile.imageBowHeadingDeg, 270, profile.key);
+    assert.match(profile.imageSrc ?? '', /^\/img\/.+-top-transp\.png$/, profile.key);
+    assert.deepEqual(profile.spots, []);
+    assert.deepEqual(profile.launchRoutes, []);
+  }
+  assert.equal(ESSEX_PROFILE.deckOffsetDeg, 0, 'axial deck');
+  assert.equal(INVINCIBLE_PROFILE.deckOffsetDeg, 0);
+  assert.equal(FORRESTAL_PROFILE.deckOffsetDeg, 9.14);
+});
+
 test('falls back on the deck class for hulls without a profile', () => {
-  assert.equal(deckProfileForType('KUZNECOW', 'stobar'), GENERIC_CATOBAR_PROFILE);
-  assert.equal(deckProfileForType('Forrestal', 'catobar'), GENERIC_CATOBAR_PROFILE);
-  assert.equal(deckProfileForType('hms_invincible', 'vstol'), GENERIC_VSTOL_PROFILE);
+  assert.equal(deckProfileForType('Clemenceau_mod', 'catobar'), GENERIC_CATOBAR_PROFILE);
+  assert.equal(deckProfileForType('juan_carlos_mod', 'vstol'), GENERIC_VSTOL_PROFILE);
   assert.equal(deckProfileForType('mystery_hull', 'unknown'), GENERIC_VSTOL_PROFILE);
   assert.equal(deckProfileForType(undefined, undefined), GENERIC_CATOBAR_PROFILE);
   assert.equal(deckProfileForType('', null), GENERIC_CATOBAR_PROFILE);
@@ -67,6 +91,14 @@ test('every profile is registered under its own key and images are unique', () =
   }
   assert.deepEqual(
     [...DECK_PROFILE_IMAGES].sort(),
-    ['/img/carrier-top-full-transp.png', '/img/tarawa-top-full-transp.png'],
+    [
+      '/img/ara-vdm-top-transp.png',
+      '/img/carrier-top-full-transp.png',
+      '/img/essex-top-transp.png',
+      '/img/forrestal-top-transp.png',
+      '/img/invincible-top-transp.png',
+      '/img/kuznetsov-top-transp.png',
+      '/img/tarawa-top-full-transp.png',
+    ],
   );
 });
