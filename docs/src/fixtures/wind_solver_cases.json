@@ -1,0 +1,95 @@
+{
+  "description": "Turn-into-wind solver contract shared by rust-web-dashboard/lua/carrier_recovery.lua (cargo test carrier_recovery) and web-dashboard/src/app/airboss/windSolver.ts (node --test). Expected values are frozen from the Lua solver; regenerate with `cargo test print_wind_solver_fixture -- --ignored --nocapture` only after a deliberate solver change.",
+  "cases": [
+    {
+      "name": "optimal_030_8kt",
+      "input": { "windFromDeg": 30, "windSpeedKt": 8, "targetWodKt": 24, "deckOffsetDeg": 9.14, "minSpeedKt": 10, "maxSpeedKt": 30, "angledDeckMinWindKt": 3, "headingDeg": 90, "naturalHeadwindKt": 4 },
+      "expected": { "headingDeg": 58.46, "speedKt": 16.662, "regime": "optimal" }
+    },
+    {
+      "name": "optimal_page_default_051_6p8kt",
+      "input": { "windFromDeg": 51, "windSpeedKt": 6.8, "targetWodKt": 25, "deckOffsetDeg": 9.14, "minSpeedKt": 10, "maxSpeedKt": 30, "angledDeckMinWindKt": 3, "headingDeg": 51, "naturalHeadwindKt": 6.8 },
+      "expected": { "headingDeg": 86.732, "speedKt": 19.163, "regime": "optimal" }
+    },
+    {
+      "name": "optimal_wrap_359_12kt",
+      "input": { "windFromDeg": 359, "windSpeedKt": 12, "targetWodKt": 24, "deckOffsetDeg": 9.14, "minSpeedKt": 10, "maxSpeedKt": 30, "angledDeckMinWindKt": 3, "headingDeg": 359, "naturalHeadwindKt": 12 },
+      "expected": { "headingDeg": 17.524, "speedKt": 12.317, "regime": "optimal" }
+    },
+    {
+      "name": "optimal_wrap_001_12kt",
+      "input": { "windFromDeg": 1, "windSpeedKt": 12, "targetWodKt": 24, "deckOffsetDeg": 9.14, "minSpeedKt": 10, "maxSpeedKt": 30, "angledDeckMinWindKt": 3, "headingDeg": 1, "naturalHeadwindKt": 12 },
+      "expected": { "headingDeg": 19.524, "speedKt": 12.317, "regime": "optimal" }
+    },
+    {
+      "name": "optimal_wrap_350_10kt",
+      "input": { "windFromDeg": 350, "windSpeedKt": 10, "targetWodKt": 24, "deckOffsetDeg": 9.14, "minSpeedKt": 10, "maxSpeedKt": 30, "angledDeckMinWindKt": 3, "headingDeg": 350, "naturalHeadwindKt": 10 },
+      "expected": { "headingDeg": 12.41, "speedKt": 14.45, "regime": "optimal" }
+    },
+    {
+      "name": "vmin_limited_astern_270_15kt_heading_090",
+      "input": { "windFromDeg": 270, "windSpeedKt": 15, "targetWodKt": 24, "deckOffsetDeg": 9.14, "minSpeedKt": 10, "maxSpeedKt": 30, "angledDeckMinWindKt": 3, "headingDeg": 90, "naturalHeadwindKt": -15 },
+      "expected": { "headingDeg": 285.219, "speedKt": 10, "regime": "vmin_limited" }
+    },
+    {
+      "name": "vmin_limited_120_30kt",
+      "input": { "windFromDeg": 120, "windSpeedKt": 30, "targetWodKt": 24, "deckOffsetDeg": 9.14, "minSpeedKt": 10, "maxSpeedKt": 30, "angledDeckMinWindKt": 3, "headingDeg": 120, "naturalHeadwindKt": 30 },
+      "expected": { "headingDeg": 132.175, "speedKt": 10, "regime": "vmin_limited" }
+    },
+    {
+      "name": "vmax_limited_090_4kt_target_40",
+      "input": { "windFromDeg": 90, "windSpeedKt": 4, "targetWodKt": 40, "deckOffsetDeg": 9.14, "minSpeedKt": 10, "maxSpeedKt": 30, "angledDeckMinWindKt": 3, "headingDeg": 90, "naturalHeadwindKt": 4 },
+      "expected": { "headingDeg": 189.14, "speedKt": 30, "regime": "vmax_limited" }
+    },
+    {
+      "name": "low_wind_200_3kt_target_30",
+      "input": { "windFromDeg": 200, "windSpeedKt": 3, "targetWodKt": 30, "deckOffsetDeg": 9.14, "minSpeedKt": 10, "maxSpeedKt": 30, "angledDeckMinWindKt": 3, "headingDeg": 200, "naturalHeadwindKt": 3 },
+      "expected": { "headingDeg": 290, "speedKt": 29.85, "regime": "low_wind" }
+    },
+    {
+      "name": "low_wind_exactly_at_threshold_030_3kt",
+      "input": { "windFromDeg": 30, "windSpeedKt": 3, "targetWodKt": 24, "deckOffsetDeg": 9.14, "minSpeedKt": 10, "maxSpeedKt": 30, "angledDeckMinWindKt": 3, "headingDeg": 30, "naturalHeadwindKt": 3 },
+      "expected": { "headingDeg": 120, "speedKt": 23.812, "regime": "low_wind" }
+    },
+    {
+      "name": "weak_wind_astern_270_2p5kt_heading_090",
+      "input": { "windFromDeg": 270, "windSpeedKt": 2.5, "targetWodKt": 24, "deckOffsetDeg": 9.14, "minSpeedKt": 10, "maxSpeedKt": 30, "angledDeckMinWindKt": 3, "headingDeg": 90, "naturalHeadwindKt": -2.5 },
+      "expected": { "headingDeg": 90, "speedKt": 26.5, "regime": "weak_wind" }
+    },
+    {
+      "name": "weak_wind_beam_180_2kt_heading_090",
+      "input": { "windFromDeg": 180, "windSpeedKt": 2, "targetWodKt": 24, "deckOffsetDeg": 9.14, "minSpeedKt": 10, "maxSpeedKt": 30, "angledDeckMinWindKt": 3, "headingDeg": 90, "naturalHeadwindKt": 0 },
+      "expected": { "headingDeg": 90, "speedKt": 24, "regime": "weak_wind" }
+    },
+    {
+      "name": "zero_wind_heading_045",
+      "input": { "windFromDeg": 45, "windSpeedKt": 0, "targetWodKt": 24, "deckOffsetDeg": 9.14, "minSpeedKt": 10, "maxSpeedKt": 30, "angledDeckMinWindKt": 3, "headingDeg": 45, "naturalHeadwindKt": 0 },
+      "expected": { "headingDeg": 45, "speedKt": 24, "regime": "weak_wind" }
+    },
+    {
+      "name": "weak_wind_clamped_to_max_speed",
+      "input": { "windFromDeg": 270, "windSpeedKt": 2.9, "targetWodKt": 30, "deckOffsetDeg": 9.14, "minSpeedKt": 10, "maxSpeedKt": 30, "angledDeckMinWindKt": 3, "headingDeg": 90, "naturalHeadwindKt": -2.9 },
+      "expected": { "headingDeg": 90, "speedKt": 30, "regime": "weak_wind" }
+    },
+    {
+      "name": "straight_deck_tarawa_030_8kt",
+      "input": { "windFromDeg": 30, "windSpeedKt": 8, "targetWodKt": 24, "deckOffsetDeg": 0, "minSpeedKt": 10, "maxSpeedKt": 30, "angledDeckMinWindKt": 3, "headingDeg": 30, "naturalHeadwindKt": 8 },
+      "expected": { "headingDeg": 30, "speedKt": 16, "regime": "optimal" }
+    },
+    {
+      "name": "page_tunables_optimal_030_8kt",
+      "input": { "windFromDeg": 30, "windSpeedKt": 8, "targetWodKt": 24, "deckOffsetDeg": 9.14, "minSpeedKt": 4, "maxSpeedKt": 33, "angledDeckMinWindKt": 0.1, "headingDeg": 90, "naturalHeadwindKt": 4 },
+      "expected": { "headingDeg": 58.46, "speedKt": 16.662, "regime": "optimal" }
+    },
+    {
+      "name": "page_tunables_vmin_120_30kt",
+      "input": { "windFromDeg": 120, "windSpeedKt": 30, "targetWodKt": 24, "deckOffsetDeg": 9.14, "minSpeedKt": 4, "maxSpeedKt": 33, "angledDeckMinWindKt": 0.1, "headingDeg": 120, "naturalHeadwindKt": 30 },
+      "expected": { "headingDeg": 130.354, "speedKt": 4, "regime": "vmin_limited" }
+    },
+    {
+      "name": "page_tunables_no_weak_wind_rule_270_2p5kt",
+      "input": { "windFromDeg": 270, "windSpeedKt": 2.5, "targetWodKt": 24, "deckOffsetDeg": 9.14, "minSpeedKt": 4, "maxSpeedKt": 33, "angledDeckMinWindKt": 0.1, "headingDeg": 90, "naturalHeadwindKt": -2.5 },
+      "expected": { "headingDeg": 0, "speedKt": 23.869, "regime": "low_wind" }
+    }
+  ]
+}
