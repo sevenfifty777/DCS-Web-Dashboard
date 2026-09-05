@@ -14,9 +14,7 @@ use std::time::Duration;
 
 use tokio::sync::broadcast;
 use tokio_stream::StreamExt;
-use tonic::transport::Channel;
-
-use crate::grpc;
+use crate::grpc::{self, Grpc};
 use crate::pb::dcs;
 use crate::proto_json;
 
@@ -35,25 +33,25 @@ const BACKOFF_MAX: Duration = Duration::from_secs(30);
 /// shared `units_tx` channel — mirroring the four explicit subscriptions the
 /// original Next.js radar route opened.
 pub fn spawn(
-    channel: Channel,
+    client: Grpc,
     events_tx: broadcast::Sender<String>,
     units_tx: broadcast::Sender<String>,
 ) {
-    tokio::spawn(run_events(channel.clone(), events_tx));
+    tokio::spawn(run_events(client.clone(), events_tx));
 
     use dcs::common::v0::GroupCategory::{Airplane, Ground, Helicopter, Ship};
     for category in [Airplane, Helicopter, Ground, Ship] {
-        tokio::spawn(run_units(channel.clone(), units_tx.clone(), category as i32));
+        tokio::spawn(run_units(client.clone(), units_tx.clone(), category as i32));
     }
 }
 
 /// Hold `Mission.StreamEvents`, publishing each event as JSON. Reconnects with
 /// backoff when the stream ends or errors.
-async fn run_events(channel: Channel, tx: broadcast::Sender<String>) {
+async fn run_events(client: Grpc, tx: broadcast::Sender<String>) {
     let mut backoff = BACKOFF_START;
 
     loop {
-        match grpc::stream_events(channel.clone()).await {
+        match grpc::stream_events(client.clone()).await {
             Ok(mut stream) => {
                 backoff = BACKOFF_START;
                 loop {
@@ -89,10 +87,10 @@ async fn run_events(channel: Channel, tx: broadcast::Sender<String>) {
 
 /// Hold one `Mission.StreamUnits` category subscription, publishing each unit
 /// update as JSON. Reconnects with backoff.
-async fn run_units(channel: Channel, tx: broadcast::Sender<String>, category: i32) {
+async fn run_units(client: Grpc, tx: broadcast::Sender<String>, category: i32) {
     let mut backoff = BACKOFF_START;
     loop {
-        match grpc::stream_units(channel.clone(), category).await {
+        match grpc::stream_units(client.clone(), category).await {
             Ok(mut stream) => {
                 backoff = BACKOFF_START;
                 loop {

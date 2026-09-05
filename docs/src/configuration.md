@@ -39,6 +39,7 @@ Enter these variables in the NSSM Environment tab, one per line (e.g., `JWT_SECR
 | --- | --- | --- |
 | `DASHBOARD_ADDR` | `0.0.0.0:3001` | Address/port the dashboard listens on. Use `127.0.0.1:3001` if a proxy is in front. |
 | `GRPC_ENDPOINT` | `http://localhost:50051` | Where your DCS-gRPC server is listening. |
+| `GRPC_API_KEY` | — | Token sent as `X-API-Key` on every DCS-gRPC call. Required when the server's `dcs-grpc.lua` has `auth.enabled = true`; add a dedicated entry for the dashboard to its `auth.tokens` list (e.g. `{ client = "web-dashboard", token = "..." }`) and paste that token here. Leave unset when authentication is off. |
 | `APP_URL` | `http://localhost:3001` | Public base URL of the dashboard. **Must match the real public IP/host** for Discord redirects to work. |
 | `ADMIN_PASSWORD` | — | Enables master-password login when set. |
 

@@ -43,11 +43,20 @@ pub fn err_detail(prefix: &str, status: tonic::Status) -> Response {
 /// 500 with `{ "error": <grpc message> }` (matches the console/triggers/
 /// mission routes which surface `err.message` directly).
 fn err_simple(status: tonic::Status) -> Response {
-    (
-        StatusCode::INTERNAL_SERVER_ERROR,
-        Json(json!({ "error": status.message() })),
-    )
-        .into_response()
+    // Surface the two configuration-side failures with an actionable hint so
+    // they are distinguishable from a mission/server fault in the UI.
+    let error = match status.code() {
+        tonic::Code::Unauthenticated => format!(
+            "{} (DCS-gRPC has auth.enabled = true; set GRPC_API_KEY to a token listed in its dcs-grpc.lua)",
+            status.message()
+        ),
+        tonic::Code::PermissionDenied => format!(
+            "{} (set evalEnabled = true in dcs-grpc.lua)",
+            status.message()
+        ),
+        _ => status.message().to_string(),
+    };
+    (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": error }))).into_response()
 }
 
 /// 400 with `{ "error": <msg> }`.
