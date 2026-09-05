@@ -6,6 +6,7 @@ export interface AircraftIconSpec {
 interface AircraftIconDefinition {
   aliases: string[];
   parkedFileName: string;
+  /** Launch configuration (wings spread, on the catapult, ramp or STOVL start); falls back to the parked icon. */
   catapultFileName?: string;
   lengthMeters: number;
 }
@@ -22,6 +23,19 @@ const AIRCRAFT_ICON_DEFINITIONS: AircraftIconDefinition[] = [
     parkedFileName: 'F-18_icon_park.png',
     catapultFileName: 'F-18_icon_cat.png',
     lengthMeters: 17.1,
+  },
+  {
+    aliases: ['su-33', 'su33', 'flanker-d'],
+    parkedFileName: 'su-33_icon_park.png',
+    catapultFileName: 'su-33_icon_cat.png',
+    lengthMeters: 21.9,
+  },
+  {
+    // DCS ships two Corsair types, F4U-1D and F4U-1D_CW (clipped wing); one icon serves both.
+    aliases: ['f4u', 'f-4u', 'corsair'],
+    parkedFileName: 'F-4U_icon_park.png',
+    catapultFileName: 'F-4U_icon_cat.png',
+    lengthMeters: 10.3,
   },
   {
     aliases: ['av8', 'av-8', 'harrier'],

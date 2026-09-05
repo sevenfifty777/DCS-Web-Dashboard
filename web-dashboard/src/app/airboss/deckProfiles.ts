@@ -4,8 +4,21 @@
 // routes in deckSpots.ts / deckRoutes.ts), never a change to the page.
 
 import type { ParkingSpot } from './deckTracking';
-import { NIMITZ_SPOTS, TARAWA_SPOTS } from './deckSpots.ts';
 import {
+  ARA_VDM_SPOTS,
+  ESSEX_SPOTS,
+  FORRESTAL_SPOTS,
+  INVINCIBLE_SPOTS,
+  KUZNETSOV_SPOTS,
+  NIMITZ_SPOTS,
+  TARAWA_SPOTS,
+} from './deckSpots.ts';
+import {
+  ARA_VDM_LAUNCH_ROUTES,
+  ESSEX_LAUNCH_ROUTES,
+  FORRESTAL_LAUNCH_ROUTES,
+  INVINCIBLE_LAUNCH_ROUTES,
+  KUZNETSOV_LAUNCH_ROUTES,
   NIMITZ_LAUNCH_ROUTES,
   NIMITZ_ROUTE_BY_ID,
   NIMITZ_ROUTE_BY_START,
@@ -14,6 +27,7 @@ import {
   TARAWA_ROUTE_BY_ID,
   TARAWA_ROUTE_BY_START,
   TARAWA_ROUTES_BY_LAUNCH,
+  indexDeckRoutes,
   type DeckLaunchRoute,
 } from './deckRoutes.ts';
 
@@ -37,6 +51,14 @@ export interface DeckProfile {
   lengthMeters: number;
   /** Used for the outline of image-less generic decks. */
   beamMeters: number;
+  /**
+   * Model-frame "forward" coordinate of the hull's mid-length, metres. DCS
+   * spot coordinates and the streamed ship position are in the model frame,
+   * whose origin is not always at mid-length; the image is centred on
+   * mid-length, so spots, routes and aircraft are drawn this far aft of the
+   * image centre. Estimated from where the catapult or deck-run ends (the bow).
+   */
+  imageCenterFwdMeters: number;
   deckCanvasWidth: number;
   deckCanvasHeight: number;
   spots: ParkingSpot[];
@@ -60,6 +82,8 @@ export const NIMITZ_PROFILE: DeckProfile = {
   imageBowHeadingDeg: 270,
   lengthMeters: 332,
   beamMeters: 77,
+  // Cat 1 ends at 167.7 m against a 166 m half-length: origin at mid-length.
+  imageCenterFwdMeters: 0,
   deckCanvasWidth: 500,
   deckCanvasHeight: 1100,
   spots: NIMITZ_SPOTS,
@@ -71,17 +95,23 @@ export const NIMITZ_PROFILE: DeckProfile = {
 };
 
 /**
- * Image-only profile (no parking spots or routes yet). All the top views below
- * were captured with the bow to the left, like the Nimitz one.
+ * Profile for a hull whose top view was captured with the bow to the left,
+ * like the Nimitz one. Spots and routes come from the DCS
+ * `*_RunwaysAndRoutes.lua` tables (see deckSpots.ts / deckRoutes.ts). Lengths
+ * are the DCS model's `GT.Length` where the mod states it, since the image is
+ * of that model and the spot coordinates are in its frame.
  */
-function imageOnlyProfile(
+function hullProfile(
   key: DeckProfileKey,
   label: string,
   imageSrc: string,
   lengthMeters: number,
   beamMeters: number,
+  imageCenterFwdMeters: number,
   deckCanvasWidth: number,
   deckOffsetDeg: number,
+  spots: ParkingSpot[],
+  routes: DeckLaunchRoute[],
 ): DeckProfile {
   return {
     key,
@@ -91,31 +121,38 @@ function imageOnlyProfile(
     imageBowHeadingDeg: 270,
     lengthMeters,
     beamMeters,
+    imageCenterFwdMeters,
     deckCanvasWidth,
     deckCanvasHeight: 1100,
-    spots: [],
-    launchRoutes: [],
-    routeById: NO_ROUTES,
-    routeByStart: NO_ROUTES,
-    routesByLaunch: NO_ROUTE_GROUPS,
+    spots,
+    ...indexDeckRoutes(routes),
     deckOffsetDeg,
   };
 }
 
-export const FORRESTAL_PROFILE = imageOnlyProfile(
-  'forrestal', 'FORRESTAL CLASS', '/img/forrestal-top-transp.png', 325, 76, 500, 9.14,
+// Cats 1 and 2 (82.4 m + 94.5 m run) end at +176.7 m: the bow. Mid-length of
+// a 325 m hull is therefore 13 m forward of the model origin.
+export const FORRESTAL_PROFILE = hullProfile(
+  'forrestal', 'FORRESTAL CLASS', '/img/forrestal-top-transp.png', 325, 76, 13, 500, 9.14,
+  FORRESTAL_SPOTS, FORRESTAL_LAUNCH_ROUTES,
 );
-export const KUZNETSOV_PROFILE = imageOnlyProfile(
-  'kuznetsov', 'KUZNETSOV CLASS', '/img/kuznetsov-top-transp.png', 305, 72, 500, 9.14,
+// Ramps 1 and 2 (78.4 m + 102.4 m run) end at the ski-jump lip, +180 m; the
+// "M" helicopter terminal then lands on the painted M of the deck texture.
+export const KUZNETSOV_PROFILE = hullProfile(
+  'kuznetsov', 'KUZNETSOV CLASS', '/img/kuznetsov-top-transp.png', 304.5, 72, 28, 500, 9.14,
+  KUZNETSOV_SPOTS, KUZNETSOV_LAUNCH_ROUTES,
 );
-export const ESSEX_PROFILE = imageOnlyProfile(
-  'essex', 'ESSEX CLASS (1944)', '/img/essex-top-transp.png', 266, 45, 400, 0,
+export const ESSEX_PROFILE = hullProfile(
+  'essex', 'ESSEX CLASS (1944)', '/img/essex-top-transp.png', 275, 45, 0, 400, 0,
+  ESSEX_SPOTS, ESSEX_LAUNCH_ROUTES,
 );
-export const INVINCIBLE_PROFILE = imageOnlyProfile(
-  'invincible', 'INVINCIBLE CLASS', '/img/invincible-top-transp.png', 209, 36, 400, 0,
+export const INVINCIBLE_PROFILE = hullProfile(
+  'invincible', 'INVINCIBLE CLASS', '/img/invincible-top-transp.png', 209.4, 36, 0, 400, 0,
+  INVINCIBLE_SPOTS, INVINCIBLE_LAUNCH_ROUTES,
 );
-export const ARA_VDM_PROFILE = imageOnlyProfile(
-  'ara-vdm', 'ARA VEINTICINCO DE MAYO', '/img/ara-vdm-top-transp.png', 212, 40, 400, 9.14,
+export const ARA_VDM_PROFILE = hullProfile(
+  'ara-vdm', 'ARA VEINTICINCO DE MAYO', '/img/ara-vdm-top-transp.png', 212, 40, 0, 400, 9.14,
+  ARA_VDM_SPOTS, ARA_VDM_LAUNCH_ROUTES,
 );
 
 export const TARAWA_PROFILE: DeckProfile = {
@@ -127,6 +164,7 @@ export const TARAWA_PROFILE: DeckProfile = {
   imageBowHeadingDeg: 0,
   lengthMeters: 254,
   beamMeters: 40,
+  imageCenterFwdMeters: 0,
   deckCanvasWidth: 400,
   deckCanvasHeight: 1100,
   spots: TARAWA_SPOTS,
@@ -145,6 +183,7 @@ export const GENERIC_CATOBAR_PROFILE: DeckProfile = {
   imageBowHeadingDeg: 0,
   lengthMeters: 300,
   beamMeters: 70,
+  imageCenterFwdMeters: 0,
   deckCanvasWidth: 500,
   deckCanvasHeight: 1100,
   spots: [],
@@ -163,6 +202,7 @@ export const GENERIC_VSTOL_PROFILE: DeckProfile = {
   imageBowHeadingDeg: 0,
   lengthMeters: 210,
   beamMeters: 36,
+  imageCenterFwdMeters: 0,
   deckCanvasWidth: 400,
   deckCanvasHeight: 1100,
   spots: [],

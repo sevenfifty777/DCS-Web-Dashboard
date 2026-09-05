@@ -9,6 +9,7 @@ import {
   findDeckShip,
   hasParkingPosition,
   isAircraftUnit,
+  isLaunchSpotKind,
   nearestShipId,
   parkingSpotSupportsUnit,
   relativeHorizontalSpeed,
@@ -170,6 +171,9 @@ export function drawDeckView(canvas: HTMLCanvasElement | null, input: DeckRender
 
   const targetLen = canvas.height * DECK_LENGTH_FRACTION;
   const pixelsPerMeter = targetLen / shipLengthM;
+  // The image is centred on the hull's mid-length; the model origin (spots,
+  // routes, streamed positions) lies this many pixels aft of it.
+  const originShiftPx = profile.imageCenterFwdMeters * pixelsPerMeter;
 
   dctx.save();
   dctx.translate(cx2, cy2);
@@ -189,6 +193,10 @@ export function drawDeckView(canvas: HTMLCanvasElement | null, input: DeckRender
   } else {
     drawGenericHull(dctx, profile, pixelsPerMeter);
   }
+
+  // Everything from here on is in the model frame.
+  dctx.translate(0, originShiftPx);
+  const originY = cy2 + originShiftPx;
 
   const activeRoutes = selectedRouteIds
     .map((routeId) => routeById[routeId])
@@ -303,7 +311,7 @@ export function drawDeckView(canvas: HTMLCanvasElement | null, input: DeckRender
     const launchSpotRoutes = spot.term_index === undefined
       ? []
       : routesByLaunch[String(spot.term_index)] ?? [];
-    const spotSelectionId = spot.kind === 'catapult' || spot.kind === 'stovl'
+    const spotSelectionId = isLaunchSpotKind(spot.kind)
       ? `launch:${spotLabel}`
       : spotRoute?.id ?? `spot:${spotLabel}`;
     const isDirectlySelected = selectedSelectionId === spotSelectionId;
@@ -341,23 +349,24 @@ export function drawDeckView(canvas: HTMLCanvasElement | null, input: DeckRender
         : `No DCS launch route is defined for parking spot ${spotLabel}.`;
       hitTargets.push({
         x: cx2 + px,
-        y: cy2 + py,
+        y: originY + py,
         radius: ROUTE_HIT_RADIUS_PX,
         selectionId: spotSelectionId,
         routeIds: spotRoute ? [spotRoute.id] : [],
         message: spotRoute ? `${shipName}: ${spotRoute.label}` : unavailableMessage,
       });
-    } else if (spot.kind === 'catapult' || spot.kind === 'stovl') {
+    } else if (isLaunchSpotKind(spot.kind)) {
       const startLabels = launchSpotRoutes
         .map((route) => route.startTermIndex)
         .sort((first, second) => first - second)
         .join(', ');
-      const launchName = spot.kind === 'catapult'
+      // Nimitz and Tarawa predate per-spot labels: keep their index arithmetic.
+      const launchName = spot.launchLabel ?? (spot.kind === 'catapult'
         ? `CAT ${Number(spot.term_index) - 22}`
-        : `STOVL ${Number(spot.term_index) - 16}`;
+        : `STOVL ${Number(spot.term_index) - 16}`);
       hitTargets.push({
         x: cx2 + px,
-        y: cy2 + py,
+        y: originY + py,
         radius: ROUTE_HIT_RADIUS_PX,
         selectionId: spotSelectionId,
         routeIds: launchSpotRoutes.map((route) => route.id),
@@ -382,7 +391,8 @@ export function drawDeckView(canvas: HTMLCanvasElement | null, input: DeckRender
     dctx.save();
     dctx.translate(px, py);
 
-    const useCatapultVariant = parkedSpot?.kind === 'catapult';
+    // Launch-configuration icon on any launch position (catapult, ramp, STOVL start).
+    const useCatapultVariant = isLaunchSpotKind(parkedSpot?.kind);
     const iconSpec = aircraftIconForType(occ.player.type, useCatapultVariant);
     const iconToDraw = iconSpec ? planeIcons[iconSpec.fileName] : null;
 
@@ -427,7 +437,7 @@ export function drawDeckView(canvas: HTMLCanvasElement | null, input: DeckRender
       ?? (parkedSpot?.term_index === undefined ? null : `spot:${parkedSpot.term_index}`);
     hitTargets.push({
       x: cx2 + px,
-      y: cy2 + py,
+      y: originY + py,
       radius: Math.max(14, (iconSpec?.lengthMeters ?? 0) * pixelsPerMeter / 2),
       selectionId: aircraftSelectionId,
       routeIds: aircraftRoute ? [aircraftRoute.id] : [],
@@ -474,6 +484,7 @@ export function drawDeckRouteFlow(
   routes: DeckLaunchRoute[],
   shipLengthMeters: number,
   elapsedMilliseconds: number,
+  imageCenterFwdMeters = 0,
 ) {
   if (!canvas) return;
   const context = canvas.getContext('2d');
@@ -486,7 +497,8 @@ export function drawDeckRouteFlow(
   const headProgress = (elapsedMilliseconds % ROUTE_FLOW_CYCLE_MS) / ROUTE_FLOW_CYCLE_MS;
 
   context.save();
-  context.translate(canvas.width / 2, canvas.height / 2);
+  // Same model-frame origin as drawDeckView.
+  context.translate(canvas.width / 2, canvas.height / 2 + imageCenterFwdMeters * pixelsPerMeter);
   for (const route of routes) {
     const shimmerStart = headProgress - ROUTE_SHIMMER_LENGTH / 2;
     for (let segmentIndex = 0; segmentIndex < ROUTE_SHIMMER_SEGMENTS; segmentIndex += 1) {

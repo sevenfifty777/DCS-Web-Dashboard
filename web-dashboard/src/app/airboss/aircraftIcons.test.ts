@@ -19,6 +19,9 @@ const expectedMappings: Array<[string, string]> = [
   ['SA342Mistral', 'sa342_icon_park.png'],
   ['UH-1H', 'UH-1H_icon_park.png'],
   ['T-45', 'T45C_icon_park.png'],
+  ['Su-33', 'su-33_icon_park.png'],
+  ['F4U-1D', 'F-4U_icon_park.png'],
+  ['F4U-1D_CW', 'F-4U_icon_park.png'],
 ];
 
 test('maps DCS aircraft type variants to their deck icons', () => {
@@ -33,6 +36,8 @@ test('uses catapult variants only when they exist', () => {
   assert.equal(aircraftIconForType('E-2D', true)?.fileName, 'E-2D_icon_cat.png');
   assert.equal(aircraftIconForType('S-3B Tanker', true)?.fileName, 'S-3B_icon_cat.png');
   assert.equal(aircraftIconForType('A-4E-C', true)?.fileName, 'A-4E-C_icon_park.png');
+  assert.equal(aircraftIconForType('Su-33', true)?.fileName, 'su-33_icon_cat.png');
+  assert.equal(aircraftIconForType('F4U-1D_CW', true)?.fileName, 'F-4U_icon_cat.png');
 });
 
 test('returns null for aircraft without a dedicated icon', () => {
@@ -41,5 +46,5 @@ test('returns null for aircraft without a dedicated icon', () => {
 
 test('preload list contains every icon exactly once', () => {
   assert.equal(new Set(AIRCRAFT_ICON_FILES).size, AIRCRAFT_ICON_FILES.length);
-  assert.equal(AIRCRAFT_ICON_FILES.length, 18);
+  assert.equal(AIRCRAFT_ICON_FILES.length, 22);
 });

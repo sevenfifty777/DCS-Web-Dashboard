@@ -70,13 +70,22 @@ export interface DeckPosition {
   right: number;
 }
 
+/** Launch positions: catapult shuttle, STOVL run start, or a plain deck run (ski jump, WWII deck). */
+export type LaunchSpotKind = 'catapult' | 'stovl' | 'deck-run';
+
 export interface ParkingSpot {
   term_index?: number | string;
   position?: WorldPosition | null;
   isLocal?: boolean;
-  kind?: 'fixed-wing' | 'helicopter' | 'catapult' | 'stovl';
+  kind?: 'fixed-wing' | 'helicopter' | LaunchSpotKind;
   /** Clockwise heading relative to the ship bow; starboard is +90 degrees. */
   deckHeadingDegrees?: number;
+  /** Display name of a launch position ("CAT 1", "RAMP 2"); launch kinds only. */
+  launchLabel?: string;
+}
+
+export function isLaunchSpotKind(kind: ParkingSpot['kind']): kind is LaunchSpotKind {
+  return kind === 'catapult' || kind === 'stovl' || kind === 'deck-run';
 }
 
 export interface PositionedParkingSpot extends ParkingSpot {

@@ -334,7 +334,7 @@ export function CarrierPanel({
       .map((routeId) => profile.routeById[routeId])
       .filter((route): route is DeckLaunchRoute => route !== undefined);
     const canvas = routeEffectCanvasRef.current;
-    const length = profile.lengthMeters;
+    const { lengthMeters: length, imageCenterFwdMeters: originFwd } = profile;
 
     let animationFrameId: number | null = null;
     let animationStart: number | null = null;
@@ -342,18 +342,18 @@ export function CarrierPanel({
       animationStart ??= timestamp;
       const elapsed = timestamp - animationStart;
       if (elapsed >= ROUTE_FLOW_CYCLE_MS) {
-        drawDeckRouteFlow(canvas, [], length, 0);
+        drawDeckRouteFlow(canvas, [], length, 0, originFwd);
         animationFrameId = null;
         return;
       }
-      drawDeckRouteFlow(canvas, routes, length, elapsed);
+      drawDeckRouteFlow(canvas, routes, length, elapsed, originFwd);
       animationFrameId = window.requestAnimationFrame(animateRouteFlow);
     };
 
     if (routes.length) {
       animationFrameId = window.requestAnimationFrame(animateRouteFlow);
     } else {
-      drawDeckRouteFlow(canvas, [], length, 0);
+      drawDeckRouteFlow(canvas, [], length, 0, originFwd);
     }
     return () => {
       if (animationFrameId !== null) window.cancelAnimationFrame(animationFrameId);

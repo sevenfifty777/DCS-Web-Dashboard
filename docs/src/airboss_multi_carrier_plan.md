@@ -12,7 +12,7 @@ Where things landed:
 | --- | --- |
 | Lua: `classifyDeck`, `listCarriers`, `windReports`, `groupOverrides` / `setGroupOverrides`, `config(groupName)`, `phase` | `rust-web-dashboard/lua/carrier_recovery.lua`, version `1.1.0` |
 | Rust routes | `GET /api/airboss/carriers`, `GET /api/airboss?names=`, `POST /api/airboss/config` in `rust-web-dashboard/src/routes/dcs.rs`; script builders and 9 new Lua tests in `src/carrier_recovery.rs` (`cargo test carrier_recovery`, 27 tests) |
-| Deck profiles | `web-dashboard/src/app/airboss/deckProfiles.ts` (`nimitz`, `tarawa` with spots and routes; `forrestal`, `kuznetsov`, `essex`, `invincible`, `ara-vdm` image-only from `public/img/*-top-transp.png`, bow left like the Nimitz view, cropped to the hull so the image width is the ship length; `generic-catobar`, `generic-vstol` outlines) |
+| Deck profiles | `web-dashboard/src/app/airboss/deckProfiles.ts`: `nimitz`, `forrestal`, `kuznetsov`, `essex`, `invincible`, `ara-vdm`, `tarawa` with images from `public/img/*-top-transp.png` (bow left like the Nimitz view, cropped to the hull so the image width is the ship length) and spots plus routes from the DCS tables in `Features/Carrier info/` (`deckSpots.ts`, `deckRoutes.ts`); `generic-catobar`, `generic-vstol` outlines. A deck-data invariant test checks every route against its parking and launch spots. |
 | Renderers | `deckRenderer.ts` (`drawDeckView`, `drawDeckRouteFlow`) and `wheelRenderer.ts` (`drawWindWheel`), smoke-tested against a stub 2D context in `deckRenderer.test.ts` |
 | Panels | `CarrierPanel.tsx` (per ship), `PlannerPanel.tsx` (manual planner), `useCarrierList.ts` (detection + radar-triggered refresh), `carrierDetection.ts`, `carrierPersistence.ts`, `airbossApi.ts`; `page.tsx` is the coordinator (radar stream, batched poll, layout persistence) |
 | Tests | `node --test "src/app/airboss/*.test.ts"` (48 tests) |
@@ -279,10 +279,33 @@ Out of scope now, listed so the interfaces above leave room for it:
   lower target wind over deck and a preference for wind slightly off the port bow for the Harrier
   pattern. Proposed shape: a per-`deck_class` solver profile in the Lua module
   (`targetWodKt`, `offsetDeg`, `minSpeedKt`) with a fixture section per class.
-- Spots and launch routes for Forrestal, Kuznetsov, Invincible, Essex and ARA Veinticinco de Mayo
-  (their top-view images landed on 2026-09-05; the `RunwaysAndRoutes.lua` tables in the DCS
-  CoreMods are the source, as for the Nimitz and Tarawa) as new rows in `deckSpots.ts` and
-  `deckRoutes.ts`.
+- Deck data landed on 2026-09-05 for Forrestal, Kuznetsov, Essex, Invincible and ARA Veinticinco de
+  Mayo, transcribed from the `RunwaysAndRoutes.lua` tables kept in `Features/Carrier info/`. The
+  Nimitz and Tarawa tables were re-checked against the same sources: every position and route
+  matches. Points to verify on a live deck with a parked aircraft:
+  - The image is centred on the hull's mid-length while DCS spot coordinates and the streamed
+    ship position are in the model frame, whose origin is not always at mid-length. The first
+    live screenshots showed the Forrestal and Kuznetsov spots sitting too far forward (a helo
+    terminal floating off the Forrestal's bow). `DeckProfile.imageCenterFwdMeters` now carries the
+    offset and the renderer draws spots, routes and aircraft that far aft of the image centre. The
+    value comes from the take-off run geometry in the DCS file, since a catapult or ramp run ends
+    at the bow: Forrestal cats 1 and 2 end at +176.7 m against a 162.5 m half-length, so 13 m;
+    Kuznetsov ramps 1 and 2 end at the ski-jump lip, +180 m against 152 m, so 28 m (and the DCS
+    "M" helicopter terminal then lands on the painted M of the deck texture). The Nimitz gives
+    1 m by the same method, which is why it never needed one. The Essex (deck runs end at
+    +152..155 m against 137.5 m), ARA (catapult ends at +121.6 m against 106 m, unless the mod's
+    stated 236 m length is the model's real size) and Invincible (run ends at +92 m against
+    104.7 m) are left at 0 until checked with a parked aircraft against deck features. Note that an
+    aircraft always sits on its spot marker whatever the offset, because both are in the model
+    frame; only its position against the painted deck reveals a wrong offset.
+  - Tarawa parking labels 6 and 7: DCS numbers terminals by table order, giving 6 at (-85, 14) and
+    7 at (-100, 14); the file's comments and our labels have them the other way round. Positions
+    and routes are identical either way.
+  - ARA Veinticinco de Mayo: the DCS taxi routes stop at (20.6, -11.65), 35 m short of the catapult
+    head; the drawn routes add a last leg to the head so the route reaches the launch marker.
+  - Lengths follow the mod's `GT.Length` where stated (Kuznetsov 304.5 m, Essex 275 m, Invincible
+    209.4 m); the Forrestal mod copies the Nimitz value (332.9 m) so the real 325 m is used, and the
+    ARA mod's 236 m is far from the ship's 212 m, so 212 m is used.
 
 ## Validation checklist
 
