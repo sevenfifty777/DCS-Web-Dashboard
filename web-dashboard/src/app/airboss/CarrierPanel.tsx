@@ -140,9 +140,13 @@ export function CarrierPanel({
     () => Object.values(radarUnits).some((unit) => String(unit.group?.category ?? '').toUpperCase().includes('SHIP')),
     [radarUnits],
   );
-  // Lost: the stream carries ships but not this one, and the ship was known
-  // (seen in the stream before, or reported by the controller).
-  const lost = !streamFound && radarHasShips && (report !== null || everSeen);
+  // The radar stream only carries units that changed since the page connected,
+  // so a stationary ship may never appear in it. While synced, the controller
+  // poll is the authority: the ship is lost when the poll says it is gone.
+  // Unsynced, it is lost when the stream had it before and dropped it.
+  const goneFromMission = reportError !== null && /is not available/i.test(reportError);
+  const lost = !streamFound && radarHasShips && (settings.sync ? goneFromMission : everSeen);
+  const headingFromController = !streamFound && report !== null && !lost;
 
   useEffect(() => {
     if (!streamFound) return;
@@ -217,9 +221,9 @@ export function CarrierPanel({
     : !settings.sync
       ? (report ? 'NOT SYNCED · LAST WIND' : 'NOT SYNCED · NO WIND DATA')
       : reportError
-        ? `POLL ERROR`
+        ? 'POLL ERROR'
         : report
-          ? null
+          ? (headingFromController ? 'STATIC · HEADING FROM CONTROLLER' : null)
           : 'WAITING FOR TELEMETRY';
 
   // --- Actions ----------------------------------------------------------------

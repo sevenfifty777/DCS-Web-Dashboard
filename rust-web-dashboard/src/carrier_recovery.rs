@@ -18,7 +18,7 @@
 pub const LUA_MODULE: &str = include_str!("../lua/carrier_recovery.lua");
 
 /// Must match `CarrierRecovery.VERSION` in the Lua file (checked by a test).
-pub const MODULE_VERSION: &str = "1.1.0";
+pub const MODULE_VERSION: &str = "1.1.2";
 
 /// Default carrier group when the client does not name one.
 pub const DEFAULT_GROUP: &str = "CVN-72";
@@ -233,6 +233,7 @@ missionCommands = {
 local function makeShip(spec)
   local unit = {}
   function unit:isExist() return spec.exists ~= false end
+  function unit:isActive() return spec.active ~= false end
   function unit:getPoint() return { x = spec.x or 0, y = 0, z = spec.z or 0 } end
   function unit:getPosition()
     local h = math.rad(spec.headingDeg or 0)
@@ -805,16 +806,24 @@ end
         lua.load(
             r#"
             Sim.setWind(30, 8)
+            -- Attribute sets below are the ones a live server reported (2026-09-05).
             Sim.addShip({ groupName = "Tarawa", typeName = "LHA_Tarawa", coalition = 2, headingDeg = 90,
-              attributes = { ["Ships"] = true, ["HelicopterCarrier"] = true, ["Heavy armed ships"] = true } })
+              attributes = { ["Ships"] = true, ["Aircraft Carriers"] = true, ["AircraftCarrier"] = true,
+                             ["AircraftCarrier With Tramplin"] = true, ["ski_jump"] = true, ["Heavy armed ships"] = true } })
             Sim.addShip({ groupName = "Kuznetsov", typeName = "KUZNECOW", coalition = 1,
-              attributes = { ["Ships"] = true, ["AircraftCarrier"] = true, ["AircraftCarrier With Arresting Gear"] = true } })
+              attributes = { ["Ships"] = true, ["AircraftCarrier"] = true, ["AircraftCarrier With Tramplin"] = true,
+                             ["AircraftCarrier With Arresting Gear"] = true } })
             Sim.addShip({ groupName = "Escort", typeName = "USS_Arleigh_Burke_IIa", coalition = 2,
-              attributes = { ["Ships"] = true, ["Frigates"] = true } })
+              attributes = { ["Ships"] = true, ["Cruisers"] = true, ["HelicopterCarrier"] = true } })
+            Sim.addShip({ groupName = "Moskva # 1", typeName = "MOSCOW", coalition = 1,
+              attributes = { ["Ships"] = true, ["Cruisers"] = true, ["HelicopterCarrier"] = true } })
             Sim.addShip({ groupName = "HMS Invincible", typeName = "hms_invincible_mod", coalition = 2,
               attributes = { ["Ships"] = true, ["Heavy armed ships"] = true } })
             Sim.addShip({ groupName = "Sunk", typeName = "CVN_73", coalition = 2, exists = false,
               attributes = { ["AircraftCarrier With Catapult"] = true } })
+            -- Foothold's late-activated spawn placeholder: exists for scripting, not in the world.
+            Sim.addShip({ groupName = "FOB ALPHA", typeName = "LHA_Tarawa", coalition = 2, active = false,
+              attributes = { ["Aircraft Carriers"] = true, ["AircraftCarrier"] = true, ["AircraftCarrier With Tramplin"] = true } })
             "#,
         )
         .exec()
@@ -828,15 +837,19 @@ end
         let class = |desc: &str, type_name: &str| -> Option<String> {
             eval::<Option<String>>(&lua, &format!("return (CarrierRecovery.classifyDeck({desc}, {type_name:?}))"))
         };
-        assert_eq!(class(r#"{ attributes = { ["AircraftCarrier With Catapult"] = true } }"#, "CVN_72").as_deref(), Some("catobar"));
-        assert_eq!(class(r#"{ attributes = { ["AircraftCarrier"] = true, ["AircraftCarrier With Arresting Gear"] = true } }"#, "KUZNECOW").as_deref(), Some("stobar"));
-        assert_eq!(class(r#"{ attributes = { ["AircraftCarrier"] = true } }"#, "Forrestal").as_deref(), Some("stobar"));
-        assert_eq!(class(r#"{ attributes = { ["HelicopterCarrier"] = true } }"#, "LHA_Tarawa").as_deref(), Some("vstol"));
-        assert_eq!(class(r#"{ attributes = { "Ships", "Landing Ships" } }"#, "Type_071").as_deref(), Some("vstol"), "list-form attributes");
-        // A VSTOL hull that also claims AircraftCarrier stays vstol.
-        assert_eq!(class(r#"{ attributes = { ["AircraftCarrier"] = true, ["HelicopterCarrier"] = true } }"#, "L61").as_deref(), Some("vstol"));
+        // Live-server attribute sets (2026-09-05).
+        assert_eq!(class(r#"{ attributes = { ["Aircraft Carriers"] = true, ["AircraftCarrier"] = true, ["AircraftCarrier With Catapult"] = true, ["AircraftCarrier With Arresting Gear"] = true, ["catapult"] = true, ["Arresting Gear"] = true } }"#, "CVN_72").as_deref(), Some("catobar"));
+        assert_eq!(class(r#"{ attributes = { ["Aircraft Carriers"] = true, ["AircraftCarrier"] = true, ["AircraftCarrier With Tramplin"] = true, ["ski_jump"] = true } }"#, "LHA_Tarawa").as_deref(), Some("vstol"));
+        assert_eq!(class(r#"{ attributes = { ["Ships"] = true, ["Cruisers"] = true, ["HelicopterCarrier"] = true } }"#, "MOSCOW"), None, "a helipad is not a carrier");
+        assert_eq!(class(r#"{ attributes = { ["Ships"] = true, ["Cruisers"] = true, ["HelicopterCarrier"] = true } }"#, "USS_Arleigh_Burke_IIa"), None);
+        assert_eq!(class(r#"{ attributes = { ["Ships"] = true, ["Frigates"] = true } }"#, "REZKY"), None);
+        // Expected sets for hulls not in that mission.
+        assert_eq!(class(r#"{ attributes = { ["AircraftCarrier"] = true, ["AircraftCarrier With Tramplin"] = true, ["AircraftCarrier With Arresting Gear"] = true } }"#, "KUZNECOW").as_deref(), Some("stobar"));
+        assert_eq!(class(r#"{ attributes = { ["AircraftCarrier With Catapult"] = true } }"#, "Forrestal").as_deref(), Some("catobar"));
+        assert_eq!(class(r#"{ attributes = { ["AircraftCarrier"] = true } }"#, "hms_invincible_mod").as_deref(), Some("vstol"), "bare fixed-wing deck without wires");
+        assert_eq!(class(r#"{ attributes = { "Ships", "Landing Ships" } }"#, "Type_071").as_deref(), Some("vstol"), "list-form attributes plus a type hint");
+        assert_eq!(class(r#"{ attributes = { ["HelicopterCarrier"] = true } }"#, "L61_Juan_Carlos").as_deref(), Some("vstol"), "helipad flag plus a type hint");
         assert_eq!(class(r#"{ attributes = { ["Ships"] = true } }"#, "hms_invincible").as_deref(), Some("unknown"));
-        assert_eq!(class(r#"{ attributes = { ["Ships"] = true, ["Frigates"] = true } }"#, "USS_Arleigh_Burke_IIa"), None);
         assert_eq!(class("nil", "CVN_75").as_deref(), Some("unknown"), "no desc at all falls back to the type hint");
         // Matched attributes are reported for the dashboard header.
         let matched: Vec<String> = eval(&lua, r#"local _, m = CarrierRecovery.classifyDeck({ attributes = { ["AircraftCarrier With Catapult"] = true, ["AircraftCarrier With Arresting Gear"] = true } }, "CVN_71") return m"#);
@@ -869,7 +882,15 @@ end
                 ("Tarawa".into(), "LHA_Tarawa".into(), "vstol".into(), 2, 0.0, "standalone".into()),
             ]
         );
-        // The Escort (no carrier attribute, no type hint) and the sunk CVN are absent.
+        // The Escort and Moskva (helipad only, no type hint), the sunk CVN and the
+        // late-activated FOB ALPHA are absent.
+        assert!(matches!(eval::<Value>(&lua, "return CarrierRecovery.windData('FOB ALPHA')"), Value::Nil), "inactive ships report no telemetry");
+        let placeholder: Table = eval(&lua, "return CarrierRecovery.windReport('FOB ALPHA')");
+        assert!(text(&placeholder, "error").contains("not available"));
+        // Once the mission activates it, the next scan lists it.
+        lua.load("Sim.fleet['FOB ALPHA'].spec.active = true").exec().unwrap();
+        assert_eq!(eval::<Table>(&lua, "return CarrierRecovery.listCarriers().carriers").len().unwrap(), 5);
+        lua.load("Sim.fleet['FOB ALPHA'].spec.active = false").exec().unwrap();
         let first: Table = carriers.get(1).unwrap();
         assert_eq!(text(&first, "unit"), "CVN-71-1");
         assert_eq!(num(&first, "target_wod"), 24.0);
@@ -883,7 +904,7 @@ end
     #[test]
     fn deck_class_drives_the_solver_offset() {
         let lua = fleet_world();
-        // The Tarawa has no straight-deck type pattern hit needed: HelicopterCarrier is enough.
+        // The Tarawa needs no straight-deck type pattern hit: its attributes classify it vstol.
         lua.load("CarrierRecovery.overrides.straightDeckTypes = {}").exec().unwrap();
         let tarawa: Table = eval(&lua, "return CarrierRecovery.windReport('Tarawa')");
         assert_eq!(num(&tarawa, "deck_offset"), 0.0);

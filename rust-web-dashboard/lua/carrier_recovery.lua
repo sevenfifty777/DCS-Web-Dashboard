@@ -30,7 +30,7 @@
 CarrierRecovery = CarrierRecovery or {}
 local M = CarrierRecovery
 
-M.VERSION = "1.1.0"
+M.VERSION = "1.1.2"
 
 -- Active recoveries keyed by group name. Preserved across a re-injection of a
 -- newer module version so a running recovery is not orphaned.
@@ -175,13 +175,22 @@ M.carrierTypeHints = {
   "Type_071", "Hermes", "Clemenceau", "Charles", "Wasp", "America",
 }
 
--- DCS `Unit.getDesc().attributes` strings used for classification. Mod
+-- DCS `Unit.getDesc().attributes` strings used for classification, verified
+-- on a live server (2026-09-05): a CVN carries `Aircraft Carriers`,
+-- `AircraftCarrier`, `AircraftCarrier With Catapult`, `AircraftCarrier With
+-- Arresting Gear`, `catapult`, `Arresting Gear`; the LHA-1 Tarawa carries
+-- `Aircraft Carriers`, `AircraftCarrier`, `AircraftCarrier With Tramplin`,
+-- `ski_jump` and nothing about helicopters; `HelicopterCarrier` only means a
+-- helipad and is present on the Moskva, Neustrashimy and Arleigh Burke. Mod
 -- authors are inconsistent; keep the whole table in this one place.
 M.deckAttributes = {
-  catapult = { "AircraftCarrier With Catapult" },
-  arrestingGear = { "AircraftCarrier With Arresting Gear" },
-  aircraftCarrier = { "AircraftCarrier" },
-  vstol = { "HelicopterCarrier", "Landing Ships" },
+  catapult = { "AircraftCarrier With Catapult", "catapult" },
+  arrestingGear = { "AircraftCarrier With Arresting Gear", "Arresting Gear" },
+  -- Any of these marks a fixed-wing deck; without catapult or wires it is a
+  -- VSTOL (or ski-jump) deck.
+  aircraftCarrier = { "Aircraft Carriers", "AircraftCarrier", "AircraftCarrier With Tramplin", "ski_jump" },
+  -- Helipad or landing-ship flags: a carrier only when the type name says so.
+  helipad = { "HelicopterCarrier", "Landing Ships" },
 }
 
 -- `getDesc().attributes` is a set (`{ ["Ships"] = true }`) in DCS; accept a
@@ -223,9 +232,13 @@ end
 --- type name. Returns deck_class or nil when the ship is not a carrier, plus
 --- the list of attribute strings that decided it:
 ---   catobar  catapult attribute present
----   stobar   arresting gear or bare AircraftCarrier attribute, no catapult
----   vstol    HelicopterCarrier or Landing Ships, nothing above
+---   stobar   arresting gear without catapult (Kuznetsov: ski jump + wires)
+---   vstol    a fixed-wing deck attribute with neither catapult nor wires
+---            (LHA-1 Tarawa), or a helipad / landing-ship flag on a hull
+---            whose type name hints at a carrier (modded LHDs)
 ---   unknown  type name hints at a carrier but no attribute matched
+--- A bare helipad flag (`HelicopterCarrier`) is not a carrier: destroyers
+--- and cruisers carry it too.
 function M.classifyDeck(desc, typeName)
   desc = type(desc) == "table" and desc or {}
   typeName = typeName or desc.typeName
@@ -240,13 +253,15 @@ function M.classifyDeck(desc, typeName)
     anyAttribute(set, attrs.aircraftCarrier, matched)
     return "stobar", matched
   end
-  if anyAttribute(set, attrs.vstol, matched) then
+  if anyAttribute(set, attrs.aircraftCarrier, matched) then
     return "vstol", matched
   end
-  if anyAttribute(set, attrs.aircraftCarrier, matched) then
-    return "stobar", matched
+  local hinted = M.typeNameLooksLikeCarrier(typeName)
+  if anyAttribute(set, attrs.helipad, matched) then
+    if hinted then return "vstol", matched end
+    return nil, matched
   end
-  if M.typeNameLooksLikeCarrier(typeName) then
+  if hinted then
     return "unknown", matched
   end
   return nil, matched
@@ -452,11 +467,23 @@ end
 -- Live data
 -- ---------------------------------------------------------------------------
 
+-- Late-activated groups exist for the scripting engine (`isExist` is true,
+-- they have a position) but are not in the world yet: `isActive` is false and
+-- they are absent from the F10 map. Foothold uses such placeholders ("FOB
+-- ALPHA") for ships it may spawn later.
+local function unitIsActive(unit)
+  if not unit or not unit.isActive then return true end
+  local ok, active = pcall(unit.isActive, unit)
+  if ok and active == false then return false end
+  return true
+end
+M.unitIsActive = unitIsActive
+
 local function leadUnit(groupName)
   local group = Group.getByName(groupName)
   if not group or not group:isExist() or group:getSize() == 0 then return nil end
   local lead = group:getUnit(1)
-  if not lead or not lead:isExist() then return nil end
+  if not lead or not lead:isExist() or not unitIsActive(lead) then return nil end
   return group, lead
 end
 
@@ -581,7 +608,7 @@ end
 local function describeCarrier(group, side)
   if not group or not group:isExist() or group:getSize() == 0 then return nil end
   local lead = group:getUnit(1)
-  if not lead or not lead:isExist() then return nil end
+  if not lead or not lead:isExist() or not unitIsActive(lead) then return nil end
   local typeName = lead.getTypeName and lead:getTypeName() or ""
   local deckClass, matched = M.classifyDeck(unitDesc(lead), typeName)
   if not deckClass then return nil end
@@ -601,8 +628,9 @@ local function describeCarrier(group, side)
   }
 end
 
---- Every ship group in the mission whose lead unit classifies as a carrier
---- (see classifyDeck), for all three coalitions, sorted by group name.
+--- Every active ship group in the mission whose lead unit classifies as a
+--- carrier (see classifyDeck), for all three coalitions, sorted by group name.
+--- Late-activated placeholders are skipped until the mission activates them.
 function M.listCarriers()
   local carriers = {}
   local sides = { 0, 1, 2 }

@@ -19,21 +19,54 @@ Where things landed:
 
 Deviations from the plan text below:
 
-- **Attribute strings were not verified on a live server** (Phase A step 1): no DCS instance was
-  reachable while implementing. The classification uses the DCS attribute names
-  `AircraftCarrier With Catapult`, `AircraftCarrier With Arresting Gear`, `AircraftCarrier`,
-  `HelicopterCarrier` and `Landing Ships`. The rule differs slightly from the table in D1 so the
-  Kuznetsov (arresting gear, no catapult) lands in `stobar`: catapult means `catobar`; arresting
-  gear or a bare `AircraftCarrier` means `stobar`; `HelicopterCarrier` or `Landing Ships` means
-  `vstol` (checked before bare `AircraftCarrier`, so a VSTOL mod that also claims `AircraftCarrier`
-  stays `vstol`); a type-name hint alone means `unknown`. Verify with
-  `return Unit.getByName("<unit>"):getDesc().attributes` on the Console page and correct
-  `CarrierRecovery.deckAttributes` if a hull is misclassified.
+- **Attribute strings verified on the live server** (Phase A step 1, done after the first
+  deployment) and the D1 table corrected. What DCS actually reports on `getDesc().attributes`:
+
+  | Hull | Relevant attributes |
+  | --- | --- |
+  | CVN-72 `CVN_72`, CVN-74 `Stennis` | `Aircraft Carriers`, `AircraftCarrier`, `AircraftCarrier With Catapult`, `AircraftCarrier With Arresting Gear`, `catapult`, `Arresting Gear`, `ACLS`, `Link4` |
+  | LHA-1 Tarawa `LHA_Tarawa` | `Aircraft Carriers`, `AircraftCarrier`, `AircraftCarrier With Tramplin`, `ski_jump` (no helicopter attribute at all) |
+  | HMS Invincible mod `hms_invincible` | identical to the Tarawa set (the mod copied it), so it classifies `vstol` on attributes alone |
+  | Moskva `MOSCOW`, Neustrashimy `NEUSTRASH`, Arleigh Burke `USS_Arleigh_Burke_IIa`, Perry `PERRY`, HMS Ariadne `leander-gun-ariadne` | `HelicopterCarrier` (a helipad flag), `Cruisers` / `Frigates` |
+  | Rezky, Molniya, Grisha, La Combattante, Type 021, speedboats | nothing carrier-related |
+
+  Confirmed on a second mission (Foothold Syria, 2026-09-05) after deploying module 1.1.1: exactly
+  the two CVNs, the Tarawa and the HMS Invincible were listed, with the right classes, and every
+  helipad-only warship was excluded. That mission names the Invincible group "Tarawa", which the
+  old hard-coded page would have drawn with the Tarawa deck; the profile now follows the type name.
+- **Late-activated placeholders** (module 1.1.2): the Foothold Syria mission carries an LHA-1
+  Tarawa group named "FOB ALPHA" that Foothold may spawn later. For the scripting engine it
+  exists (`isExist()` true, it has a position and a life value) but `Unit.isActive()` is false and
+  it is on nobody's F10 map. `listCarriers` skips inactive lead units and `windData` treats them as
+  unavailable, so the panel list only shows ships that are in the world; when the mission activates
+  one, it appears in the radar stream and triggers the automatic list refresh.
+
+  The first rule (helipad means VSTOL) therefore listed three warships and put the Tarawa in
+  `stobar`. The rule now is: catapult means `catobar`; arresting gear without catapult means
+  `stobar` (the Kuznetsov's expected `AircraftCarrier With Tramplin` plus wires); any other
+  fixed-wing deck attribute (`Aircraft Carriers`, `AircraftCarrier`, `AircraftCarrier With
+  Tramplin`, `ski_jump`) means `vstol`; `HelicopterCarrier` or `Landing Ships` counts only when the
+  type name also hints at a carrier (modded LHDs), otherwise the ship is not listed; a type-name
+  hint alone means `unknown`. The Kuznetsov set is still an expectation, not a measurement: check it
+  with `return Unit.getByName("<unit>"):getDesc().attributes` on the Console page the first time
+  one is in a mission and correct `CarrierRecovery.deckAttributes` if needed.
+- Validation checklist items 1 (detection and one batched request), 5 (one Eval for several
+  synced ships) and the target-isolation part of 7 were confirmed on the live Foothold mission
+  on 2026-09-05: CVN-72 (Foothold), CVN-74 and Tarawa detected; `GET /api/airboss?names=` returned
+  all of them plus a clean error for an unknown name; setting CVN-74 to 26 kt left CVN-72 at 24 kt
+  and did not touch `CarrierRecoveryTargetWodKt`; out-of-range values are rejected with 400.
 - The Sync checkbox drives the batched poll only; the deck view and the wheel's actual heading
   always come from the radar stream, as designed. The wheel's "not synced" state keeps the last
   wind received while the panel was synced.
-- The lost state is derived from the stream (ships present, this one absent) and the tag shows
-  the time the ship disappeared rather than a last-seen timestamp.
+- The lost state: while a panel is synced the controller poll is the authority, so the ship is
+  lost only when the poll answers "not available"; unsynced, it is lost when the stream carried
+  the ship before and dropped it. The tag shows the time the ship disappeared. This matters
+  because the radar stream only broadcasts unit **changes** from the moment the browser connects
+  (the backend does not replay a snapshot), so a stationary ship such as the Foothold "FOB ALPHA"
+  Tarawa never appears in it; its panel then draws the deck from the controller's position and
+  heading, tagged "STATIC · HEADING FROM CONTROLLER", and cannot show parked aircraft. Replaying
+  the last known frame per unit to new SSE subscribers would lift that limit for the radar page
+  too and is left as a follow-up.
 - The Target WOD value is persisted only once the user changes it; until then the panel shows the
   controller's reported target so a reload does not pin the mission default as an override.
 - `docs/src/openapi.json` was regenerated; `docs/book/` (the built book) was left as is.
@@ -71,16 +104,16 @@ Add `CarrierRecovery.listCarriers()` to the Lua module. It walks `coalition.getG
 Group.Category.SHIP)` for both coalitions, reads the lead unit's `getDesc().attributes` and type
 name, and classifies:
 
-| `deck_class` | Rule (attributes from `Unit.getDesc`) | Examples |
+| `deck_class` | Rule (attributes from `Unit.getDesc`, as verified live, see the deviations above) | Examples |
 | --- | --- | --- |
-| `catobar` | `AircraftCarrier With Catapult` or `AircraftCarrier With Arresting Gear` | CVN-71/72/73/75, Stennis, Forrestal |
-| `stobar` | `AircraftCarrier` without catapult attribute | Kuznetsov |
-| `vstol` | `HelicopterCarrier` or `Landing Ships`, no arresting gear | LHA-1 Tarawa, HMS Invincible, Type 071 |
-| `unknown` | Type-name hint matched (`CV`, `CVN`, `LHA`, `Carrier`, `Invincible`, `Essex`, `Ark`) but no attribute matched | modded hulls with unusual attributes |
+| `catobar` | `AircraftCarrier With Catapult` | CVN-71/72/73/75, Stennis, Forrestal |
+| `stobar` | `AircraftCarrier With Arresting Gear` without catapult | Kuznetsov (expected) |
+| `vstol` | `Aircraft Carriers`, `AircraftCarrier`, `AircraftCarrier With Tramplin` or `ski_jump` with neither catapult nor wires; or `HelicopterCarrier` / `Landing Ships` on a hull whose type name hints at a carrier | LHA-1 Tarawa, HMS Invincible, Juan Carlos, Type 071 |
+| `unknown` | Type-name hint matched (`CV`, `CVN`, `LHA`, `Carrier`, `Invincible`, `Essex`, `Ark`, ...) but no attribute matched | modded hulls with unusual attributes |
 
-Ships with none of the above are not returned. The exact attribute strings must be verified on the
-server before coding (Phase A step 1) because mod authors are inconsistent; the classification table
-lives in one Lua function so it is cheap to correct.
+Ships with none of the above are not returned; in particular a bare `HelicopterCarrier` (the DCS
+helipad flag carried by the Moskva, Neustrashimy and Arleigh Burke) is not a carrier. Mod authors
+are inconsistent, so the classification table lives in one Lua function and is cheap to correct.
 
 The page calls this once on load and on a **Refresh** button. Between refreshes the radar stream
 keeps the list live: a carrier that dies disappears from the stream and its panel greys out; a ship
