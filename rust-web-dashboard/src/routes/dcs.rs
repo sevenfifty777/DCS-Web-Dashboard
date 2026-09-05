@@ -683,12 +683,30 @@ pub struct AirbossDataResponse {
     pub angled_deck_min_wind: f64,
     /// `foothold` when the Foothold BattleCommander manages this group, else `standalone`.
     pub backend: String,
+    /// Deck classification: `catobar`, `stobar`, `vstol`, `unknown`, or absent for a non-carrier ship.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub deck_class: Option<String>,
+    /// Coalition of the group (0 neutral, 1 red, 2 blue).
+    pub coalition: i32,
+    /// Recovery phase: `normal`, `pending`, `aligning` or `active`.
+    pub recovery_phase: String,
+}
+
+/// Batched telemetry: one entry per requested group name. A ship that is not
+/// in the mission gets `{ "error": "<name> is not available." }` instead.
+#[derive(serde::Serialize, utoipa::ToSchema)]
+pub struct AirbossReportsResponse {
+    #[schema(value_type = std::collections::HashMap<String, AirbossDataResponse>)]
+    pub reports: serde_json::Value,
 }
 
 #[derive(Deserialize, utoipa::IntoParams)]
 pub struct AirbossQuery {
-    /// Carrier group name (defaults to `CVN-72`).
+    /// Carrier group name (defaults to `CVN-72`). Ignored when `names` is given.
     name: Option<String>,
+    /// Comma-separated carrier group names. When present the response is
+    /// `{ "reports": { <name>: <report> } }` and costs one mission Eval for all of them.
+    names: Option<String>,
 }
 
 #[utoipa::path(
@@ -698,12 +716,37 @@ pub struct AirbossQuery {
     security(("jwt" = [])),
     params(AirbossQuery),
     responses(
-        (status = 200, description = "Current carrier telemetry and recovery solution", body = AirbossDataResponse),
+        (status = 200, description = "Current carrier telemetry and recovery solution (one report with `name`, `{ reports }` with `names`)", body = AirbossDataResponse),
         (status = 400, description = "Invalid carrier group name"),
-        (status = 404, description = "Carrier group not found in the mission")
+        (status = 404, description = "Carrier group not found in the mission (single-name form only)")
     )
 )]
 pub async fn airboss_data(_user: AuthUser, State(state): State<AppState>, Query(q): Query<AirbossQuery>) -> Response {
+    if let Some(names) = q.names.as_deref() {
+        let names = match carrier_recovery::parse_group_names(names) {
+            Ok(names) => names,
+            Err(message) => return bad_request(&message),
+        };
+        return match eval_controller(&state, carrier_recovery::wind_reports_scripts(&names)).await {
+            Ok(json) => {
+                let reports = json.get("reports").cloned().unwrap_or(serde_json::Value::Null);
+                if reports.is_object() {
+                    Json(AirbossReportsResponse { reports }).into_response()
+                } else if reports.is_array() && reports.as_array().is_some_and(|a| a.is_empty()) {
+                    // An empty Lua table serialises as a list.
+                    Json(AirbossReportsResponse { reports: json!({}) }).into_response()
+                } else {
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(json!({ "error": "Invalid json from carrier recovery script" })),
+                    )
+                        .into_response()
+                }
+            }
+            Err(e) => err_detail("Failed to evaluate carrier recovery script", e),
+        };
+    }
+
     let carrier = q.name.as_deref().unwrap_or(carrier_recovery::DEFAULT_GROUP);
     if !carrier_recovery::is_valid_group_name(carrier) {
         return bad_request("Invalid carrier group name");
@@ -723,6 +766,132 @@ pub async fn airboss_data(_user: AuthUser, State(state): State<AppState>, Query(
             }
         }
         Err(e) => err_detail("Failed to evaluate carrier recovery script", e),
+    }
+}
+
+/// One carrier-type ship group detected in the mission.
+#[derive(serde::Serialize, utoipa::ToSchema)]
+pub struct AirbossCarrier {
+    /// Mission Editor group name (what every other airboss call takes).
+    pub group: String,
+    /// Name of the lead unit.
+    pub unit: String,
+    /// DCS unit type name of the lead ship (e.g. `CVN_72`, `LHA_Tarawa`).
+    #[serde(rename = "type")]
+    pub type_name: String,
+    /// 0 neutral, 1 red, 2 blue.
+    pub coalition: i32,
+    /// `catobar`, `stobar`, `vstol` or `unknown` (type-name hint only).
+    pub deck_class: String,
+    /// DCS attributes that decided the classification.
+    pub attributes: Vec<String>,
+    /// Angled-deck offset the controller uses for this hull, degrees.
+    pub deck_offset: f64,
+    /// Target wind over deck currently in force for this group, knots.
+    pub target_wod: f64,
+    /// `foothold` or `standalone`.
+    pub backend: String,
+    /// `normal`, `pending`, `aligning` or `active`.
+    pub recovery_phase: String,
+}
+
+#[derive(serde::Serialize, utoipa::ToSchema)]
+pub struct AirbossCarriersResponse {
+    #[schema(value_type = Vec<AirbossCarrier>)]
+    pub carriers: serde_json::Value,
+    /// Version of the Lua controller that answered.
+    pub version: String,
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/airboss/carriers",
+    tags = ["dcs"],
+    security(("jwt" = [])),
+    responses(
+        (status = 200, description = "Every carrier-type ship group in the running mission", body = AirbossCarriersResponse)
+    )
+)]
+pub async fn airboss_carriers(_user: AuthUser, State(state): State<AppState>) -> Response {
+    match eval_controller(&state, carrier_recovery::list_carriers_scripts()).await {
+        Ok(json) => {
+            let carriers = match json.get("carriers") {
+                Some(v) if v.is_array() => v.clone(),
+                // An empty Lua table may serialise as `{}`.
+                Some(v) if v.is_object() && v.as_object().is_some_and(|o| o.is_empty()) => json!([]),
+                _ => {
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(json!({ "error": "Invalid json from carrier recovery script" })),
+                    )
+                        .into_response()
+                }
+            };
+            let version = json
+                .get("version")
+                .and_then(|v| v.as_str())
+                .unwrap_or(carrier_recovery::MODULE_VERSION)
+                .to_string();
+            Json(AirbossCarriersResponse { carriers, version }).into_response()
+        }
+        Err(e) => err_detail("Failed to list carriers", e),
+    }
+}
+
+#[derive(Deserialize, utoipa::ToSchema)]
+pub struct AirbossConfigPayload {
+    /// Carrier group name.
+    pub carrier: String,
+    /// Target wind over deck for this ship, knots (10 to 45).
+    pub target_wod: f64,
+}
+
+#[derive(serde::Serialize, utoipa::ToSchema)]
+pub struct AirbossConfigResponse {
+    pub carrier_name: String,
+    /// Effective target after clamping, knots.
+    pub target_wod: f64,
+    pub backend: String,
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/airboss/config",
+    tags = ["dcs"],
+    security(("jwt" = [])),
+    request_body = AirbossConfigPayload,
+    responses(
+        (status = 200, description = "Per-carrier target applied", body = AirbossConfigResponse),
+        (status = 400, description = "Invalid carrier group name or target out of range")
+    )
+)]
+pub async fn airboss_config(_user: AuthUser, State(state): State<AppState>, Json(payload): Json<AirbossConfigPayload>) -> Response {
+    if !carrier_recovery::is_valid_group_name(&payload.carrier) {
+        return bad_request("Invalid carrier group name");
+    }
+    if !carrier_recovery::is_valid_target_wod(payload.target_wod) {
+        return bad_request(&format!(
+            "target_wod must be between {} and {} kt",
+            carrier_recovery::TARGET_WOD_MIN_KT,
+            carrier_recovery::TARGET_WOD_MAX_KT
+        ));
+    }
+    match eval_controller(&state, carrier_recovery::group_config_scripts(&payload.carrier, payload.target_wod)).await {
+        Ok(json) => {
+            if let Some(err) = json.get("error").and_then(|v| v.as_str()) {
+                (StatusCode::BAD_REQUEST, Json(json!({ "error": err }))).into_response()
+            } else if json.is_object() {
+                tracing::info!("carrier {} target WOD set to {} kt", payload.carrier, payload.target_wod);
+                Json(json).into_response()
+            } else {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({ "error": "Invalid json from carrier recovery script" })),
+                )
+                    .into_response()
+            }
+        }
+        Err(e) => err_detail("Failed to apply carrier configuration", e),
     }
 }
 

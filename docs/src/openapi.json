@@ -20,7 +20,19 @@
           {
             "name": "name",
             "in": "query",
-            "description": "Carrier group name (defaults to `CVN-72`).",
+            "description": "Carrier group name (defaults to `CVN-72`). Ignored when `names` is given.",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "names",
+            "in": "query",
+            "description": "Comma-separated carrier group names. When present the response is\n`{ \"reports\": { <name>: <report> } }` and costs one mission Eval for all of them.",
             "required": false,
             "schema": {
               "type": [
@@ -32,7 +44,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Current carrier telemetry and recovery solution",
+            "description": "Current carrier telemetry and recovery solution (one report with `name`, `{ reports }` with `names`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -45,7 +57,7 @@
             "description": "Invalid carrier group name"
           },
           "404": {
-            "description": "Carrier group not found in the mission"
+            "description": "Carrier group not found in the mission (single-name form only)"
           }
         },
         "security": [
@@ -93,6 +105,69 @@
           },
           "422": {
             "description": "Recovery leg unsafe (land clearance) or circuit could not be restored"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/airboss/carriers": {
+      "get": {
+        "tags": [
+          "dcs"
+        ],
+        "operationId": "airboss_carriers",
+        "responses": {
+          "200": {
+            "description": "Every carrier-type ship group in the running mission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AirbossCarriersResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/airboss/config": {
+      "post": {
+        "tags": [
+          "dcs"
+        ],
+        "operationId": "airboss_config",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AirbossConfigPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Per-carrier target applied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AirbossConfigResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid carrier group name or target out of range"
           }
         },
         "security": [
@@ -1335,6 +1410,128 @@
           }
         }
       },
+      "AirbossCarrier": {
+        "type": "object",
+        "description": "One carrier-type ship group detected in the mission.",
+        "required": [
+          "group",
+          "unit",
+          "type",
+          "coalition",
+          "deck_class",
+          "attributes",
+          "deck_offset",
+          "target_wod",
+          "backend",
+          "recovery_phase"
+        ],
+        "properties": {
+          "attributes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "DCS attributes that decided the classification."
+          },
+          "backend": {
+            "type": "string",
+            "description": "`foothold` or `standalone`."
+          },
+          "coalition": {
+            "type": "integer",
+            "format": "int32",
+            "description": "0 neutral, 1 red, 2 blue."
+          },
+          "deck_class": {
+            "type": "string",
+            "description": "`catobar`, `stobar`, `vstol` or `unknown` (type-name hint only)."
+          },
+          "deck_offset": {
+            "type": "number",
+            "format": "double",
+            "description": "Angled-deck offset the controller uses for this hull, degrees."
+          },
+          "group": {
+            "type": "string",
+            "description": "Mission Editor group name (what every other airboss call takes)."
+          },
+          "recovery_phase": {
+            "type": "string",
+            "description": "`normal`, `pending`, `aligning` or `active`."
+          },
+          "target_wod": {
+            "type": "number",
+            "format": "double",
+            "description": "Target wind over deck currently in force for this group, knots."
+          },
+          "type": {
+            "type": "string",
+            "description": "DCS unit type name of the lead ship (e.g. `CVN_72`, `LHA_Tarawa`)."
+          },
+          "unit": {
+            "type": "string",
+            "description": "Name of the lead unit."
+          }
+        }
+      },
+      "AirbossCarriersResponse": {
+        "type": "object",
+        "required": [
+          "carriers",
+          "version"
+        ],
+        "properties": {
+          "carriers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AirbossCarrier"
+            }
+          },
+          "version": {
+            "type": "string",
+            "description": "Version of the Lua controller that answered."
+          }
+        }
+      },
+      "AirbossConfigPayload": {
+        "type": "object",
+        "required": [
+          "carrier",
+          "target_wod"
+        ],
+        "properties": {
+          "carrier": {
+            "type": "string",
+            "description": "Carrier group name."
+          },
+          "target_wod": {
+            "type": "number",
+            "format": "double",
+            "description": "Target wind over deck for this ship, knots (10 to 45)."
+          }
+        }
+      },
+      "AirbossConfigResponse": {
+        "type": "object",
+        "required": [
+          "carrier_name",
+          "target_wod",
+          "backend"
+        ],
+        "properties": {
+          "backend": {
+            "type": "string"
+          },
+          "carrier_name": {
+            "type": "string"
+          },
+          "target_wod": {
+            "type": "number",
+            "format": "double",
+            "description": "Effective target after clamping, knots."
+          }
+        }
+      },
       "AirbossDataResponse": {
         "type": "object",
         "description": "Telemetry and recovery solution for one carrier group, as returned by the\nLua controller's `windReport`.",
@@ -1357,7 +1554,9 @@
           "min_speed",
           "max_speed",
           "angled_deck_min_wind",
-          "backend"
+          "backend",
+          "coalition",
+          "recovery_phase"
         ],
         "properties": {
           "angled_deck_min_wind": {
@@ -1387,6 +1586,18 @@
             "type": "number",
             "format": "double"
           },
+          "coalition": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Coalition of the group (0 neutral, 1 red, 2 blue)."
+          },
+          "deck_class": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Deck classification: `catobar`, `stobar`, `vstol`, `unknown`, or absent for a non-carrier ship."
+          },
           "deck_offset": {
             "type": "number",
             "format": "double",
@@ -1409,6 +1620,10 @@
             "type": "number",
             "format": "double",
             "description": "Course the controller would steer for a recovery, degrees true."
+          },
+          "recovery_phase": {
+            "type": "string",
+            "description": "Recovery phase: `normal`, `pending`, `aligning` or `active`."
           },
           "recovery_speed": {
             "type": "number",
@@ -1447,6 +1662,24 @@
             "type": "number",
             "format": "double",
             "description": "Wind over deck on the current course, knots."
+          }
+        }
+      },
+      "AirbossReportsResponse": {
+        "type": "object",
+        "description": "Batched telemetry: one entry per requested group name. A ship that is not\nin the mission gets `{ \"error\": \"<name> is not available.\" }` instead.",
+        "required": [
+          "reports"
+        ],
+        "properties": {
+          "reports": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/AirbossDataResponse"
+            },
+            "propertyNames": {
+              "type": "string"
+            }
           }
         }
       },

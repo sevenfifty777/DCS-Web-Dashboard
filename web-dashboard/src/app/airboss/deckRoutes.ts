@@ -1,6 +1,7 @@
 import type { DeckPosition, ParkingSpot } from './deckTracking';
 
-export type DeckId = 'carrier' | 'tarawa';
+/** Deck profile key (see deckProfiles.ts); kept as an alias for older imports. */
+export type DeckId = string;
 
 export interface DeckLaunchRoute {
   id: string;

@@ -37,6 +37,8 @@ use utoipa_swagger_ui::SwaggerUi;
         dcs::mission_action,
         dcs::airboss_data,
         dcs::airboss_action,
+        dcs::airboss_carriers,
+        dcs::airboss_config,
         dcs::kick_player,
         dcs::ban_player,
         dcs::unban_player,
@@ -77,6 +79,8 @@ use utoipa_swagger_ui::SwaggerUi;
             dcs::ConsoleBody, dcs::SetFlagBody, dcs::MissionBody, dcs::MissionPayload,
             dcs::PlayerActionBody, dcs::AnnouncementBody,
             dcs::AirbossDataResponse, dcs::AirbossActionPayload, dcs::AirbossActionResponse,
+            dcs::AirbossReportsResponse, dcs::AirbossCarrier, dcs::AirbossCarriersResponse,
+            dcs::AirbossConfigPayload, dcs::AirbossConfigResponse,
             system::TaskActionBody, system::WeatherApplyBody, system::DcsProcessAction, system::SrsProcessAction,
             system::WindowsServiceStatus, system::WindowsServiceAction,
             crate::lso::LsoPass, crate::lso::LsoPassesResponse, crate::lso::LsoStatus,
@@ -161,6 +165,8 @@ pub fn router() -> Router<AppState> {
         )
         .route("/api/airboss", get(dcs::airboss_data))
         .route("/api/airboss/action", post(dcs::airboss_action))
+        .route("/api/airboss/carriers", get(dcs::airboss_carriers))
+        .route("/api/airboss/config", post(dcs::airboss_config))
         // Filesystem- and OS-backed endpoints (session-protected).
         .route(
             "/api/settings",

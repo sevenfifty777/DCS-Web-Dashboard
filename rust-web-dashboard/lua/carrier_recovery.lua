@@ -11,7 +11,12 @@
   Public API (all group names are Mission Editor group names):
     CarrierRecovery.VERSION
     CarrierRecovery.solve(params)              pure solver, no DCS calls
+    CarrierRecovery.classifyDeck(desc, type)   pure deck classification
+    CarrierRecovery.listCarriers()             every carrier-type ship group
     CarrierRecovery.windData(groupName)        live ship + wind + solution
+    CarrierRecovery.windReport(groupName)      plain-data windData
+    CarrierRecovery.windReports(names)         batched windReport, keyed by name
+    CarrierRecovery.setGroupOverrides(name, t) per-ship tunables (targetWodKt)
     CarrierRecovery.start(groupName, groupId)  -> ok, message
     CarrierRecovery.restore(reason, groupName, groupId) -> ok, message
     CarrierRecovery.status(groupName, groupId) -> table
@@ -25,7 +30,7 @@
 CarrierRecovery = CarrierRecovery or {}
 local M = CarrierRecovery
 
-M.VERSION = "1.0.0"
+M.VERSION = "1.1.0"
 
 -- Active recoveries keyed by group name. Preserved across a re-injection of a
 -- newer module version so a running recovery is not orphaned.
@@ -80,8 +85,19 @@ local FOOTHOLD_GLOBALS = {
 -- before this file loads, or assign CarrierRecovery.overrides at runtime.
 M.overrides = M.overrides or {}
 
+-- Per-group overrides set from the dashboard (`setGroupOverrides`). They win
+-- over everything else for that group only. Preserved across re-injection.
+M.groupOverrides = M.groupOverrides or {}
+
+-- Bounds applied to a per-group target wind over deck, knots.
+M.TARGET_WOD_MIN_KT = 10
+M.TARGET_WOD_MAX_KT = 45
+
 --- Effective configuration, resolved on every call so runtime changes apply.
-function M.config()
+--- Resolution order: defaults, Foothold globals, `CarrierRecoveryConfig`,
+--- `CarrierRecovery.overrides`, then the group's own overrides when a group
+--- name is given.
+function M.config(groupName)
   local cfg = {}
   for key, value in pairs(M.defaults) do cfg[key] = value end
   for key, globalName in pairs(FOOTHOLD_GLOBALS) do
@@ -99,17 +115,161 @@ function M.config()
     for key, value in pairs(missionOverrides) do cfg[key] = value end
   end
   for key, value in pairs(M.overrides) do cfg[key] = value end
+  local groupOverrides = groupName and M.groupOverrides[groupName] or nil
+  if type(groupOverrides) == "table" then
+    for key, value in pairs(groupOverrides) do cfg[key] = value end
+  end
   return cfg
 end
 
+local function clamp(value, low, high)
+  if value < low then return low end
+  if value > high then return high end
+  return value
+end
+
+--- Set (or clear, with `clearTargetWodKt = true`) per-group tunables. Only
+--- `targetWodKt` is accepted today; it is clamped to
+--- [TARGET_WOD_MIN_KT, TARGET_WOD_MAX_KT]. For a group that Foothold manages,
+--- the target is also written to the `CarrierRecoveryTargetWodKt` global
+--- because Foothold's own solver reads it on every call. Returns the
+--- effective values for the group.
+function M.setGroupOverrides(groupName, values)
+  if type(groupName) ~= "string" or groupName == "" then
+    return { error = "group name required" }
+  end
+  values = type(values) == "table" and values or {}
+  local current = M.groupOverrides[groupName] or {}
+  if values.targetWodKt ~= nil then
+    local target = tonumber(values.targetWodKt)
+    if not target then
+      return { error = "targetWodKt must be a number", carrier_name = groupName }
+    end
+    target = clamp(target, M.TARGET_WOD_MIN_KT, M.TARGET_WOD_MAX_KT)
+    current.targetWodKt = target
+    if M.backend(groupName) == "foothold" then
+      _G.CarrierRecoveryTargetWodKt = target
+    end
+  elseif values.clearTargetWodKt then
+    current.targetWodKt = nil
+  end
+  if next(current) == nil then
+    M.groupOverrides[groupName] = nil
+  else
+    M.groupOverrides[groupName] = current
+  end
+  local cfg = M.config(groupName)
+  return {
+    carrier_name = groupName,
+    target_wod = cfg.targetWodKt,
+    backend = M.backend(groupName),
+  }
+end
+
+-- Type-name fragments (case-insensitive) that mark a hull as a probable
+-- carrier when its DCS attributes do not say so (modded hulls). Mirrors
+-- CARRIER_TYPE_HINTS in the page's carrierDetection.ts.
+M.carrierTypeHints = {
+  "CVN", "CV_", "CV-", "LHA", "LHD", "Carrier", "Invincible", "Essex", "Ark",
+  "Kuznetsov", "KUZNECOW", "1143", "Stennis", "Forrestal", "Tarawa", "Juan_Carlos",
+  "Type_071", "Hermes", "Clemenceau", "Charles", "Wasp", "America",
+}
+
+-- DCS `Unit.getDesc().attributes` strings used for classification. Mod
+-- authors are inconsistent; keep the whole table in this one place.
+M.deckAttributes = {
+  catapult = { "AircraftCarrier With Catapult" },
+  arrestingGear = { "AircraftCarrier With Arresting Gear" },
+  aircraftCarrier = { "AircraftCarrier" },
+  vstol = { "HelicopterCarrier", "Landing Ships" },
+}
+
+-- `getDesc().attributes` is a set (`{ ["Ships"] = true }`) in DCS; accept a
+-- plain list as well so hand-written tables and mods both work.
+local function attributeSet(attributes)
+  local set = {}
+  if type(attributes) ~= "table" then return set end
+  for key, value in pairs(attributes) do
+    if type(key) == "string" then
+      if value then set[key] = true end
+    elseif type(value) == "string" then
+      set[value] = true
+    end
+  end
+  return set
+end
+
+local function anyAttribute(set, names, matched)
+  local hit = false
+  for _, name in ipairs(names) do
+    if set[name] then
+      hit = true
+      matched[#matched + 1] = name
+    end
+  end
+  return hit
+end
+
+function M.typeNameLooksLikeCarrier(typeName)
+  local name = string.lower(tostring(typeName or ""))
+  if name == "" then return false end
+  for _, hint in ipairs(M.carrierTypeHints) do
+    if name:find(string.lower(hint), 1, true) then return true end
+  end
+  return false
+end
+
+--- Pure deck classification from a unit description (`Unit.getDesc()`) and
+--- type name. Returns deck_class or nil when the ship is not a carrier, plus
+--- the list of attribute strings that decided it:
+---   catobar  catapult attribute present
+---   stobar   arresting gear or bare AircraftCarrier attribute, no catapult
+---   vstol    HelicopterCarrier or Landing Ships, nothing above
+---   unknown  type name hints at a carrier but no attribute matched
+function M.classifyDeck(desc, typeName)
+  desc = type(desc) == "table" and desc or {}
+  typeName = typeName or desc.typeName
+  local set = attributeSet(desc.attributes)
+  local matched = {}
+  local attrs = M.deckAttributes
+  if anyAttribute(set, attrs.catapult, matched) then
+    anyAttribute(set, attrs.arrestingGear, matched)
+    return "catobar", matched
+  end
+  if anyAttribute(set, attrs.arrestingGear, matched) then
+    anyAttribute(set, attrs.aircraftCarrier, matched)
+    return "stobar", matched
+  end
+  if anyAttribute(set, attrs.vstol, matched) then
+    return "vstol", matched
+  end
+  if anyAttribute(set, attrs.aircraftCarrier, matched) then
+    return "stobar", matched
+  end
+  if M.typeNameLooksLikeCarrier(typeName) then
+    return "unknown", matched
+  end
+  return nil, matched
+end
+
 --- Angled-deck offset for a unit type name, in degrees (0 for straight decks).
-function M.deckOffsetForType(typeName, cfg)
+--- `deckClass` (from classifyDeck) takes precedence; the type-name pattern
+--- list stays as the fallback for hulls whose attributes say nothing.
+function M.deckOffsetForType(typeName, cfg, deckClass)
   cfg = cfg or M.config()
+  if deckClass == "vstol" then return 0 end
   local name = tostring(typeName or "")
   for _, pattern in ipairs(cfg.straightDeckTypes or {}) do
     if name:find(pattern, 1, true) then return 0 end
   end
   return tonumber(cfg.angledDeckOffsetDeg) or 9.14
+end
+
+local function unitDesc(unit)
+  if not unit or not unit.getDesc then return nil end
+  local ok, desc = pcall(unit.getDesc, unit)
+  if ok and type(desc) == "table" then return desc end
+  return nil
 end
 
 -- ---------------------------------------------------------------------------
@@ -308,7 +468,7 @@ function M.windData(groupName)
   local pos = lead:getPosition()
   if not point or not pos or not pos.x then return nil end
 
-  local cfg = M.config()
+  local cfg = M.config(groupName)
   local wind = atmosphere.getWind({ x = point.x, y = (point.y or 0) + 18, z = point.z }) or { x = 0, y = 0, z = 0 }
   local headingDeg = M.headingFromUnit(lead) or 0
   local windSpeedKt = math.sqrt(((wind.x or 0) ^ 2) + ((wind.z or 0) ^ 2)) * KNOTS_PER_MPS
@@ -323,7 +483,8 @@ function M.windData(groupName)
   local naturalHeadwindKt = (-(wind.x or 0) * pos.x.x - (wind.z or 0) * pos.x.z) * KNOTS_PER_MPS
   local windOnDeckKt = shipSpeedKt + naturalHeadwindKt
   local typeName = lead.getTypeName and lead:getTypeName() or ""
-  local deckOffsetDeg = M.deckOffsetForType(typeName, cfg)
+  local deckClass = M.classifyDeck(unitDesc(lead), typeName)
+  local deckOffsetDeg = M.deckOffsetForType(typeName, cfg, deckClass)
 
   local solved = M.solve({
     windFromDeg = windFromDeg,
@@ -343,6 +504,7 @@ function M.windData(groupName)
     point = point,
     groupName = groupName,
     typeName = typeName,
+    deckClass = deckClass,
     coalition = group.getCoalition and group:getCoalition() or 2,
     headingDeg = headingDeg,
     windFromDeg = windFromDeg,
@@ -368,6 +530,9 @@ function M.windReport(groupName)
   return {
     carrier_name = groupName,
     type_name = data.typeName,
+    deck_class = data.deckClass,
+    coalition = data.coalition,
+    recovery_phase = M.phase(groupName),
     carrier_u = data.point.x,
     carrier_v = data.point.z,
     brc = data.headingDeg,
@@ -386,6 +551,72 @@ function M.windReport(groupName)
     angled_deck_min_wind = data.angledDeckMinWindKt,
     backend = M.backend(groupName),
   }
+end
+
+--- Batched windReport: one Eval for every synced carrier. Returns
+--- `{ reports = { [groupName] = report } }`; a missing ship gets the same
+--- `{ error = ... }` entry windReport returns.
+function M.windReports(names)
+  local reports = {}
+  for _, name in ipairs(type(names) == "table" and names or {}) do
+    if type(name) == "string" and name ~= "" then
+      reports[name] = M.windReport(name)
+    end
+  end
+  return { reports = reports }
+end
+
+-- ---------------------------------------------------------------------------
+-- Carrier detection
+-- ---------------------------------------------------------------------------
+
+local function shipGroupsForSide(side)
+  local category = (Group and Group.Category and Group.Category.SHIP) or 3
+  if not coalition or not coalition.getGroups then return {} end
+  local ok, groups = pcall(coalition.getGroups, side, category)
+  if ok and type(groups) == "table" then return groups end
+  return {}
+end
+
+local function describeCarrier(group, side)
+  if not group or not group:isExist() or group:getSize() == 0 then return nil end
+  local lead = group:getUnit(1)
+  if not lead or not lead:isExist() then return nil end
+  local typeName = lead.getTypeName and lead:getTypeName() or ""
+  local deckClass, matched = M.classifyDeck(unitDesc(lead), typeName)
+  if not deckClass then return nil end
+  local groupName = group:getName()
+  local cfg = M.config(groupName)
+  return {
+    group = groupName,
+    unit = lead.getName and lead:getName() or groupName,
+    type = typeName,
+    coalition = side,
+    deck_class = deckClass,
+    attributes = matched,
+    deck_offset = M.deckOffsetForType(typeName, cfg, deckClass),
+    target_wod = cfg.targetWodKt,
+    backend = M.backend(groupName),
+    recovery_phase = M.phase(groupName),
+  }
+end
+
+--- Every ship group in the mission whose lead unit classifies as a carrier
+--- (see classifyDeck), for all three coalitions, sorted by group name.
+function M.listCarriers()
+  local carriers = {}
+  local sides = { 0, 1, 2 }
+  if coalition and coalition.side then
+    sides = { coalition.side.NEUTRAL or 0, coalition.side.RED or 1, coalition.side.BLUE or 2 }
+  end
+  for _, side in ipairs(sides) do
+    for _, group in ipairs(shipGroupsForSide(side)) do
+      local ok, entry = pcall(describeCarrier, group, side)
+      if ok and entry then carriers[#carriers + 1] = entry end
+    end
+  end
+  table.sort(carriers, function(a, b) return a.group < b.group end)
+  return { carriers = carriers, version = M.VERSION }
 end
 
 -- ---------------------------------------------------------------------------
@@ -545,6 +776,19 @@ function M.backend(groupName)
   return "standalone"
 end
 
+--- Current recovery phase for a group: `pending`, `aligning`, `active` or
+--- `normal`. Reads Foothold's state for a delegated group.
+function M.phase(groupName)
+  if M.backend(groupName) == "foothold" then
+    local recovery = _G.bc and _G.bc.carrierRecoveryIntoWind or nil
+    if type(recovery) == "table" then return recovery.phase or "active" end
+    return "normal"
+  end
+  local recovery = M.active[groupName]
+  if recovery then return recovery.phase or "active" end
+  return "normal"
+end
+
 -- Foothold reports failures only through outTextForGroup; capture that text
 -- so the dashboard can show the reason.
 local function callFootholdCapturing(callback)
@@ -581,7 +825,7 @@ end
 
 function M.start(groupName, groupId)
   groupName = groupName or "CVN-72"
-  local cfg = M.config()
+  local cfg = M.config(groupName)
   if M.backend(groupName) == "foothold" then
     local group = Group.getByName(groupName)
     local id = groupId or (group and group:getID()) or 0
@@ -648,7 +892,7 @@ function M.restore(reason, groupName, groupId)
     sayToGroup(groupId, text)
     return false, text
   end
-  local cfg = M.config()
+  local cfg = M.config(groupName)
   local group, lead = leadUnit(groupName)
   local current = lead and lead:getPoint() or nil
   if group and current then
@@ -676,7 +920,7 @@ function M.monitor(param, time)
   local groupName = param.groupName
   local recovery = M.active[groupName]
   if not recovery or recovery.generation ~= param.generation then return nil end
-  local cfg = M.config()
+  local cfg = M.config(groupName)
   local data = M.windData(groupName)
   if not data then
     if M.restore("unsafe", groupName) then return nil end
@@ -806,6 +1050,8 @@ function M.status(groupName, groupId)
     recovery_heading = data.recoveryHeadingDeg,
     recovery_speed = data.recoverySpeedKt,
     regime = data.regime,
+    target_wod = data.targetWodKt,
+    deck_offset = data.deckOffsetDeg,
     remaining_sec = remaining,
     text = text,
   }
