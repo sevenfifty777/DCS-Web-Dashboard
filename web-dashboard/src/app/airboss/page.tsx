@@ -2,6 +2,15 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { apiFetch } from '@/lib/api';
+import {
+  REGIME_LABELS,
+  SHIP_DEFAULTS,
+  apparentWind,
+  compassStr,
+  solveIntoWind,
+  toRad,
+  type SolverRegime,
+} from './windSolver';
 import { AIRCRAFT_ICON_FILES, aircraftIconForType } from './aircraftIcons';
 import {
   RADAR_BATCH_SETTLE_MS,
@@ -63,6 +72,39 @@ interface SelectedDeckRoutes {
   deckId: DeckId;
   selectionId: string;
   routeIds: string[];
+}
+
+/** What the in-game controller would order right now (from GET /api/airboss). */
+interface ControllerPlan {
+  headingDeg: number;
+  speedKt: number;
+  regime: SolverRegime;
+  backend: string;
+}
+
+/** Status table returned by POST /api/airboss/action with action=status. */
+interface RecoveryStatus {
+  carrier_name: string;
+  backend: string;
+  phase: string;
+  state: string;
+  course: number;
+  wind_from: number;
+  wind_speed: number;
+  headwind: number;
+  wod: number;
+  ship_speed: number;
+  recovery_heading: number;
+  recovery_speed: number;
+  regime: string;
+  remaining_sec: number;
+}
+
+type CarrierAction = 'start' | 'resume' | 'status';
+
+function formatRemaining(seconds: number): string {
+  const whole = Math.max(0, Math.floor(seconds));
+  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')}`;
 }
 
 function drawDeckRouteFlow(
@@ -152,6 +194,15 @@ export default function AirbossPlanner() {
   const [autoSync, setAutoSync] = useState(false);
   const [actualBrc, setActualBrc] = useState<number | null>(null);
   const [actualShipSpd, setActualShipSpd] = useState<number | null>(null);
+  // Ship limits come from the in-game controller while auto-sync is on, so the
+  // page prediction and the ship behaviour use the same numbers.
+  const [shipLimits, setShipLimits] = useState({
+    minSpeedKt: SHIP_DEFAULTS.minSpeedKt,
+    maxSpeedKt: SHIP_DEFAULTS.maxSpeedKt,
+    angledDeckMinWindKt: SHIP_DEFAULTS.angledDeckMinWindKt,
+  });
+  const [controllerPlan, setControllerPlan] = useState<ControllerPlan | null>(null);
+  const [recoveryStatus, setRecoveryStatus] = useState<RecoveryStatus | null>(null);
 
   const [carrierNameInput, setCarrierNameInput] = useState("CVN-72");
   const [carrierName, setCarrierName] = useState<string | null>(null);
@@ -247,6 +298,26 @@ export default function AirbossPlanner() {
           setTargetWod(data.target_wod);
           setActualBrc(data.brc);
           setActualShipSpd(data.ship_spd);
+          if (typeof data.deck_offset === 'number') setOffset(data.deck_offset);
+          if (
+            typeof data.min_speed === 'number'
+            && typeof data.max_speed === 'number'
+            && typeof data.angled_deck_min_wind === 'number'
+          ) {
+            setShipLimits({
+              minSpeedKt: data.min_speed,
+              maxSpeedKt: data.max_speed,
+              angledDeckMinWindKt: data.angled_deck_min_wind,
+            });
+          }
+          if (typeof data.recovery_heading === 'number' && typeof data.recovery_speed === 'number') {
+            setControllerPlan({
+              headingDeg: data.recovery_heading,
+              speedKt: data.recovery_speed,
+              regime: data.regime,
+              backend: data.backend,
+            });
+          }
         }
 
       } catch (err) {
@@ -331,27 +402,44 @@ export default function AirbossPlanner() {
     };
   }, []);
 
-  const handleAction = async (actionStr: string) => {
+  const handleAction = async (actionStr: CarrierAction) => {
+    const carrier = carrierNameInput.trim();
+    if (!carrier) {
+      setActionStatus('Failed: enter the carrier group name first');
+      return;
+    }
+    // Guard against steering a different ship than the one being watched.
+    if (actionStr !== 'status' && carrierName && carrierName !== carrier) {
+      const proceed = window.confirm(
+        `Send "${actionStr}" to ${carrier}? The last telemetry came from ${carrierName}.`,
+      );
+      if (!proceed) return;
+    }
     setActionStatus('Sending command...');
     try {
       const res = await apiFetch('/api/airboss/action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: actionStr }),
+        body: JSON.stringify({ action: actionStr, carrier }),
       });
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        const data = await res.json();
-        if (data.message) {
-          setActionStatus(`${data.message}`);
-          setTimeout(() => setActionStatus(null), 15000);
+        if (actionStr === 'status') {
+          setRecoveryStatus(data as RecoveryStatus);
+          setActionStatus(null);
         } else {
-          setActionStatus(`Command successful: ${actionStr}`);
-          setTimeout(() => setActionStatus(null), 5000);
+          setRecoveryStatus(null);
+          setActionStatus(actionStr === 'start'
+            ? `Turn into wind ordered for ${carrier}`
+            : `${carrier} is resuming its normal circuit`);
+          setTimeout(() => setActionStatus(null), 8000);
         }
       } else {
-        const err = await res.json();
-        setActionStatus(`Failed: ${err.error || 'Unknown error'}`);
-        setTimeout(() => setActionStatus(null), 8000);
+        // 409 (already active / not active) and 422 (unsafe leg) are the
+        // controller declining, not a failure of the dashboard.
+        const prefix = res.status === 409 || res.status === 422 ? 'Refused' : 'Failed';
+        setActionStatus(`${prefix}: ${data.error || `HTTP ${res.status}`}`);
+        setTimeout(() => setActionStatus(null), 10000);
       }
     } catch (e) {
       setActionStatus(`Error: ${e}`);
@@ -359,72 +447,26 @@ export default function AirbossPlanner() {
     }
   };
 
-  function toRad(deg: number) { return deg * Math.PI / 180; }
-  function toDeg(rad: number) { return rad * 180 / Math.PI; }
-  function compassStr(deg: number) { return deg.toFixed(1).padStart(5, '0') + '°'; }
+  // Same solver as the in-game controller (windSolver.ts is a port of
+  // CarrierRecovery.solve, both pinned to docs/src/fixtures/wind_solver_cases.json).
+  // In auto-sync the limits, deck offset and current course come from the ship.
+  const calc = solveIntoWind({
+    windFromDeg: twDir,
+    windSpeedKt: twSpd,
+    targetWodKt: targetWod,
+    deckOffsetDeg: offset,
+    minSpeedKt: shipLimits.minSpeedKt,
+    maxSpeedKt: shipLimits.maxSpeedKt,
+    angledDeckMinWindKt: shipLimits.angledDeckMinWindKt,
+    headingDeg: autoSync && actualBrc !== null ? actualBrc : undefined,
+  });
+  const brc = calc.headingDeg;
+  const shipSpd = calc.speedKt;
 
-  // --- AIRBOSS GET HEADING INTO WIND NEW ---
-  function getHeadingIntoWind(twDir: number, twSpd: number, vdeck: number, offset: number) {
-    const Vmin = 4;
-    const Vmax = 33; // Carrier max speed constraint
-
-    if (twSpd < 0.1) {
-      return { brc: twDir, shipSpd: Math.min(vdeck, Vmax), status: 'NO WIND' };
-    }
-
-    const windto = (twDir + 180) % 360;
-    const alpha = toRad(offset); // positive offset for port angle
-
-    const C = Math.sqrt(Math.pow(Math.cos(alpha), 2) / Math.pow(Math.sin(alpha), 2) + 1);
-
-    const vdeckMax = twSpd + Math.cos(alpha) * Vmax;
-    const vdeckMin = twSpd + Math.cos(alpha) * Vmin;
-
-    let v = 0;
-    let theta = 0;
-    let status = 'OPTIMAL';
-
-    if (vdeck > vdeckMax) {
-      v = Vmax;
-      let arg = v / (twSpd * C);
-      if (arg > 1) arg = 1; if (arg < -1) arg = -1;
-      theta = Math.asin(arg) - Math.asin(-1 / C);
-      status = 'VMAX LIMITED';
-    } else if (vdeck < vdeckMin) {
-      v = Vmin;
-      let arg = v / (twSpd * C);
-      if (arg > 1) arg = 1; if (arg < -1) arg = -1;
-      theta = Math.asin(arg) - Math.asin(-1 / C);
-      status = 'VMIN LIMITED';
-    } else if (vdeck * Math.sin(alpha) > twSpd) {
-      theta = Math.PI / 2;
-      const sq = vdeck * vdeck - twSpd * twSpd;
-      v = Math.sqrt(sq > 0 ? sq : 0);
-      status = 'LOW WIND';
-    } else {
-      theta = Math.asin((vdeck * Math.sin(alpha)) / twSpd);
-      v = vdeck * Math.cos(alpha) - twSpd * Math.cos(theta);
-    }
-
-    const brc = (540 + windto + toDeg(theta)) % 360;
-    return { brc, shipSpd: v, status };
-  }
-
-  const calc = getHeadingIntoWind(twDir, twSpd, targetWod, offset);
-  const brc = calc.brc;
-  const shipSpd = calc.shipSpd;
-
-  // ── FORWARD CALCULATION TO VERIFY ──
-  const xTw = twSpd   * Math.sin(toRad(twDir));
-  const yTw = twSpd   * Math.cos(toRad(twDir));
-  const xSh = shipSpd * Math.sin(toRad(brc));
-  const ySh = shipSpd * Math.cos(toRad(brc));
-
-  const xWod  = xTw + xSh;
-  const yWod  = yTw + ySh;
-  const wodSpd = Math.sqrt(xWod * xWod + yWod * yWod);
-  let wodDir   = toDeg(Math.atan2(xWod, yWod));
-  if (wodDir < 0) wodDir += 360;
+  // Forward calculation: the apparent wind the solved course and speed produce.
+  const apparent = apparentWind(twDir, twSpd, brc, shipSpd, offset);
+  const wodSpd = apparent.speedKt;
+  const wodDir = apparent.fromDeg;
 
   const deckHdg = (brc - offset + 360) % 360;
 
@@ -1090,8 +1132,49 @@ export default function AirbossPlanner() {
             </button>
           </div>
           {actionStatus && (
-            <div style={{ fontSize: '11px', color: 'var(--yel)', marginTop: '-2px', marginBottom: '10px', textAlign: 'center', fontFamily: 'var(--mono)', padding: '0 10px', whiteSpace: 'pre-wrap' }}>
+            <div style={{ fontSize: '11px', color: actionStatus.startsWith('Failed') || actionStatus.startsWith('Error') ? 'var(--red)' : 'var(--yel)', marginTop: '-2px', marginBottom: '10px', textAlign: 'center', fontFamily: 'var(--mono)', padding: '0 10px', whiteSpace: 'pre-wrap' }}>
               {actionStatus}
+            </div>
+          )}
+          {recoveryStatus && (
+            <div className="ab-results" style={{ marginTop: '-2px', marginBottom: '10px' }}>
+              <div className="ab-res-row">
+                <span className="ab-res-label">{recoveryStatus.carrier_name}</span>
+                <span className="ab-res-val" style={{ color: recoveryStatus.phase === 'normal' ? 'var(--txt-dim)' : 'var(--yel)' }}>{recoveryStatus.state}</span>
+              </div>
+              <div className="ab-res-row">
+                <span className="ab-res-label">Controller</span>
+                <span className="ab-res-val">{recoveryStatus.backend}</span>
+              </div>
+              <div className="ab-res-row">
+                <span className="ab-res-label">Course · Speed</span>
+                <span className="ab-res-val">{compassStr(recoveryStatus.course)} · {recoveryStatus.ship_speed.toFixed(1)} kts</span>
+              </div>
+              <div className="ab-res-row">
+                <span className="ab-res-label">Natural Wind</span>
+                <span className="ab-res-val">{compassStr(recoveryStatus.wind_from)} · {recoveryStatus.wind_speed.toFixed(1)} kts</span>
+              </div>
+              <div className="ab-res-row">
+                <span className="ab-res-label">Headwind · WOD</span>
+                <span className="ab-res-val">{recoveryStatus.headwind.toFixed(1)} · {recoveryStatus.wod.toFixed(1)} kts</span>
+              </div>
+              <div className="ab-res-row">
+                <span className="ab-res-label">Will Steer</span>
+                <span className="ab-res-val" style={{ color: 'var(--grn)' }}>{compassStr(recoveryStatus.recovery_heading)} · {recoveryStatus.recovery_speed.toFixed(0)} kts</span>
+              </div>
+              {recoveryStatus.remaining_sec > 0 && (
+                <div className="ab-res-row">
+                  <span className="ab-res-label">Window Remaining</span>
+                  <span className="ab-res-val">{formatRemaining(recoveryStatus.remaining_sec)}</span>
+                </div>
+              )}
+              <button
+                className="ab-autosync-btn"
+                style={{ width: '100%', justifyContent: 'center', marginTop: '6px' }}
+                onClick={() => setRecoveryStatus(null)}
+              >
+                Close
+              </button>
             </div>
           )}
 
@@ -1151,6 +1234,12 @@ export default function AirbossPlanner() {
               <div className="ab-res-row" style={{opacity: 0.7}}>
                 <span className="ab-res-label">Actual Speed</span>
                 <span className="ab-res-val">{actualShipSpd.toFixed(1)} kts</span>
+              </div>
+            )}
+            {autoSync && controllerPlan && (
+              <div className="ab-res-row" style={{opacity: 0.85}} title={`In-game controller (${controllerPlan.backend}), ${REGIME_LABELS[controllerPlan.regime] ?? controllerPlan.regime}`}>
+                <span className="ab-res-label">Controller Would Steer</span>
+                <span className="ab-res-val">{compassStr(controllerPlan.headingDeg)} · {controllerPlan.speedKt.toFixed(0)} kts</span>
               </div>
             )}
           </div>
@@ -1236,7 +1325,7 @@ export default function AirbossPlanner() {
       </div>
 
       <div className="ab-sbar">
-        STATUS:&nbsp;<span className="ab-sbar-ok" style={{color: calc.status === 'OPTIMAL' ? 'var(--grn)' : 'var(--yel)'}}>{calc.status}</span>
+        STATUS:&nbsp;<span className="ab-sbar-ok" style={{color: calc.regime === 'optimal' ? 'var(--grn)' : 'var(--yel)'}}>{REGIME_LABELS[calc.regime]}</span>
         &nbsp;·&nbsp; REVERSE WOD CALCULATION &nbsp;·&nbsp; DCS CARRIER OPS
       </div>
     </div>

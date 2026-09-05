@@ -22,6 +22,7 @@ use serde_json::json;
 use std::path::Path;
 
 use crate::auth::AuthUser;
+use crate::carrier_recovery;
 use crate::grpc;
 use crate::pb::dcs::common::v0::Coalition;
 use crate::settings_lua;
@@ -623,17 +624,70 @@ pub async fn announcements(_user: AuthUser, State(state): State<AppState>, Json(
     }
 }
 
+// --- /api/airboss ----------------------------------------------------------
+//
+// Both routes drive the stand-alone `CarrierRecovery` Lua controller (see
+// `crate::carrier_recovery`). The controller is injected into the mission on
+// first use, so these work in any mission, with or without Foothold.
+
+/// Run a controller call: the cheap probe first, the full install script only
+/// when the mission does not have the module at the expected version yet.
+async fn eval_controller(state: &AppState, scripts: carrier_recovery::Scripts) -> Result<serde_json::Value, tonic::Status> {
+    let parse = |res: crate::pb::dcs::custom::v0::EvalResponse| {
+        serde_json::from_str::<serde_json::Value>(&res.json).unwrap_or(serde_json::Value::Null)
+    };
+    let first = parse(grpc::custom_eval(state.grpc.clone(), scripts.probe).await?);
+    if !carrier_recovery::needs_install(&first) {
+        return Ok(first);
+    }
+    tracing::info!("installing CarrierRecovery {} into the mission", carrier_recovery::MODULE_VERSION);
+    Ok(parse(grpc::custom_eval(state.grpc.clone(), scripts.install).await?))
+}
+
+/// Telemetry and recovery solution for one carrier group, as returned by the
+/// Lua controller's `windReport`.
 #[derive(serde::Serialize, utoipa::ToSchema)]
 pub struct AirbossDataResponse {
+    /// Mission Editor group name of the carrier.
+    pub carrier_name: String,
+    /// DCS unit type name of the lead ship (e.g. `CVN_71`).
+    pub type_name: String,
+    /// Ship position, DCS map coordinates (x north, z east).
+    pub carrier_u: f64,
+    pub carrier_v: f64,
+    /// Current ship course, degrees true.
     pub brc: f64,
+    /// Current ship speed over ground, knots.
     pub ship_spd: f64,
+    /// Natural wind at deck height: direction it blows from, degrees true.
     pub tw_dir: f64,
+    /// Natural wind speed, knots.
     pub tw_spd: f64,
+    /// Headwind component of the natural wind on the current course, knots.
+    pub headwind: f64,
+    /// Wind over deck on the current course, knots.
+    pub wod: f64,
+    /// Target wind over the angled deck the controller aims for, knots.
     pub target_wod: f64,
+    /// Course the controller would steer for a recovery, degrees true.
+    pub recovery_heading: f64,
+    /// Speed the controller would order for a recovery, knots.
+    pub recovery_speed: f64,
+    /// Solver regime: `optimal`, `vmax_limited`, `vmin_limited`, `low_wind`, `weak_wind`.
+    pub regime: String,
+    /// Angled-deck offset used for this ship type, degrees.
+    pub deck_offset: f64,
+    pub min_speed: f64,
+    pub max_speed: f64,
+    /// Below this natural wind the ship keeps its course and only adjusts speed.
+    pub angled_deck_min_wind: f64,
+    /// `foothold` when the Foothold BattleCommander manages this group, else `standalone`.
+    pub backend: String,
 }
 
 #[derive(Deserialize, utoipa::IntoParams)]
 pub struct AirbossQuery {
+    /// Carrier group name (defaults to `CVN-72`).
     name: Option<String>,
 }
 
@@ -643,62 +697,66 @@ pub struct AirbossQuery {
     tags = ["dcs"],
     security(("jwt" = [])),
     params(AirbossQuery),
-    responses((status = 200, description = "Current Airboss data from DCS", body = AirbossDataResponse))
+    responses(
+        (status = 200, description = "Current carrier telemetry and recovery solution", body = AirbossDataResponse),
+        (status = 400, description = "Invalid carrier group name"),
+        (status = 404, description = "Carrier group not found in the mission")
+    )
 )]
-pub async fn airboss_data(State(state): State<AppState>, Query(q): Query<AirbossQuery>) -> Response {
-    let carrier_name = q.name.as_deref().unwrap_or("CVN-72");
-    let lua = format!(r#"
-        local group = Group.getByName("{}")
-        if not group or not group:isExist() or group:getSize() == 0 then return {{ error = "{} not found" }} end
-        local lead = group:getUnit(1)
-        if not lead or not lead:isExist() then return {{ error = "Lead unit not found" }} end
-        local point = lead:getPoint()
-        local pos = lead:getPosition()
-        local vel = lead:getVelocity()
-
-        local wind = atmosphere.getWind({{ x = point.x, y = (point.y or 0) + 18, z = point.z }}) or {{ x = 0, y = 0, z = 0 }}
-        
-        local windDir = math.deg(math.atan2(-wind.z, -wind.x))
-        if windDir < 0 then windDir = windDir + 360 end
-        local windSpeedKt = math.sqrt(wind.x^2 + wind.z^2) * 1.94384449
-
-        local headingDeg = math.deg(math.atan2(pos.x.z, pos.x.x))
-        if headingDeg < 0 then headingDeg = headingDeg + 360 end
-        local speedKt = math.sqrt(vel.x^2 + vel.z^2) * 1.94384449
-
-        local targetWod = CarrierRecoveryTargetWodKt or 25.0
-
-        return net.json2lua(net.lua2json({{
-            carrier_name = "{}",
-            carrier_u = point.x,
-            carrier_v = point.z,
-            brc = headingDeg,
-            ship_spd = speedKt,
-            tw_dir = windDir,
-            tw_spd = windSpeedKt,
-            target_wod = targetWod
-        }}))
-    "#, carrier_name, carrier_name, carrier_name);
-
-    match grpc::custom_eval(state.grpc.clone(), lua).await {
-        Ok(res) => {
-            if let Ok(json) = serde_json::from_str::<serde_json::Value>(&res.json) {
-                if let Some(err) = json.get("error").and_then(|v| v.as_str()) {
-                    (axum::http::StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({ "error": err }))).into_response()
-                } else {
-                    Json(json).into_response()
-                }
+pub async fn airboss_data(_user: AuthUser, State(state): State<AppState>, Query(q): Query<AirbossQuery>) -> Response {
+    let carrier = q.name.as_deref().unwrap_or(carrier_recovery::DEFAULT_GROUP);
+    if !carrier_recovery::is_valid_group_name(carrier) {
+        return bad_request("Invalid carrier group name");
+    }
+    match eval_controller(&state, carrier_recovery::wind_report_scripts(carrier)).await {
+        Ok(json) => {
+            if let Some(err) = json.get("error").and_then(|v| v.as_str()) {
+                (StatusCode::NOT_FOUND, Json(json!({ "error": err }))).into_response()
+            } else if json.is_object() {
+                Json(json).into_response()
             } else {
-                (axum::http::StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({ "error": "Invalid json from airboss script" }))).into_response()
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({ "error": "Invalid json from carrier recovery script" })),
+                )
+                    .into_response()
             }
-        },
-        Err(e) => err_detail("Failed to evaluate airboss script", e),
+        }
+        Err(e) => err_detail("Failed to evaluate carrier recovery script", e),
     }
 }
 
 #[derive(Deserialize, utoipa::ToSchema)]
 pub struct AirbossActionPayload {
+    /// `start` (turn into wind), `resume` (normal circuit) or `status`.
     pub action: String,
+    /// Carrier group name (defaults to `CVN-72`).
+    #[serde(default)]
+    pub carrier: Option<String>,
+}
+
+/// Result of `start` / `resume`. `status` returns the controller's status table instead.
+#[derive(serde::Serialize, utoipa::ToSchema)]
+pub struct AirbossActionResponse {
+    pub success: bool,
+    pub action: String,
+    pub carrier: String,
+}
+
+/// Map a controller refusal to an HTTP status. Messages come from the Lua
+/// controller (English) or, in Foothold missions, from Foothold's localized
+/// strings, so unknown texts fall back to 400.
+fn carrier_refusal_status(message: &str) -> StatusCode {
+    let lower = message.to_ascii_lowercase();
+    if lower.contains("already pending or active") || lower.contains("not in recovery-course mode") {
+        StatusCode::CONFLICT
+    } else if lower.starts_with("unable to turn into wind") || lower.contains("could not resume") {
+        StatusCode::UNPROCESSABLE_ENTITY
+    } else if lower.contains("is not available") || lower.contains("not found") {
+        StatusCode::NOT_FOUND
+    } else {
+        StatusCode::BAD_REQUEST
+    }
 }
 
 #[utoipa::path(
@@ -707,61 +765,59 @@ pub struct AirbossActionPayload {
     tags = ["dcs"],
     security(("jwt" = [])),
     request_body = AirbossActionPayload,
-    responses((status = 200, description = "Action executed"))
+    responses(
+        (status = 200, description = "Action accepted (start/resume) or status table (status)", body = AirbossActionResponse),
+        (status = 400, description = "Invalid action or carrier group name"),
+        (status = 404, description = "Carrier group not found in the mission"),
+        (status = 409, description = "Recovery already active (start) or not active (resume)"),
+        (status = 422, description = "Recovery leg unsafe (land clearance) or circuit could not be restored")
+    )
 )]
 pub async fn airboss_action(_user: AuthUser, State(state): State<AppState>, Json(payload): Json<AirbossActionPayload>) -> Response {
-    let lua = match payload.action.as_str() {
-        "start" => r#"
-            if bc and bc._carrierRecoveryStart then 
-                local cvn = Group.getByName('CVN-72')
-                local id = cvn and cvn:getID() or 0
-                local res = bc:_carrierRecoveryStart(id)
-                if res then return 'ok' else return 'failed to start (maybe already active or unsafe)' end
-            else 
-                return 'bc not found' 
-            end
-        "#,
-        "resume" => r#"
-            if bc and bc._carrierRecoveryRestore then 
-                local cvn = Group.getByName('CVN-72')
-                local id = cvn and cvn:getID() or 0
-                local res = bc:_carrierRecoveryRestore('manual', id)
-                if res then return 'ok' else return 'failed to resume (maybe not active)' end
-            else 
-                return 'bc not found' 
-            end
-        "#,
-        "status" => r#"
-            if bc and bc._carrierRecoveryStatus then
-                local cvn = Group.getByName('CVN-72')
-                local id = cvn and cvn:getID() or 0
-                local captured = nil
-                local old = trigger.action.outTextForGroup
-                trigger.action.outTextForGroup = function(g, msg, time) 
-                    captured = msg 
-                    trigger.action.outTextForCoalition(2, msg, time)
-                end
-                bc:_carrierRecoveryStatus(id)
-                trigger.action.outTextForGroup = old
-                return captured or 'Status unavailable'
-            else
-                return 'bc not found'
-            end
-        "#,
-        _ => return bad_request("Invalid action"),
+    let Some(action) = carrier_recovery::Action::parse(&payload.action) else {
+        return bad_request("Invalid action");
+    };
+    let carrier = payload.carrier.as_deref().unwrap_or(carrier_recovery::DEFAULT_GROUP);
+    if !carrier_recovery::is_valid_group_name(carrier) {
+        return bad_request("Invalid carrier group name");
+    }
+
+    let result = match eval_controller(&state, carrier_recovery::action_scripts(action, carrier)).await {
+        Ok(value) => value,
+        Err(e) => return err_detail("Failed to execute carrier action", e),
     };
 
-    match grpc::custom_eval(state.grpc.clone(), lua.to_string()).await {
-        Ok(res) => {
-            let msg = serde_json::from_str::<String>(&res.json).unwrap_or_else(|_| res.json.clone());
-            if msg == "ok" {
-                Json(json!({ "success": true })).into_response()
-            } else if payload.action == "status" {
-                Json(json!({ "success": true, "message": msg })).into_response()
+    match action {
+        carrier_recovery::Action::Status => {
+            if let Some(err) = result.get("error").and_then(|v| v.as_str()) {
+                (StatusCode::NOT_FOUND, Json(json!({ "error": err }))).into_response()
+            } else if result.is_object() {
+                Json(result).into_response()
             } else {
-                (axum::http::StatusCode::BAD_REQUEST, Json(serde_json::json!({ "error": msg }))).into_response()
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({ "error": "Invalid status from carrier recovery script" })),
+                )
+                    .into_response()
             }
-        },
-        Err(e) => err_detail("Failed to execute airboss action", e),
+        }
+        carrier_recovery::Action::Start | carrier_recovery::Action::Resume => {
+            let ok = result.get("ok").and_then(|v| v.as_bool()).unwrap_or(false);
+            let message = result
+                .get("message")
+                .and_then(|v| v.as_str())
+                .unwrap_or("Carrier controller returned no result")
+                .to_string();
+            if ok {
+                Json(AirbossActionResponse {
+                    success: true,
+                    action: payload.action,
+                    carrier: carrier.to_string(),
+                })
+                .into_response()
+            } else {
+                (carrier_refusal_status(&message), Json(json!({ "error": message }))).into_response()
+            }
+        }
     }
 }

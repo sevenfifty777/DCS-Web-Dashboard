@@ -5,6 +5,7 @@
 //! added in later phases per `docs/PLAN.md`.
 
 mod auth;
+mod carrier_recovery;
 mod config;
 mod embed;
 mod grpc;

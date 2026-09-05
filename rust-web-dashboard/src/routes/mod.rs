@@ -76,7 +76,7 @@ use utoipa_swagger_ui::SwaggerUi;
             auth::LoginRequest, auth::TokenResponse, dcs::ChatBody,
             dcs::ConsoleBody, dcs::SetFlagBody, dcs::MissionBody, dcs::MissionPayload,
             dcs::PlayerActionBody, dcs::AnnouncementBody,
-            dcs::AirbossDataResponse, dcs::AirbossActionPayload,
+            dcs::AirbossDataResponse, dcs::AirbossActionPayload, dcs::AirbossActionResponse,
             system::TaskActionBody, system::WeatherApplyBody, system::DcsProcessAction, system::SrsProcessAction,
             system::WindowsServiceStatus, system::WindowsServiceAction,
             crate::lso::LsoPass, crate::lso::LsoPassesResponse, crate::lso::LsoStatus,
@@ -94,6 +94,20 @@ use utoipa_swagger_ui::SwaggerUi;
     modifiers(&SecurityAddon)
 )]
 pub struct ApiDoc;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Regenerates `docs/src/openapi.json`. Run with
+    /// `cargo test dump_openapi -- --ignored --nocapture > ../docs/src/openapi.json`
+    /// (strip cargo's own lines from the top and bottom of the output).
+    #[test]
+    #[ignore]
+    fn dump_openapi() {
+        println!("{}", ApiDoc::openapi().to_pretty_json().expect("openapi serialises"));
+    }
+}
 
 struct SecurityAddon;
 

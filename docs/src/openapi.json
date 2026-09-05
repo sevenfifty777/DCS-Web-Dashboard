@@ -20,6 +20,7 @@
           {
             "name": "name",
             "in": "query",
+            "description": "Carrier group name (defaults to `CVN-72`).",
             "required": false,
             "schema": {
               "type": [
@@ -31,7 +32,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Current Airboss data from DCS",
+            "description": "Current carrier telemetry and recovery solution",
             "content": {
               "application/json": {
                 "schema": {
@@ -39,6 +40,12 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Invalid carrier group name"
+          },
+          "404": {
+            "description": "Carrier group not found in the mission"
           }
         },
         "security": [
@@ -66,7 +73,26 @@
         },
         "responses": {
           "200": {
-            "description": "Action executed"
+            "description": "Action accepted (start/resume) or status table (status)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AirbossActionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid action or carrier group name"
+          },
+          "404": {
+            "description": "Carrier group not found in the mission"
+          },
+          "409": {
+            "description": "Recovery already active (start) or not active (resume)"
+          },
+          "422": {
+            "description": "Recovery leg unsafe (land clearance) or circuit could not be restored"
           }
         },
         "security": [
@@ -1277,39 +1303,150 @@
         ],
         "properties": {
           "action": {
+            "type": "string",
+            "description": "`start` (turn into wind), `resume` (normal circuit) or `status`."
+          },
+          "carrier": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Carrier group name (defaults to `CVN-72`)."
+          }
+        }
+      },
+      "AirbossActionResponse": {
+        "type": "object",
+        "description": "Result of `start` / `resume`. `status` returns the controller's status table instead.",
+        "required": [
+          "success",
+          "action",
+          "carrier"
+        ],
+        "properties": {
+          "action": {
             "type": "string"
+          },
+          "carrier": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
           }
         }
       },
       "AirbossDataResponse": {
         "type": "object",
+        "description": "Telemetry and recovery solution for one carrier group, as returned by the\nLua controller's `windReport`.",
         "required": [
+          "carrier_name",
+          "type_name",
+          "carrier_u",
+          "carrier_v",
           "brc",
           "ship_spd",
           "tw_dir",
           "tw_spd",
-          "target_wod"
+          "headwind",
+          "wod",
+          "target_wod",
+          "recovery_heading",
+          "recovery_speed",
+          "regime",
+          "deck_offset",
+          "min_speed",
+          "max_speed",
+          "angled_deck_min_wind",
+          "backend"
         ],
         "properties": {
+          "angled_deck_min_wind": {
+            "type": "number",
+            "format": "double",
+            "description": "Below this natural wind the ship keeps its course and only adjusts speed."
+          },
+          "backend": {
+            "type": "string",
+            "description": "`foothold` when the Foothold BattleCommander manages this group, else `standalone`."
+          },
           "brc": {
             "type": "number",
+            "format": "double",
+            "description": "Current ship course, degrees true."
+          },
+          "carrier_name": {
+            "type": "string",
+            "description": "Mission Editor group name of the carrier."
+          },
+          "carrier_u": {
+            "type": "number",
+            "format": "double",
+            "description": "Ship position, DCS map coordinates (x north, z east)."
+          },
+          "carrier_v": {
+            "type": "number",
             "format": "double"
+          },
+          "deck_offset": {
+            "type": "number",
+            "format": "double",
+            "description": "Angled-deck offset used for this ship type, degrees."
+          },
+          "headwind": {
+            "type": "number",
+            "format": "double",
+            "description": "Headwind component of the natural wind on the current course, knots."
+          },
+          "max_speed": {
+            "type": "number",
+            "format": "double"
+          },
+          "min_speed": {
+            "type": "number",
+            "format": "double"
+          },
+          "recovery_heading": {
+            "type": "number",
+            "format": "double",
+            "description": "Course the controller would steer for a recovery, degrees true."
+          },
+          "recovery_speed": {
+            "type": "number",
+            "format": "double",
+            "description": "Speed the controller would order for a recovery, knots."
+          },
+          "regime": {
+            "type": "string",
+            "description": "Solver regime: `optimal`, `vmax_limited`, `vmin_limited`, `low_wind`, `weak_wind`."
           },
           "ship_spd": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "description": "Current ship speed over ground, knots."
           },
           "target_wod": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "description": "Target wind over the angled deck the controller aims for, knots."
           },
           "tw_dir": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "description": "Natural wind at deck height: direction it blows from, degrees true."
           },
           "tw_spd": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "description": "Natural wind speed, knots."
+          },
+          "type_name": {
+            "type": "string",
+            "description": "DCS unit type name of the lead ship (e.g. `CVN_71`)."
+          },
+          "wod": {
+            "type": "number",
+            "format": "double",
+            "description": "Wind over deck on the current course, knots."
           }
         }
       },
