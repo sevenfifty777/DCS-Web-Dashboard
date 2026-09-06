@@ -79,6 +79,10 @@ pub struct Config {
     pub app_url: String,
     /// DCS-gRPC server endpoint (normalised to include an `http(s)://` scheme).
     pub grpc_endpoint: String,
+    /// API token sent as `X-API-Key` on every DCS-gRPC request. Required when
+    /// the server's `dcs-grpc.lua` has `auth.enabled = true`; must match one of
+    /// its `auth.tokens[].token` entries.
+    pub grpc_api_key: Option<String>,
     /// Path to the JSON auth audit log.
     pub audit_log_path: String,
     /// DCS "Saved Games" directory whose `Config/serverSettings.lua` and
@@ -197,6 +201,7 @@ impl Config {
             mobile_api_key: optional("MOBILE_API_KEY"),
             app_url,
             grpc_endpoint,
+            grpc_api_key: optional("GRPC_API_KEY"),
             audit_log_path,
             dcs_saved_games_dir,
             dcs_dynamic_weather_dir,
