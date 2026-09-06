@@ -4,6 +4,8 @@
 
 A powerful, standalone web dashboard and remote administration tool for DCS World Dedicated Servers. Built on a blazing fast Rust backend (`axum` + `tonic`) with a modern Next.js frontend, this dashboard securely connects to your server via DCS-gRPC.
 
+Originally developed for the [NOeZ](https://discord.gg/Yz5wjw4ZZp) server (French DCS community), and usable on any DCS dedicated server.
+
 ## 🚀 Features
 
 The dashboard provides a massive array of features to help you run your DCS server effortlessly directly from your web browser:
@@ -11,7 +13,8 @@ The dashboard provides a massive array of features to help you run your DCS serv
 - **Mission Management**: View the mission queue, instantly run new missions, or browse your server's filesystem to load new `.miz` files.
 - **Foothold Campaign**: Built-in support for the dynamic Foothold campaign, including a persistent leaderboard, zone capture status, and real-time configuration tuning.
 - **Airboss Planner**: A dynamic toolkit for managing carrier operations. Every carrier in the mission is detected automatically and gets its own panel with wind wheel, live deck view, Sync checkbox, per-ship target Wind Over Deck and Carrier Actions; synced ships share one batched telemetry request. Command any carrier to turn into the wind remotely, in any mission: the recovery controller is injected by the dashboard and no longer needs Foothold.
-- **LSO Greenie Board**: Carrier recoveries graded by the [DCS-gRPC-lso](https://github.com/sevenfifty777/DCS-gRPC-lso) client, read straight from its `lso.db` with zero DCS-gRPC load: full pass history with trap-sheet and pattern charts, plus a per-pilot view with recent-grade greenie strips and stats.
+- **LSO Greenie Board**: Carrier recoveries graded by the following fork [DCS-gRPC-lso](https://github.com/LennyKruger/DCS-gRPC-lso) client by [LennyKruger](https://github.com/LennyKruger) (recommended), read straight from its `lso.db` with zero DCS-gRPC load: full pass history with trap-sheet and pattern charts, plus a per-pilot view with recent-grade greenie strips and stats.
+-- my original [fork](https://github.com/sevenfifty777/DCS-gRPC-lso) of DCS-gRPC-lso also exists
 - **Weather Injection**: Edit weather settings on-the-fly and seamlessly inject new presets into the active mission using the `DCS-Dynamic-Weather` script.
 - **SRS Integration**: Visual configuration editor for `server.cfg`, process management, and live client frequency tracking.
 - **Player Management & Chat**: See who is online, read the live chat, send broadcast messages to players, and issue kicks/bans.
@@ -39,6 +42,14 @@ The documentation includes:
 
 > **HTTP vs HTTPS**
 > The dashboard serves plain HTTP. For public internet access, you should set up a Reverse Proxy (Nginx, Caddy, Cloudflare Tunnel) to provide SSL encryption (HTTPS). If you use a reverse proxy, **do not** open port 3001 to the public internet; bind the dashboard to `127.0.0.1:3001` and only allow the proxy to access it.
+
+## 💬 Support & Contact
+
+- **Discord**: the quickest way to reach me. Join the [NOeZ Discord](https://discord.gg/Yz5wjw4ZZp) and ask in the dashboard channel, or message me directly as `[NOeZ] TiTi` directly.
+- **Bug reports & feature requests**: open an [issue](https://github.com/sevenfifty777/DCS-Web-Dashboard/issues). Please include your dashboard version, your DCS-gRPC version, and the relevant lines from `logs\dashboard-error.log`.
+- **Questions & ideas**: start a [discussion](https://github.com/sevenfifty777/DCS-Web-Dashboard/discussions).
+
+When reporting a problem, say what you expected to happen and what happened instead. A screenshot of the page and the matching log lines usually settle it in one round.
 
 ## 📜 License
 
