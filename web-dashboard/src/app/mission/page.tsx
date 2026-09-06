@@ -27,6 +27,8 @@ export default function MissionPage() {
   const [uploadMsg, setUploadMsg] = useState('');
   const [dcsProcess, setDcsProcess] = useState({ running: false, checking: true });
   const [srsProcess, setSrsProcess] = useState({ running: false, checking: true });
+  const [dcsError, setDcsError] = useState('');
+  const [srsError, setSrsError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const initializedFolder = useRef(false);
 
@@ -121,32 +123,44 @@ export default function MissionPage() {
     }
   };
 
+  // Start/Restart can take up to ~15 s on the backend (it waits for the old
+  // process to exit, then for the new one to appear). A non-OK response carries
+  // an `error` string explaining what went wrong (task failed, user not logged
+  // on, script exit code...), shown under the process box.
+  const sendProcessAction = async (
+    endpoint: string,
+    action: 'start' | 'stop' | 'restart',
+    setError: (msg: string) => void,
+  ) => {
+    setError('');
+    try {
+      const res = await apiFetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action })
+      });
+      const json: unknown = await res.json().catch(() => null);
+      if (!res.ok) {
+        const msg = json && typeof json === 'object' && typeof (json as { error?: unknown }).error === 'string'
+          ? (json as { error: string }).error
+          : `${action} failed (HTTP ${res.status})`;
+        setError(msg);
+      }
+    } catch (err: unknown) {
+      setError(errorMessage(err));
+    } finally {
+      fetchMission();
+    }
+  };
+
   const manageProcess = (action: 'start' | 'stop' | 'restart') => {
     setDcsProcess(p => ({ ...p, checking: true }));
-    apiFetch('/api/server/dcs-process', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action })
-    })
-      .then(r => r.json())
-      .then(() => {
-        setTimeout(fetchMission, 2000);
-      })
-      .catch(console.error);
+    void sendProcessAction('/api/server/dcs-process', action, setDcsError);
   };
 
   const manageSrsProcess = (action: 'start' | 'stop' | 'restart') => {
     setSrsProcess(p => ({ ...p, checking: true }));
-    apiFetch('/api/server/srs-process', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action })
-    })
-      .then(r => r.json())
-      .then(() => {
-        setTimeout(fetchMission, 2000);
-      })
-      .catch(console.error);
+    void sendProcessAction('/api/server/srs-process', action, setSrsError);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -247,6 +261,12 @@ export default function MissionPage() {
               </strong>
             </div>
 
+            {dcsError && (
+              <div style={{ color: '#ff4444', marginBottom: '1rem', fontSize: '13px', wordBreak: 'break-word' }}>
+                {dcsError}
+              </div>
+            )}
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
               <button 
                 onClick={() => manageProcess('start')}
@@ -269,18 +289,18 @@ export default function MissionPage() {
               
               <button 
                 onClick={() => manageProcess('restart')}
-                disabled={!dcsProcess.running || dcsProcess.checking}
+                disabled={dcsProcess.checking}
                 style={{
                   padding: '0.75rem',
                   backgroundColor: 'transparent',
                   border: '1px solid var(--primary)',
                   color: 'var(--primary)',
                   borderRadius: '4px',
-                  cursor: (!dcsProcess.running || dcsProcess.checking) ? 'not-allowed' : 'pointer',
+                  cursor: dcsProcess.checking ? 'not-allowed' : 'pointer',
                   fontWeight: 'bold',
                   textTransform: 'uppercase',
                   letterSpacing: '1px',
-                  opacity: (!dcsProcess.running || dcsProcess.checking) ? 0.3 : 1
+                  opacity: dcsProcess.checking ? 0.3 : 1
                 }}
               >
                 Restart
@@ -326,6 +346,12 @@ export default function MissionPage() {
               </strong>
             </div>
 
+            {srsError && (
+              <div style={{ color: '#ff4444', marginBottom: '1rem', fontSize: '13px', wordBreak: 'break-word' }}>
+                {srsError}
+              </div>
+            )}
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
               <button 
                 onClick={() => manageSrsProcess('start')}
@@ -348,18 +374,18 @@ export default function MissionPage() {
               
               <button 
                 onClick={() => manageSrsProcess('restart')}
-                disabled={!srsProcess.running || srsProcess.checking}
+                disabled={srsProcess.checking}
                 style={{
                   padding: '0.75rem',
                   backgroundColor: 'transparent',
                   border: '1px solid var(--primary)',
                   color: 'var(--primary)',
                   borderRadius: '4px',
-                  cursor: (!srsProcess.running || srsProcess.checking) ? 'not-allowed' : 'pointer',
+                  cursor: srsProcess.checking ? 'not-allowed' : 'pointer',
                   fontWeight: 'bold',
                   textTransform: 'uppercase',
                   letterSpacing: '1px',
-                  opacity: (!srsProcess.running || srsProcess.checking) ? 0.3 : 1
+                  opacity: srsProcess.checking ? 0.3 : 1
                 }}
               >
                 Restart

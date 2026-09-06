@@ -48,8 +48,10 @@ Enter these variables in the NSSM Environment tab, one per line (e.g., `JWT_SECR
 | --- | --- |
 | `DCS_SAVED_GAMES_DIR` | Absolute path to your DCS _Saved Games_ folder (e.g., `C:\Users\admin\Saved Games\DCS.openbeta_server`). Drives `serverSettings.lua` and mission uploads. |
 | `DCS_TASK_WHITELIST` | Comma-separated allow-list of Windows scheduled tasks the **Tasks** tab can control. If unset, all root tasks are shown. |
-| `DCS_START_CMD` | Command to launch DCS directly via PowerShell. Example: `'"C:\Program Files\Eagle Dynamics\DCS World Server\bin\DCS_server.exe" --server --norender'` (Notice the single quotes surrounding the double quotes). |
-| `SRS_START_CMD` | Command to launch SRS. Example: `'Start-Process -FilePath "C:\...\SRS-Server.exe" -ArgumentList "-cfg=\"C:\...\server.cfg\"" -WindowStyle Hidden'` |
+| `DCS_SCHEDULED_TASK_NAME` | Name of the Windows scheduled task the **Start**/**Restart** buttons run to launch DCS, e.g. `DCS Server Start`. **Recommended.** This is the only way to get a visible DCS window when the dashboard runs as a service. Full procedure: [DCS & SRS Process Control Setup](./process_control_setup.md). Takes priority over `DCS_START_CMD`. |
+| `SRS_SCHEDULED_TASK_NAME` | Same for SRS, e.g. `SRS Server Start`. Takes priority over `SRS_START_CMD`. |
+| `DCS_START_CMD` | Fallback when no task name is set: executable and arguments the dashboard launches itself. Example: `"C:\Program Files\Eagle Dynamics\DCS World Server\bin\DCS_server.exe" --server --norender`. Launched from the service session, so the window is hidden; only suitable for headless `--norender` use. |
+| `SRS_START_CMD` | Fallback when no task name is set: executable and arguments, e.g. `"C:\Program Files\DCS-SimpleRadio-Standalone\Server\SRS-Server.exe" -cfg="C:\Program Files\DCS-SimpleRadio-Standalone\Server\server.cfg"`. Same hidden-window limitation. |
 | `SRS_CFG_PATH` | Absolute path to your SRS `server.cfg`. Needed for the SRS settings editor and connected clients list. Example: `C:\Program Files\DCS-SimpleRadio-Standalone\Server\server.cfg` |
 
 ### Dynamic Weather Integration

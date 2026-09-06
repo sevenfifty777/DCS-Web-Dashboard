@@ -3,6 +3,7 @@
 - [Introduction](./README.md)
 - [Setup & Installation](./setup.md)
 - [Configuration (NSSM)](./configuration.md)
+- [DCS & SRS Process Control Setup](./process_control_setup.md)
 - [Features & Admin Manual](./features.md)
 - [Architecture](./architecture.md)
 - [Airboss Deck Tracking Plan](./airboss_deck_tracking.md)
