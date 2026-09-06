@@ -100,3 +100,8 @@ github_logs/
 airboss_planner/
 /Releases/
 Features/
+
+# mdBook build output. The GitHub Pages workflow rebuilds this from docs/src
+# on every push to main and publishes that build, so the generated HTML is
+# never served from git.
+docs/book/

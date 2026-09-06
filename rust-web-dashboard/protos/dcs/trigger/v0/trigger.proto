@@ -82,7 +82,8 @@ service TriggerService {
   rpc SetMarkupColorFill(SetMarkupColorFillRequest) returns (SetMarkupColorFillResponse) {}
   rpc SetMarkupTypeLine(SetMarkupTypeLineRequest) returns (SetMarkupTypeLineResponse) {}
   rpc SetMarkupPositionEnd(SetMarkupPositionEndRequest) returns (SetMarkupPositionEndResponse) {}
-  rpc SetMarkupPositionStart(SetMarkupPositionStartRequest) returns (SetMarkupPositionStartResponse) {}
+  rpc SetMarkupPositionStart(SetMarkupPositionStartRequest)
+      returns (SetMarkupPositionStartResponse) {}
   rpc LineToAll(LineToAllRequest) returns (LineToAllResponse) {}
   rpc CircleToAll(CircleToAllRequest) returns (CircleToAllResponse) {}
   rpc RectToAll(RectToAllRequest) returns (RectToAllResponse) {}
@@ -418,56 +419,64 @@ message SetMarkupRadiusRequest {
   double radius = 2;
 }
 
-message SetMarkupRadiusResponse {}
+message SetMarkupRadiusResponse {
+}
 
 message SetMarkupTextRequest {
   uint32 id = 1;
   string text = 2;
 }
 
-message SetMarkupTextResponse {}
+message SetMarkupTextResponse {
+}
 
 message SetMarkupFontSizeRequest {
   uint32 id = 1;
   int32 font_size = 2;
 }
 
-message SetMarkupFontSizeResponse {}
+message SetMarkupFontSizeResponse {
+}
 
 message SetMarkupColorRequest {
   uint32 id = 1;
   Color color = 2;
 }
 
-message SetMarkupColorResponse {}
+message SetMarkupColorResponse {
+}
 
 message SetMarkupColorFillRequest {
   uint32 id = 1;
   Color fill_color = 2;
 }
 
-message SetMarkupColorFillResponse {}
+message SetMarkupColorFillResponse {
+}
 
 message SetMarkupTypeLineRequest {
   uint32 id = 1;
   LineType line_type = 2;
 }
 
-message SetMarkupTypeLineResponse {}
+message SetMarkupTypeLineResponse {
+}
 
 message SetMarkupPositionEndRequest {
   uint32 id = 1;
   dcs.common.v0.InputPosition position = 2;
 }
 
-message SetMarkupPositionEndResponse {}
+message SetMarkupPositionEndResponse {
+}
 
 message SetMarkupPositionStartRequest {
   uint32 id = 1;
   dcs.common.v0.InputPosition position = 2;
 }
 
-message SetMarkupPositionStartResponse {}
+message SetMarkupPositionStartResponse {
+}
 
 message LineToAllRequest {
   dcs.common.v0.Coalition coalition = 1;

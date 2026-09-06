@@ -357,6 +357,10 @@ pub async fn stream_units(
             poll_rate: Some(1),
             max_backoff: Some(1),
             category,
+            // Left unset so `poll_rate` (1 s) stays in effect. The server
+            // treats `poll_rate_ms` as an override, and a faster rate would
+            // add DCS-gRPC load for no gain here.
+            poll_rate_ms: None,
         }))
         .await?;
     Ok(resp.into_inner())

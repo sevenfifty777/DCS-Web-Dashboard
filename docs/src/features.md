@@ -7,6 +7,17 @@ The DCS Web Dashboard is a powerful web interface for managing your DCS Dedicate
 - **RDP Available**: Displays a live indicator showing if there are any active Windows Remote Desktop (RDP) or interactive user sessions on the server host machine.
 - **Mission Environment**: Quickly see the current Theatre (e.g., Caucasus, Syria) and the in-game Time of the active mission.
 
+### Customising the left panel
+
+The page list in the left panel is yours to arrange:
+
+- **Right-click a page** (or press `Shift+F10` on a focused one) for a menu with **Move up**, **Move down**, **Hide**, **Show hidden pages…** and **Reset to default**.
+- **Drag to reorder**: press and hold a page, or grab the `⋮⋮` grip that appears at its right edge, and drop it where you want it. On a phone or tablet use the grip; swiping elsewhere still scrolls the list.
+- **Hidden pages** are listed in a `+ N hidden pages` row above **Logout**. Expand it and press **Show** to bring a page back. A hidden page is still reachable by its URL. **Server Status** cannot be hidden, so the list is never empty.
+- After hiding or resetting, an **Undo** line appears for a few seconds.
+
+The layout is saved in the browser (per device); clearing site data or using another browser gives the default order again. Pages added in a future release appear at the end of the list.
+
 ## 🟢 Server Status
 
 The homepage gives you a quick, beautiful overview of the server's health, current active mission, uptime, and player count.

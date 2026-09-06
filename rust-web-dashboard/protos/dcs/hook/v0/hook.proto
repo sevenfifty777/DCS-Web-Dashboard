@@ -74,10 +74,16 @@ service HookService {
     returns (GetBallisticsCountResponse) {}
 
   rpc GetModelTime(GetModelTimeRequest) returns (GetModelTimeResponse) {}
+  // Returns the local player's raw arresting-hook mechanization reported by
+  // Export.LoGetMechInfo(). This is ownship-only and is subject to the DCS
+  // allow_ownship_export setting.
+  rpc GetOwnshipHookState(GetOwnshipHookStateRequest)
+      returns (GetOwnshipHookStateResponse) {}
   rpc GetMissionOptions(GetMissionOptionsRequest) returns (GetMissionOptionsResponse) {}
   rpc GetCurrentMission(GetCurrentMissionRequest) returns (GetCurrentMissionResponse) {}
   rpc GetAvailableSlots(GetAvailableSlotsRequest) returns (GetAvailableSlotsResponse) {}
-  rpc GetAvailableCoalitions(GetAvailableCoalitionsRequest) returns (GetAvailableCoalitionsResponse) {}
+  rpc GetAvailableCoalitions(GetAvailableCoalitionsRequest)
+      returns (GetAvailableCoalitionsResponse) {}
   rpc GetMissionResult(GetMissionResultRequest) returns (GetMissionResultResponse) {}
   rpc GetUnitProperty(GetUnitPropertyRequest) returns (GetUnitPropertyResponse) {}
 }
@@ -251,6 +257,31 @@ message GetModelTimeRequest {
 
 message GetModelTimeResponse {
   double time = 1;
+}
+
+message GetOwnshipHookStateRequest {
+}
+
+enum OwnshipHookObservationStatus {
+  OWNSHIP_HOOK_OBSERVATION_STATUS_UNSPECIFIED = 0;
+  OWNSHIP_HOOK_OBSERVATION_STATUS_OBSERVED = 1;
+  OWNSHIP_HOOK_OBSERVATION_STATUS_UNAVAILABLE = 2;
+}
+
+message GetOwnshipHookStateResponse {
+  OwnshipHookObservationStatus observation_status = 1;
+  // DCS model time captured in the same hook callback as the observation.
+  double model_time = 2;
+  // Empty when DCS does not expose ownship data.
+  string aircraft_type = 3;
+  // Raw hook.status from LoGetMechInfo(). Boolean values are normalized to
+  // 0.0/1.0; numeric values are preserved. No lever polarity is inferred.
+  optional double status_value = 4;
+  // Raw hook.value from LoGetMechInfo(). No physical-state polarity is inferred.
+  optional double value = 5;
+  // DCS object ID from LoGetPlayerPlaneId(), used by clients to reject an
+  // ownship observation that belongs to a different tracked aircraft.
+  optional uint32 ownship_unit_id = 6;
 }
 
 message GetMissionOptionsRequest {
