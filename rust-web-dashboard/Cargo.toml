@@ -21,6 +21,8 @@ tokio = { version = "1.37", features = [
     "signal",
 ] }
 tokio-stream = { version = "0.1", features = ["sync"] }
+# `ReaderStream`, used to stream file downloads without buffering them in memory.
+tokio-util = { version = "0.7", features = ["io"] }
 
 # HTTP server
 axum = { version = "0.8", features = ["multipart"] }

@@ -65,6 +65,13 @@ Enter these variables in the NSSM Environment tab, one per line (e.g., `JWT_SECR
 | --- | --- |
 | `LSO_DIR` | Output directory of the [DCS-gRPC-lso](https://github.com/sevenfifty777/DCS-gRPC-lso) client (its `--out-dir`, the folder holding `lso.db` and the trap-sheet PNGs). Required for the **LSO** tab. The dashboard opens `lso.db` read-only and never calls DCS-gRPC for it. Run an LSO client build that enables WAL journaling (0.4.0 or later) so both processes can use the file at the same time. Example: `C:\LSO\recordings` |
 
+### Tacview Downloads
+| Variable | Purpose |
+| --- | --- |
+| `TACVIEW_DIR` | Folder holding the server's Tacview `.acmi` recordings. Required for the **Tacview** tab; when unset, the tab shows a "not configured" note and the `/api/tacview/*` routes return no data. There is deliberately **no** automatic `%USERPROFILE%\Documents\Tacview` fallback: under NSSM the service usually runs as a different account, so a guessed path would silently list nothing. Example: `C:\Users\admin\Documents\Tacview` |
+
+> **Service account permissions.** The account the dashboard service runs as must have **read** access to `TACVIEW_DIR`. A `LocalSystem` service reading another user's `Documents` folder needs the folder ACL to allow it — otherwise the Tacview tab reports the OS error instead of listing files. Either grant the service account read access, or point Tacview at a shared folder (Tacview → Options → Recorder → recordings path).
+
 ### Discord OAuth Integration
 | Variable | Purpose |
 | --- | --- |

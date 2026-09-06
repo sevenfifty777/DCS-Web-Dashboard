@@ -20,6 +20,7 @@ Completely control the server's mission queue.
 - **Run Now**: Immediately loads and runs any mission file, bypassing the queue entirely.
 - **Upload**: Upload a local `.miz` file from your PC directly to the server.
 - **Browse Server**: Browse the server's hard drive to add existing `.miz` files into the queue.
+- **Download**: Pull any `.miz` back to your PC from the server-files browser or the uploads panel. Downloads are restricted to `.miz` files inside the DCS `Missions/` tree.
 
 ## 🌤️ Weather
 
@@ -74,6 +75,15 @@ Carrier recoveries graded by the [DCS-gRPC-lso](https://github.com/sevenfifty777
 - Filter the table by pilot name. Click a row to open the final-approach trap sheet and the overhead pattern chart the client saved for that pass.
 - Pilot UCIDs are never shown. The score is a project-derived training grade, not an official certification.
 - **By pilot** (`/lso/pilots`): one section per pilot with passes, average points, last pass, a greenie strip of recent grades, and a table of their last 5 passes (switch to All for the full history). Pilots are grouped by UCID on the server, so a renamed pilot keeps one history and earlier names are listed as aliases; the UCID itself is never sent to the browser.
+
+## 🎬 Tacview
+
+Download the server's flight recordings without an RDP session or a file share.
+
+- Lists `.acmi` recordings (including the compressed `.zip.acmi` form) found under `TACVIEW_DIR`, newest first, with file size and recording date.
+- Capped at the **200 newest** recordings; the header says how many exist in total when there are more.
+- Filter by file name, then download straight to your PC.
+- Requires `TACVIEW_DIR` to be set in the service environment (see [Configuration](configuration.md)); until it is, the tab explains what to set. Downloads are restricted to `.acmi` files inside that folder.
 
 ## ⚙️ Settings
 

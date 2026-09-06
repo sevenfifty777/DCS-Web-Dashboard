@@ -10,6 +10,7 @@
 - [LSO Greenie Board Page Plan](./lso_greenie_board_plan.md)
 - [Carrier Recovery Without Foothold Plan](./carrier_recovery_standalone_plan.md)
 - [Airboss Multi-Carrier Plan](./airboss_multi_carrier_plan.md)
+- [File Downloads Plan (Missions + Tacview)](./file_downloads_plan.md)
 
 ---
 
