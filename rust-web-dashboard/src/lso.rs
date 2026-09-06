@@ -326,7 +326,7 @@ pub fn list_by_pilot(
             pilot.graded_passes += 1;
             point_sums[slot] += points;
         }
-        if per_pilot.map_or(true, |cap| pilot.passes.len() < cap) {
+        if per_pilot.is_none_or(|cap| pilot.passes.len() < cap) {
             pilot.passes.push(pass);
         }
     }
@@ -425,9 +425,9 @@ pub fn chart_bytes(dir: &Path, id: i64, kind: ChartKind) -> Result<Vec<u8>, LsoE
         .query_row("SELECT timestamp FROM passes WHERE id = ?1", [id], |row| {
             row.get(0)
         })
-        .or_else(|err| match err {
-            rusqlite::Error::QueryReturnedNoRows => Err(LsoError::PassNotFound(id)),
-            other => Err(LsoError::Sqlite(other)),
+        .map_err(|err| match err {
+            rusqlite::Error::QueryReturnedNoRows => LsoError::PassNotFound(id),
+            other => LsoError::Sqlite(other),
         })?;
     let path = chart_path(dir, &timestamp, kind).ok_or(LsoError::ChartMissing)?;
     std::fs::read(&path).map_err(|err| {

@@ -131,8 +131,8 @@ export default function SrsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action }),
       });
-      if (!response.ok) throw new Error('SRS process action failed.');
-      setTimeout(fetchSrsData, 2000);
+      if (!response.ok) throw new Error(await responseError(response, 'SRS process action failed.'));
+      fetchSrsData();
     } catch (error: unknown) {
       setSrsProcess(p => ({ ...p, checking: false }));
       setProcessError(errorMessage(error, 'SRS process action failed.'));

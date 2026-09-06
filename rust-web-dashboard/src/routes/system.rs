@@ -11,8 +11,8 @@
 //! require a valid session (the [`AuthUser`] extractor). Lua parsing and
 //! byte-faithful serialization live in [`crate::settings_lua`].
 
-use std::path::Path;
-use std::time::Duration;
+use std::path::{Path, PathBuf};
+use std::time::{Duration, Instant};
 
 use axum::{
     extract::{Multipart, State},
@@ -26,6 +26,7 @@ use tokio::process::Command;
 use std::process::{Command as StdCommand};
 
 use crate::auth::{self, AuthUser};
+use crate::config::Config;
 use crate::grpc;
 use crate::settings_lua;
 use crate::state::AppState;
@@ -650,7 +651,319 @@ pub async fn weather_apply(
     Json(json!({ "success": true, "output": stdout })).into_response()
 }
 
-// --- /api/server/dcs-process ------------------------------------------------
+// --- /api/server/dcs-process, /api/server/srs-process -----------------------
+//
+// DCS and SRS are host processes the dashboard can start, stop and restart.
+// Because the dashboard runs as a service (Session 0, no desktop), starting is
+// delegated to a Windows scheduled task configured "run only when user is
+// logged on" (`DCS_SCHEDULED_TASK_NAME` / `SRS_SCHEDULED_TASK_NAME`), which
+// launches the process on the user's desktop. `*_START_CMD` remains as a
+// hidden-window fallback. See `docs/src/process_control_setup.md`.
+//
+// Stop leaves a marker file in the DCS Saved Games folder so the boot-time
+// watchdog (`Features/Services/Watchdog-DCS-SRS.ps1`) does not restart a
+// process that was stopped on purpose; Start/Restart remove it.
+
+/// Seconds to wait for a killed process to disappear before starting it again.
+const STOP_WAIT_SECS: u64 = 30;
+/// Seconds to wait for the process to appear after a scheduled task was run.
+const TASK_START_TIMEOUT_SECS: u64 = 15;
+/// Task Scheduler "the task is currently running" (SCHED_S_TASK_RUNNING).
+const TASK_RESULT_RUNNING: i64 = 0x0004_1301;
+/// Task Scheduler "the task has not yet run" (SCHED_S_TASK_HAS_NOT_RUN).
+const TASK_RESULT_NEVER_RAN: i64 = 0x0004_1303;
+/// Win32 ERROR_NOT_LOGGED_ON as an HRESULT: the task's user has no session.
+const TASK_RESULT_NOT_LOGGED_ON: i64 = 0x8007_04DD;
+
+/// One controllable host process and everything needed to drive it.
+struct ProcessTarget {
+    /// Label for log lines and error messages ("DCS", "SRS").
+    label: &'static str,
+    /// Image names (without `.exe`) that count as "the process".
+    process_names: &'static [&'static str],
+    /// Scheduled task run by Start/Restart (preferred).
+    scheduled_task: Option<String>,
+    /// Fallback executable + arguments launched by the dashboard itself.
+    start_cmd: Option<String>,
+    /// Marker file the watchdog honours while the process is stopped on purpose.
+    stop_flag: PathBuf,
+    /// Env var names quoted in the "not configured" error.
+    env_hint: &'static str,
+    /// Log file the start script writes, quoted in error messages.
+    start_log: &'static str,
+}
+
+impl ProcessTarget {
+    fn dcs(config: &Config) -> Self {
+        Self {
+            label: "DCS",
+            process_names: &["DCS", "DCS_server"],
+            scheduled_task: config.dcs_scheduled_task.clone(),
+            start_cmd: config.dcs_start_cmd.clone(),
+            stop_flag: config.dcs_saved_games_dir.join("dashboard_stop_dcs.flag"),
+            env_hint: "DCS_SCHEDULED_TASK_NAME nor DCS_START_CMD",
+            start_log: "dcs_start.log",
+        }
+    }
+
+    fn srs(config: &Config) -> Self {
+        Self {
+            label: "SRS",
+            process_names: &["SRS-Server"],
+            scheduled_task: config.srs_scheduled_task.clone(),
+            start_cmd: config.srs_start_cmd.clone(),
+            stop_flag: config.dcs_saved_games_dir.join("dashboard_stop_srs.flag"),
+            env_hint: "SRS_SCHEDULED_TASK_NAME nor SRS_START_CMD",
+            start_log: "srs_start.log",
+        }
+    }
+
+    /// `'DCS','DCS_server'` for `-Name` parameters.
+    fn ps_name_list(&self) -> String {
+        self.process_names
+            .iter()
+            .map(|n| format!("'{n}'"))
+            .collect::<Vec<_>>()
+            .join(",")
+    }
+}
+
+/// Run a PowerShell snippet and return its output.
+async fn run_powershell(script: &str) -> std::io::Result<std::process::Output> {
+    Command::new("powershell")
+        .arg("-NoProfile")
+        .arg("-NonInteractive")
+        .arg("-Command")
+        .arg(script)
+        .output()
+        .await
+}
+
+/// Whether any of the target's image names is currently running.
+async fn process_running(target: &ProcessTarget) -> bool {
+    let ps = format!(
+        "Get-Process -Name {} -ErrorAction SilentlyContinue | Measure-Object | Select-Object -ExpandProperty Count",
+        target.ps_name_list()
+    );
+    match run_powershell(&ps).await {
+        Ok(out) => String::from_utf8_lossy(&out.stdout)
+            .trim()
+            .parse::<i32>()
+            .map(|n| n > 0)
+            .unwrap_or(false),
+        Err(_) => false,
+    }
+}
+
+/// Kill the process, wait for it to be gone, and leave the watchdog stop flag.
+async fn stop_target(target: &ProcessTarget) {
+    let names = target.ps_name_list();
+    tracing::info!("Stopping {} ({})", target.label, names);
+    let ps = format!(
+        "Stop-Process -Name {names} -Force -ErrorAction SilentlyContinue; \
+         Wait-Process -Name {names} -Timeout {STOP_WAIT_SECS} -ErrorAction SilentlyContinue"
+    );
+    if let Err(e) = run_powershell(&ps).await {
+        tracing::warn!("Stop-Process for {} could not run: {}", target.label, e);
+    }
+
+    match tokio::fs::write(&target.stop_flag, b"stopped from the dashboard\r\n").await {
+        Ok(()) => tracing::info!("Created stop flag {}", target.stop_flag.display()),
+        Err(e) => tracing::warn!(
+            "Could not create stop flag {} (the watchdog, if any, will restart {}): {}",
+            target.stop_flag.display(),
+            target.label,
+            e
+        ),
+    }
+}
+
+/// Remove the watchdog stop flag, then start via the scheduled task or the
+/// fallback command. `Err` carries a message suitable for the UI.
+async fn start_target(target: &ProcessTarget) -> Result<(), String> {
+    match tokio::fs::remove_file(&target.stop_flag).await {
+        Ok(()) => tracing::info!("Removed stop flag {}", target.stop_flag.display()),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+        Err(e) => tracing::warn!("Could not remove stop flag {}: {}", target.stop_flag.display(), e),
+    }
+
+    if let Some(task) = &target.scheduled_task {
+        start_via_task(target, task).await
+    } else if let Some(raw_cmd) = &target.start_cmd {
+        start_via_command(target, raw_cmd);
+        Ok(())
+    } else {
+        Err(format!("Neither {} is configured", target.env_hint))
+    }
+}
+
+/// Snapshot of a scheduled task's last run, from `Get-ScheduledTaskInfo`.
+struct TaskInfo {
+    last_run_time: String,
+    last_task_result: i64,
+}
+
+async fn task_info(task: &str) -> Option<TaskInfo> {
+    let safe = task.replace('\'', "''");
+    let ps = format!(
+        "$i = Get-ScheduledTaskInfo -TaskName '{safe}' -ErrorAction Stop; \
+         @{{ t = \"$($i.LastRunTime)\"; r = [int64]$i.LastTaskResult }} | ConvertTo-Json -Compress"
+    );
+    let out = run_powershell(&ps).await.ok()?;
+    let v: Value = serde_json::from_str(String::from_utf8_lossy(&out.stdout).trim()).ok()?;
+    Some(TaskInfo {
+        last_run_time: v.get("t")?.as_str()?.to_string(),
+        last_task_result: v.get("r")?.as_i64()?,
+    })
+}
+
+/// Human explanation of a non-zero task result.
+fn describe_task_result(target: &ProcessTarget, task: &str, result: i64) -> String {
+    match result {
+        TASK_RESULT_NOT_LOGGED_ON => format!(
+            "task \"{task}\" could not run: its user is not logged on to the server \
+             (no desktop session; set up auto-logon, or connect by Remote Desktop and disconnect without signing out)"
+        ),
+        1 => format!(
+            "task \"{task}\" ran but the start script found no executable or config file (exit code 1, see {})",
+            target.start_log
+        ),
+        2 => format!(
+            "task \"{task}\" ran but the start script could not launch {} (exit code 2, see {})",
+            target.label, target.start_log
+        ),
+        TASK_RESULT_NEVER_RAN => format!("task \"{task}\" did not run"),
+        other => format!("task \"{task}\" ended with result 0x{other:X}"),
+    }
+}
+
+/// Run the scheduled task and wait until the process shows up, translating
+/// task failures (user not logged on, script exit codes) into messages.
+async fn start_via_task(target: &ProcessTarget, task: &str) -> Result<(), String> {
+    tracing::info!("Starting {} via scheduled task \"{}\"", target.label, task);
+    let before = task_info(task).await;
+
+    let out = Command::new("schtasks")
+        .arg("/run")
+        .arg("/tn")
+        .arg(task)
+        .output()
+        .await
+        .map_err(|e| format!("could not run schtasks: {e}"))?;
+    if !out.status.success() {
+        let stderr = String::from_utf8_lossy(&out.stderr);
+        let stdout = String::from_utf8_lossy(&out.stdout);
+        let detail = if stderr.trim().is_empty() { stdout.trim() } else { stderr.trim() };
+        return Err(format!("schtasks /run \"{task}\" failed: {detail}"));
+    }
+
+    // `schtasks /run` reports success even when the task cannot start (e.g. no
+    // logged-on user). Watch for the process, and read the task result meanwhile.
+    let deadline = Instant::now() + Duration::from_secs(TASK_START_TIMEOUT_SECS);
+    loop {
+        tokio::time::sleep(Duration::from_secs(1)).await;
+
+        if process_running(target).await {
+            tracing::info!("{} is running after task \"{}\"", target.label, task);
+            return Ok(());
+        }
+
+        if let Some(info) = task_info(task).await {
+            let is_new_run = before
+                .as_ref()
+                .is_none_or(|b| b.last_run_time != info.last_run_time);
+            let result = info.last_task_result;
+            if is_new_run && result != 0 && result != TASK_RESULT_RUNNING {
+                return Err(describe_task_result(target, task, result));
+            }
+        }
+
+        if Instant::now() >= deadline {
+            return Err(format!(
+                "task \"{task}\" was started but no {} process appeared within {}s (see {})",
+                target.label, TASK_START_TIMEOUT_SECS, target.start_log
+            ));
+        }
+    }
+}
+
+/// Split `"C:\path\exe" args` / `C:\path\exe args` into (exe, args).
+fn split_command(raw_cmd: &str) -> (&str, &str) {
+    let cmd_str = raw_cmd.trim().trim_matches('\'');
+    if let Some(unquoted) = cmd_str.strip_prefix('"') {
+        if let Some(end_quote) = unquoted.find('"') {
+            return (&unquoted[..end_quote], unquoted[end_quote + 1..].trim());
+        }
+        return (cmd_str, "");
+    }
+    match cmd_str.find(' ') {
+        Some(space) => (&cmd_str[..space], cmd_str[space + 1..].trim()),
+        None => (cmd_str, ""),
+    }
+}
+
+/// Fallback when no scheduled task is configured: launch in the console
+/// session via Win32, else spawn from the service session via PowerShell
+/// (window hidden by Session 0, not by choice).
+fn start_via_command(target: &ProcessTarget, raw_cmd: &str) {
+    let (exe_path, args) = split_command(raw_cmd);
+    let working_dir = Path::new(exe_path).parent().and_then(|p| p.to_str());
+
+    tracing::info!(
+        "Attempting to launch {} in interactive session: \"{}\" {}",
+        target.label, exe_path, args
+    );
+    match crate::win_session::launch_in_user_session(exe_path, args, working_dir) {
+        Ok(()) => {
+            tracing::info!("Successfully launched {} in interactive user session", target.label);
+        }
+        Err(e) => {
+            tracing::warn!(
+                "Win32 interactive session launch failed ({}), falling back to PowerShell Start-Process",
+                e
+            );
+
+            let mut ps_cmd = format!("Start-Process -FilePath '{}'", exe_path.replace('\'', "''"));
+            if !args.is_empty() {
+                ps_cmd.push_str(&format!(" -ArgumentList '{}'", args.replace('\'', "''")));
+            }
+            if let Some(wd) = working_dir {
+                ps_cmd.push_str(&format!(" -WorkingDirectory '{}'", wd.replace('\'', "''")));
+            }
+
+            tracing::info!("Spawning {} via PowerShell: {}", target.label, ps_cmd);
+            match StdCommand::new("powershell")
+                .arg("-NoProfile")
+                .arg("-Command")
+                .arg(&ps_cmd)
+                .spawn()
+            {
+                Ok(_) => tracing::info!("Successfully spawned PowerShell to start {}", target.label),
+                Err(e) => tracing::error!("Failed to spawn PowerShell for {}: {}", target.label, e),
+            }
+        }
+    }
+}
+
+/// Shared handler body for `POST /api/server/{dcs,srs}-process`.
+async fn process_action(target: ProcessTarget, action: &str) -> Response {
+    if !matches!(action, "start" | "stop" | "restart") {
+        return err_400("Invalid action");
+    }
+
+    if action == "stop" || action == "restart" {
+        stop_target(&target).await;
+    }
+
+    if action == "start" || action == "restart" {
+        if let Err(msg) = start_target(&target).await {
+            tracing::error!("{} {} failed: {}", target.label, action, msg);
+            return err_500(&msg);
+        }
+    }
+
+    Json(json!({ "success": true })).into_response()
+}
 
 /// `GET /api/server/dcs-process` → check if DCS.exe or DCS_server.exe is running.
 #[utoipa::path(
@@ -660,21 +973,9 @@ pub async fn weather_apply(
     security(("jwt" = [])),
     responses((status = 200, description = "DCS process running state"))
 )]
-pub async fn dcs_process_get(_user: AuthUser, State(_state): State<AppState>) -> Response {
-    let ps = "Get-Process -Name 'DCS', 'DCS_server' -ErrorAction SilentlyContinue | Measure-Object | Select-Object -ExpandProperty Count";
-    let output = match Command::new("powershell")
-        .arg("-NoProfile")
-        .arg("-Command")
-        .arg(ps)
-        .output()
-        .await
-    {
-        Ok(out) => out,
-        Err(_) => return Json(json!({ "running": false })).into_response(),
-    };
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    let count: i32 = stdout.trim().parse().unwrap_or(0);
-    Json(json!({ "running": count > 0 })).into_response()
+pub async fn dcs_process_get(_user: AuthUser, State(state): State<AppState>) -> Response {
+    let running = process_running(&ProcessTarget::dcs(&state.config)).await;
+    Json(json!({ "running": running })).into_response()
 }
 
 #[derive(Deserialize, utoipa::ToSchema)]
@@ -682,111 +983,26 @@ pub struct DcsProcessAction {
     pub action: String,
 }
 
-/// `POST /api/server/dcs-process` → start/stop/restart DCS.exe.
+/// `POST /api/server/dcs-process` → start/stop/restart DCS.
 #[utoipa::path(
     post,
     path = "/api/server/dcs-process",
     tags = ["system"],
     security(("jwt" = [])),
     request_body = DcsProcessAction,
-    responses((status = 200, description = "DCS process action executed"))
+    responses(
+        (status = 200, description = "DCS process action executed"),
+        (status = 400, description = "Invalid action"),
+        (status = 500, description = "Start failed; `error` explains why")
+    )
 )]
 pub async fn dcs_process_post(
     _user: AuthUser,
     State(state): State<AppState>,
     Json(payload): Json<DcsProcessAction>,
 ) -> Response {
-    let action = payload.action.as_str();
-
-    if action == "stop" || action == "restart" {
-        tracing::info!("Stopping DCS process via PowerShell");
-        let _ = Command::new("powershell")
-            .arg("-NoProfile")
-            .arg("-Command")
-            .arg("Stop-Process -Name 'DCS', 'DCS_server' -Force -ErrorAction SilentlyContinue")
-            .status()
-            .await;
-    }
-
-    if action == "start" || action == "restart" {
-        if action == "restart" {
-            tokio::time::sleep(Duration::from_secs(2)).await;
-        }
-
-        if let Some(task_name) = &state.config.dcs_scheduled_task {
-            // Run via scheduled task
-            tracing::info!("Starting DCS via scheduled task: {}", task_name);
-            match Command::new("schtasks")
-                .arg("/run")
-                .arg("/tn")
-                .arg(task_name)
-                .spawn()
-            {
-                Ok(_) => tracing::info!("Successfully spawned schtasks for DCS"),
-                Err(e) => tracing::error!("Failed to spawn schtasks for DCS: {}", e),
-            }
-        } else if let Some(raw_cmd) = &state.config.dcs_start_cmd {
-            let cmd_str = raw_cmd.trim_matches('\'');
-            let (exe_path, args_str) = if let Some(unquoted) = cmd_str.strip_prefix('"') {
-                if let Some(end_quote) = unquoted.find('"') {
-                    (&unquoted[..end_quote], unquoted[end_quote + 1..].trim())
-                } else {
-                    (cmd_str, "")
-                }
-            } else if let Some(space) = cmd_str.find(' ') {
-                (&cmd_str[..space], cmd_str[space + 1..].trim())
-            } else {
-                (cmd_str, "")
-            };
-
-            let args_to_pass = if args_str.is_empty() { "" } else { args_str };
-            let working_dir = std::path::Path::new(exe_path)
-                .parent()
-                .and_then(|p| p.to_str());
-
-            // Try launching in the interactive user session first (solves
-            // Session 0 / no-desktop issue when running as an NSSM service).
-            tracing::info!("Attempting to launch DCS in interactive session: \"{}\" {}", exe_path, args_to_pass);
-            match crate::win_session::launch_in_user_session(exe_path, args_to_pass, working_dir) {
-                Ok(()) => {
-                    tracing::info!("Successfully launched DCS in interactive user session");
-                }
-                Err(e) => {
-                    tracing::warn!("Win32 interactive session launch failed ({}), falling back to PowerShell Start-Process", e);
-
-                    // Fallback: PowerShell Start-Process (works if dashboard
-                    // itself is already in an interactive session).
-                    let mut ps_cmd = format!("Start-Process -FilePath '{}'", exe_path.replace("'", "''"));
-                    if !args_to_pass.is_empty() {
-                        ps_cmd.push_str(&format!(" -ArgumentList '{}'", args_to_pass.replace("'", "''")));
-                    }
-                    if let Some(wd) = working_dir {
-                        ps_cmd.push_str(&format!(" -WorkingDirectory '{}'", wd.replace("'", "''")));
-                    }
-                    ps_cmd.push_str(" -WindowStyle Hidden");
-
-                    tracing::info!("Spawning DCS via PowerShell: {}", ps_cmd);
-
-                    match StdCommand::new("powershell")
-                        .arg("-NoProfile")
-                        .arg("-Command")
-                        .arg(&ps_cmd)
-                        .spawn()
-                    {
-                        Ok(_) => tracing::info!("Successfully spawned PowerShell to start DCS"),
-                        Err(e) => tracing::error!("Failed to spawn PowerShell for DCS: {}", e),
-                    }
-                }
-            }
-        } else {
-            return err_500("Neither DCS_SCHEDULED_TASK_NAME nor DCS_START_CMD is configured");
-        }
-    }
-
-    Json(json!({ "success": true })).into_response()
+    process_action(ProcessTarget::dcs(&state.config), &payload.action).await
 }
-
-// --- /api/server/srs-process ------------------------------------------------
 
 /// `GET /api/server/srs-process` → check if SRS-Server.exe is running.
 #[utoipa::path(
@@ -796,21 +1012,9 @@ pub async fn dcs_process_post(
     security(("jwt" = [])),
     responses((status = 200, description = "SRS process running state"))
 )]
-pub async fn srs_process_get(_user: AuthUser, State(_state): State<AppState>) -> Response {
-    let ps = "Get-Process -Name 'SRS-Server' -ErrorAction SilentlyContinue | Measure-Object | Select-Object -ExpandProperty Count";
-    let output = match Command::new("powershell")
-        .arg("-NoProfile")
-        .arg("-Command")
-        .arg(ps)
-        .output()
-        .await
-    {
-        Ok(out) => out,
-        Err(_) => return Json(json!({ "running": false })).into_response(),
-    };
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    let count: i32 = stdout.trim().parse().unwrap_or(0);
-    Json(json!({ "running": count > 0 })).into_response()
+pub async fn srs_process_get(_user: AuthUser, State(state): State<AppState>) -> Response {
+    let running = process_running(&ProcessTarget::srs(&state.config)).await;
+    Json(json!({ "running": running })).into_response()
 }
 
 #[derive(Deserialize, utoipa::ToSchema)]
@@ -825,91 +1029,57 @@ pub struct SrsProcessAction {
     tags = ["system"],
     security(("jwt" = [])),
     request_body = SrsProcessAction,
-    responses((status = 200, description = "SRS process action executed"))
+    responses(
+        (status = 200, description = "SRS process action executed"),
+        (status = 400, description = "Invalid action"),
+        (status = 500, description = "Start failed; `error` explains why")
+    )
 )]
 pub async fn srs_process_post(
     _user: AuthUser,
     State(state): State<AppState>,
     Json(payload): Json<SrsProcessAction>,
 ) -> Response {
-    let action = payload.action.as_str();
+    process_action(ProcessTarget::srs(&state.config), &payload.action).await
+}
 
-    if action == "stop" || action == "restart" {
-        let _ = Command::new("powershell")
-            .arg("-NoProfile")
-            .arg("-Command")
-            .arg("Stop-Process -Name 'SRS-Server' -Force -ErrorAction SilentlyContinue")
-            .status()
-            .await;
+#[cfg(test)]
+mod process_tests {
+    use super::*;
+
+    #[test]
+    fn split_command_handles_quoted_and_bare_paths() {
+        assert_eq!(
+            split_command(r#""C:\Program Files\DCS\bin\DCS_server.exe" --server --norender"#),
+            (r"C:\Program Files\DCS\bin\DCS_server.exe", "--server --norender")
+        );
+        assert_eq!(
+            split_command(r#"'"C:\x\SRS-Server.exe" -cfg="C:\x\server.cfg"'"#),
+            (r"C:\x\SRS-Server.exe", r#"-cfg="C:\x\server.cfg""#)
+        );
+        assert_eq!(split_command(r"C:\x\app.exe launch"), (r"C:\x\app.exe", "launch"));
+        assert_eq!(split_command(r"C:\x\app.exe"), (r"C:\x\app.exe", ""));
     }
 
-    if action == "start" || action == "restart" {
-        if action == "restart" {
-            tokio::time::sleep(Duration::from_secs(2)).await;
-        }
-
-        if let Some(task_name) = &state.config.srs_scheduled_task {
-            // Run via scheduled task
-            let _ = Command::new("schtasks")
-                .arg("/run")
-                .arg("/tn")
-                .arg(task_name)
-                .spawn();
-        } else if let Some(raw_cmd) = &state.config.srs_start_cmd {
-            let cmd_str = raw_cmd.trim_matches('\'');
-            let (exe_path, args_str) = if let Some(unquoted) = cmd_str.strip_prefix('"') {
-                if let Some(end_quote) = unquoted.find('"') {
-                    (&unquoted[..end_quote], unquoted[end_quote + 1..].trim())
-                } else {
-                    (cmd_str, "")
-                }
-            } else if let Some(space) = cmd_str.find(' ') {
-                (&cmd_str[..space], cmd_str[space + 1..].trim())
-            } else {
-                (cmd_str, "")
-            };
-
-            let working_dir = std::path::Path::new(exe_path)
-                .parent()
-                .and_then(|p| p.to_str());
-
-            // Try launching in the interactive user session first.
-            tracing::info!("Attempting to launch SRS in interactive session: \"{}\" {}", exe_path, args_str);
-            match crate::win_session::launch_in_user_session(exe_path, args_str, working_dir) {
-                Ok(()) => {
-                    tracing::info!("Successfully launched SRS in interactive user session");
-                }
-                Err(e) => {
-                    tracing::warn!("Win32 interactive session launch failed ({}), falling back to PowerShell Start-Process", e);
-
-                    let mut ps_cmd = format!("Start-Process -FilePath '{}'", exe_path.replace("'", "''"));
-                    if !args_str.is_empty() {
-                        ps_cmd.push_str(&format!(" -ArgumentList '{}'", args_str.replace("'", "''")));
-                    }
-                    if let Some(wd) = working_dir {
-                        ps_cmd.push_str(&format!(" -WorkingDirectory '{}'", wd.replace("'", "''")));
-                    }
-                    ps_cmd.push_str(" -WindowStyle Hidden");
-
-                    tracing::info!("Spawning SRS via PowerShell: {}", ps_cmd);
-
-                    match StdCommand::new("powershell")
-                        .arg("-NoProfile")
-                        .arg("-Command")
-                        .arg(&ps_cmd)
-                        .spawn()
-                    {
-                        Ok(_) => tracing::info!("Successfully spawned PowerShell to start SRS"),
-                        Err(e) => tracing::error!("Failed to spawn PowerShell for SRS: {}", e),
-                    }
-                }
-            }
-        } else {
-            return err_500("Neither SRS_SCHEDULED_TASK_NAME nor SRS_START_CMD is configured");
-        }
+    #[test]
+    fn task_results_are_explained() {
+        let cfg_dir = std::env::temp_dir();
+        let target = ProcessTarget {
+            label: "DCS",
+            process_names: &["DCS_server"],
+            scheduled_task: Some("DCS Server Start".into()),
+            start_cmd: None,
+            stop_flag: cfg_dir.join("dashboard_stop_dcs.flag"),
+            env_hint: "DCS_SCHEDULED_TASK_NAME nor DCS_START_CMD",
+            start_log: "dcs_start.log",
+        };
+        let msg = describe_task_result(&target, "DCS Server Start", TASK_RESULT_NOT_LOGGED_ON);
+        assert!(msg.contains("not logged on"));
+        let msg = describe_task_result(&target, "DCS Server Start", 1);
+        assert!(msg.contains("exit code 1") && msg.contains("dcs_start.log"));
+        let msg = describe_task_result(&target, "DCS Server Start", 0xC000_013A);
+        assert!(msg.contains("0xC000013A"));
     }
-
-    Json(json!({ "success": true })).into_response()
 }
 
 // --- /api/server/services ----------------------------------------------------

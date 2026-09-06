@@ -134,10 +134,17 @@ $AssetMappings = @(
     [pscustomobject]@{ Source = "icon"; Destination = "icon" },
     [pscustomobject]@{ Source = "img"; Destination = "images" }
 )
-$ReleaseDirectories = @($AssetMappings.Destination) + "logs"
+# PowerShell scripts + README for starting DCS/SRS through Task Scheduler
+# (see services\README.md). Shipped verbatim in the release.
+$ServicesDirectory = Join-Path $RepoRoot "services"
+$ReleaseDirectories = @($AssetMappings.Destination) + "logs" + "services"
 
 Assert-RequiredPath -Path $RustManifestPath -Description "Rust manifest" -PathType Leaf
 Assert-RequiredPath -Path (Join-Path $FrontendDirectory "package-lock.json") -Description "frontend lockfile" -PathType Leaf
+Assert-RequiredPath -Path $ServicesDirectory -Description "services scripts directory" -PathType Container
+foreach ($RequiredScript in @("Start-DCS.ps1", "Start-SRS.ps1", "Register-DcsSrsTasks.ps1", "Watchdog-DCS-SRS.ps1", "README.md")) {
+    Assert-RequiredPath -Path (Join-Path $ServicesDirectory $RequiredScript) -Description "services file $RequiredScript" -PathType Leaf
+}
 
 $VersionLine = Select-String -Path $RustManifestPath -Pattern '^version\s*=\s*"([^"]+)"' | Select-Object -First 1
 if (-not $VersionLine) {
@@ -218,6 +225,11 @@ foreach ($AssetMapping in $AssetMappings) {
 $LogsDirectory = Join-Path $ReleaseFolder "logs"
 New-Item -ItemType Directory -Force -Path $LogsDirectory | Out-Null
 $PackagedAssetFiles["logs"] = @()
+
+Write-Information "Packaging the services scripts..."
+$PackagedAssetFiles["services"] = @(
+    Copy-DirectoryTree -Source $ServicesDirectory -Destination (Join-Path $ReleaseFolder "services")
+)
 
 foreach ($ReleaseDirectory in $ReleaseDirectories) {
     $DestinationDirectory = Join-Path $ReleaseFolder $ReleaseDirectory
