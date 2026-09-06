@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>REST API (Swagger UI) - DCS-Web-Dashboard Documentation</title>
+        <title>Publishing a Release - DCS-Web-Dashboard Documentation</title>
 
 
         <!-- Custom HTML head -->
@@ -147,7 +147,7 @@
                         <a href="https://github.com/sevenfifty777/DCS-Web-Dashboard" title="Git repository" aria-label="Git repository">
                             <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
                         </a>
-                        <a href="https://github.com/sevenfifty777/DCS-Web-Dashboard/edit/main/docs/src/rest-api.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                        <a href="https://github.com/sevenfifty777/DCS-Web-Dashboard/edit/main/docs/src/releasing.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
                             <span class=fa-svg id="git-edit-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M421.7 220.3l-11.3 11.3-22.6 22.6-205 205c-6.6 6.6-14.8 11.5-23.8 14.1L30.8 511c-8.4 2.5-17.5 .2-23.7-6.1S-1.5 489.7 1 481.2L38.7 353.1c2.6-9 7.5-17.2 14.1-23.8l205-205 22.6-22.6 11.3-11.3 33.9 33.9 62.1 62.1 33.9 33.9zM96 353.9l-9.3 9.3c-.9 .9-1.6 2.1-2 3.4l-25.3 86 86-25.3c1.3-.4 2.5-1.1 3.4-2l9.3-9.3H112c-8.8 0-16-7.2-16-16V353.9zM453.3 19.3l39.4 39.4c25 25 25 65.5 0 90.5l-14.5 14.5-22.6 22.6-11.3 11.3-33.9-33.9-62.1-62.1L314.3 67.7l11.3-11.3 22.6-22.6 14.5-14.5c25-25 65.5-25 90.5 0z"/></svg></span>
                         </a>
 
@@ -181,19 +181,247 @@
 
                 <div id="mdbook-content" class="content">
                     <main>
-                        <h1 id="rest-api"><a class="header" href="#rest-api">REST API</a></h1>
-<p>The interactive Swagger UI below is generated from the dashboard’s OpenAPI specification.</p>
-<iframe src="swagger.html" title="DCS Web Dashboard REST API" style="width: 100%; height: 80vh; border: 0; background: #fff;"></iframe>
+                        <h1 id="publishing-a-release"><a class="header" href="#publishing-a-release">Publishing a Release</a></h1>
+<p>This page is the checklist for cutting a new version of the DCS Web Dashboard and publishing it
+on GitHub. It assumes no prior experience with GitHub releases: every command is written out, and
+every button is named.</p>
+<p>You do all of this from a normal PowerShell window on your development machine, in the folder
+where you cloned the repository. Nothing here touches your DCS server.</p>
+<h2 id="0-vocabulary"><a class="header" href="#0-vocabulary">0. Vocabulary</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Term</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>Branch</td><td>A named line of development. Work happens on a feature branch such as <code>left_panel</code>; the finished, official code lives on <code>main</code>.</td></tr>
+<tr><td>Pull request (PR)</td><td>A request to merge one branch into another, with a page on GitHub showing every change. Even when you are the only developer, it gives you a reviewable summary and a record of what went into each version.</td></tr>
+<tr><td>Merge</td><td>Actually applying the PR’s changes to <code>main</code>.</td></tr>
+<tr><td>Tag</td><td>A permanent, human-readable label on one exact commit, such as <code>v0.1.0</code>. Unlike a branch, a tag never moves.</td></tr>
+<tr><td>Release</td><td>A GitHub page attached to a tag, holding release notes and downloadable files.</td></tr>
+<tr><td>Asset</td><td>A file attached to a release. Ours is the release ZIP.</td></tr>
+<tr><td>Semantic version</td><td>The <code>MAJOR.MINOR.PATCH</code> numbering scheme, e.g. <code>0.1.0</code>.</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="1-choose-the-version-number"><a class="header" href="#1-choose-the-version-number">1. Choose the version number</a></h2>
+<p>The version lives in one place, <code>rust-web-dashboard/Cargo.toml</code>, and everything else derives from
+it: the ZIP file name, the folder inside it, and the version the dashboard reports in its API.</p>
+<p>We use <a href="https://semver.org/">semantic versioning</a>:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Change</th><th>Bump</th><th>Example</th></tr>
+</thead>
+<tbody>
+<tr><td>Bug fixes only, nothing new</td><td>PATCH</td><td><code>0.1.0</code> → <code>0.1.1</code></td></tr>
+<tr><td>New features, nothing broken for existing users</td><td>MINOR</td><td><code>0.1.0</code> → <code>0.2.0</code></td></tr>
+<tr><td>Something existing users must react to (a renamed variable, a removed page)</td><td>MAJOR</td><td><code>0.9.0</code> → <code>1.0.0</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>While the project is below <code>1.0.0</code>, a MINOR bump is the normal choice for a release with new
+features, and breaking changes are still allowed in a MINOR bump.</p>
+<p>For the very first release, keep the version already in the file (<code>0.1.0</code>). For later releases,
+edit it:</p>
+<pre><code class="language-powershell">notepad rust-web-dashboard\Cargo.toml
+</code></pre>
+<p>Change the <code>version = "0.1.0"</code> line near the top, save, then refresh the lockfile so it records
+the new version too:</p>
+<pre><code class="language-powershell">cd rust-web-dashboard
+cargo check --locked
+cd ..
+</code></pre>
+<p>If <code>cargo check --locked</code> complains that the lockfile needs updating, run <code>cargo check</code> once
+without <code>--locked</code>, then commit the changed <code>Cargo.lock</code> along with <code>Cargo.toml</code>.</p>
+<h2 id="2-pre-flight-checks"><a class="header" href="#2-pre-flight-checks">2. Pre-flight checks</a></h2>
+<p>Run these from the repository root. All three must pass before you go further.</p>
+<pre><code class="language-powershell"># 1. The backend compiles exactly as the release will build it
+cd rust-web-dashboard
+cargo +1.98.0 check --locked
+
+# 2. The test suite passes
+cargo +1.98.0 test --locked
+
+# 3. The API documentation matches the code
+$env:EXPORT_OPENAPI = "1"
+cargo +1.98.0 run --locked --quiet &gt; ..\docs\src\openapi.json
+Remove-Item Env:\EXPORT_OPENAPI
+cd ..
+git status --short docs/src/openapi.json
+</code></pre>
+<p>If that last <code>git status</code> prints a line, the API changed: commit the regenerated
+<code>docs/src/openapi.json</code> with your other changes so the published Swagger UI stays accurate. If it
+prints nothing, the spec was already current.</p>
+<p>Rust <code>1.98.0</code> is the toolchain the release script pins. Install it once with
+<code>rustup toolchain install 1.98.0</code>.</p>
+<h2 id="3-open-the-pull-request"><a class="header" href="#3-open-the-pull-request">3. Open the pull request</a></h2>
+<p>Make sure everything is committed and pushed on your feature branch:</p>
+<pre><code class="language-powershell">git status
+git add -A
+git commit -m "Describe what this change does"
+git push -u origin left_panel
+</code></pre>
+<p>Replace <code>left_panel</code> with whatever branch you are on. Then create the PR. With the
+<a href="https://cli.github.com/">GitHub CLI</a>:</p>
+<pre><code class="language-powershell">gh pr create --base main --head left_panel --title "Release 0.1.0" --body "First public release."
+</code></pre>
+<p>Or in a browser: open the repository, click the <strong>Pull requests</strong> tab, then <strong>New pull request</strong>,
+set <strong>base</strong> to <code>main</code> and <strong>compare</strong> to your branch, and click <strong>Create pull request</strong>.</p>
+<p>Look through the <strong>Files changed</strong> tab once. You are checking for things that should not ship:
+secrets, absolute paths from your own machine, or leftover debug code.</p>
+<h2 id="4-merge-the-pull-request"><a class="header" href="#4-merge-the-pull-request">4. Merge the pull request</a></h2>
+<p>Once you are happy with it:</p>
+<pre><code class="language-powershell">gh pr merge --merge
+</code></pre>
+<p>Or click the green <strong>Merge pull request</strong> button on the PR page, then <strong>Confirm merge</strong>.</p>
+<p>Bring your local <code>main</code> up to date afterwards:</p>
+<pre><code class="language-powershell">git checkout main
+git pull
+</code></pre>
+<p>Every command from here on runs on <code>main</code>.</p>
+<h2 id="5-build-the-release-zip"><a class="header" href="#5-build-the-release-zip">5. Build the release ZIP</a></h2>
+<p>One script does the whole build: frontend, backend, packaging and verification.</p>
+<pre><code class="language-powershell">.\build_release.ps1
+</code></pre>
+<p>It takes several minutes. It will:</p>
+<ol>
+<li>install the exact frontend dependencies from <code>package-lock.json</code>;</li>
+<li>build the static Next.js frontend;</li>
+<li>copy that build into <code>rust-web-dashboard/static/</code> so it gets embedded in the binary;</li>
+<li>compile the Rust executable in release mode with Rust 1.98.0;</li>
+<li>assemble <code>Releases\DCS-Web-Dashboard-&lt;version&gt;\</code> with the executable, the <code>icon</code> and <code>images</code>
+asset folders, an empty <code>logs</code> folder and the <code>services</code> scripts;</li>
+<li>zip it to <code>Releases\DCS-Web-Dashboard-&lt;version&gt;.zip</code> and verify every expected file is inside.</li>
+</ol>
+<p>The script stops with an error rather than producing a half-built ZIP, so if it finishes, the
+archive is complete. It prints the folder and ZIP paths at the end.</p>
+<h3 id="test-the-zip-before-publishing-it"><a class="header" href="#test-the-zip-before-publishing-it">Test the ZIP before publishing it</a></h3>
+<p>Do not skip this. Extract the ZIP somewhere fresh, on the server or on your own machine, set at
+minimum <code>JWT_SECRET</code> and <code>ADMIN_PASSWORD</code>, run <code>rust-web-dashboard.exe</code> from a PowerShell window,
+and open <code>http://localhost:3001</code>. Log in, click through the pages, and confirm the version shown
+by the API matches what you are about to publish:</p>
+<pre><code class="language-powershell">$env:JWT_SECRET = "a-temporary-test-secret-value"
+$env:ADMIN_PASSWORD = "test"
+.\rust-web-dashboard.exe
+</code></pre>
+<p>Press <code>Ctrl+C</code> to stop it when you are done.</p>
+<h2 id="6-tag-the-release"><a class="header" href="#6-tag-the-release">6. Tag the release</a></h2>
+<p>A tag marks the exact commit this version was built from, so you can always come back to it.</p>
+<pre><code class="language-powershell">git tag -a v0.1.0 -m "Release 0.1.0"
+git push origin v0.1.0
+</code></pre>
+<p>The tag name is the version with a leading <code>v</code>, matching the convention used by the DCS-gRPC
+fork. It must point at the commit you actually built, so tag <strong>after</strong> merging and pulling, and
+do not commit anything else in between.</p>
+<p>If you tagged the wrong commit and have not published the release yet:</p>
+<pre><code class="language-powershell">git tag -d v0.1.0
+git push origin :refs/tags/v0.1.0
+</code></pre>
+<p>Then tag again. Never move a tag that people may already have downloaded; cut a new version
+instead.</p>
+<h2 id="7-write-the-release-notes"><a class="header" href="#7-write-the-release-notes">7. Write the release notes</a></h2>
+<p>Release notes are what your users read first. Write them for someone who runs a DCS server, not
+for someone who reads Rust. A workable shape:</p>
+<pre><code class="language-markdown">## What's new
+
+- **Left panel customisation** — reorder, hide and unhide the pages in the sidebar by right-click
+  or drag.
+- **Mission and Tacview downloads** — pull `.miz` and `.acmi` files straight from the browser.
+- **DCS and SRS process control** — Start, Stop and Restart buttons that open a real, visible DCS
+  window, plus an optional crash-recovery watchdog.
+- **Multi-carrier Airboss planner** — every carrier in the mission gets its own panel.
+- **DCS-gRPC API key authentication** — the dashboard can authenticate to a gRPC server that has
+  `auth.enabled = true`.
+
+## Installing
+
+New install: download the ZIP below and follow the
+[setup guide](https://sevenfifty777.github.io/DCS-Web-Dashboard/setup.html).
+
+Upgrading: stop the service, replace `rust-web-dashboard.exe`, restart it. Your NSSM environment
+variables are unaffected.
+
+## Requirements
+
+- Windows Server or Windows 10 or newer
+- DCS-gRPC v0.9.2 or later ([custom fork](https://github.com/sevenfifty777/rust-server))
+
+## Breaking changes
+
+None.
+</code></pre>
+<p>For later releases, list anything that forces users to act (a renamed environment variable, a
+changed default) under <strong>Breaking changes</strong>, at the top. If nothing does, say “None” explicitly:
+that sentence saves people a careful read.</p>
+<h2 id="8-publish-the-release"><a class="header" href="#8-publish-the-release">8. Publish the release</a></h2>
+<p>With the GitHub CLI, from the repository root:</p>
+<pre><code class="language-powershell">gh release create v0.1.0 `
+    "Releases\DCS-Web-Dashboard-0.1.0.zip" `
+    --title "v0.1.0 - First release" `
+    --notes-file release-notes.md
+</code></pre>
+<p>Write your notes into <code>release-notes.md</code> first (and do not commit that file; it is scratch). To
+type the notes in the browser instead, drop <code>--notes-file</code> and add <code>--draft</code>, then finish the page
+on GitHub.</p>
+<p>Without the CLI: open the repository, click <strong>Releases</strong> in the right sidebar, then
+<strong>Draft a new release</strong>. Choose the existing tag <code>v0.1.0</code>, give it a title, paste the notes, drag
+the ZIP into the <strong>Attach binaries</strong> box, and click <strong>Publish release</strong>.</p>
+<p>Mark it as a <strong>pre-release</strong> if you want testers to try it before you recommend it generally. The
+checkbox is on the same page, or <code>--prerelease</code> on the CLI.</p>
+<h2 id="9-after-publishing"><a class="header" href="#9-after-publishing">9. After publishing</a></h2>
+<ol>
+<li><strong>Check the download.</strong> Open the release page in a private browser window, download the ZIP,
+and confirm it extracts with the executable inside. This catches a failed upload.</li>
+<li><strong>Check the documentation site.</strong> Merging to <code>main</code> triggers the <em>Deploy mdBook to GitHub
+Pages</em> workflow, which republishes
+<a href="https://sevenfifty777.github.io/DCS-Web-Dashboard/">https://sevenfifty777.github.io/DCS-Web-Dashboard/</a>. Watch it with <code>gh run watch</code>, or the
+<strong>Actions</strong> tab. If it fails, the site keeps serving the previous version, so fix it and push
+again.</li>
+<li><strong>Announce it</strong> wherever your users are, linking the release page.</li>
+</ol>
+<h2 id="quick-reference"><a class="header" href="#quick-reference">Quick reference</a></h2>
+<p>The whole sequence, once you know it:</p>
+<pre><code class="language-powershell"># On the feature branch
+cd rust-web-dashboard; cargo +1.98.0 test --locked; cd ..
+git push -u origin left_panel
+gh pr create --base main --head left_panel --title "Release 0.1.0" --body "..."
+gh pr merge --merge
+
+# On main
+git checkout main; git pull
+.\build_release.ps1
+git tag -a v0.1.0 -m "Release 0.1.0"
+git push origin v0.1.0
+gh release create v0.1.0 "Releases\DCS-Web-Dashboard-0.1.0.zip" --title "v0.1.0" --notes-file release-notes.md
+</code></pre>
+<h2 id="troubleshooting"><a class="header" href="#troubleshooting">Troubleshooting</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+</thead>
+<tbody>
+<tr><td><code>build_release.ps1</code> fails on <code>npm ci</code></td><td><code>package-lock.json</code> and <code>package.json</code> disagree.</td><td>Run <code>npm install</code> in <code>web-dashboard</code>, commit the updated lockfile, and rerun.</td></tr>
+<tr><td>Build fails fetching <code>protoc-bundled</code></td><td>No network, or Git cannot reach GitHub.</td><td>The build needs internet access on the first build; check your connection and any proxy.</td></tr>
+<tr><td><code>cargo</code> cannot find toolchain <code>1.98.0</code></td><td>The pinned toolchain is not installed.</td><td><code>rustup toolchain install 1.98.0</code>.</td></tr>
+<tr><td>The script says a packaged tree “does not match its expected contents”</td><td>A stale file is sitting in the release folder.</td><td>Delete <code>Releases\DCS-Web-Dashboard-&lt;version&gt;\</code> and rerun.</td></tr>
+<tr><td><code>gh</code> says “release not found” or “tag not found”</td><td>The tag was never pushed.</td><td><code>git push origin v0.1.0</code>.</td></tr>
+<tr><td>The release ZIP has the wrong version in its name</td><td><code>Cargo.toml</code> was not bumped, or not saved.</td><td>Fix the version, rerun <code>build_release.ps1</code>.</td></tr>
+<tr><td>The docs site still shows the old content</td><td>The Pages workflow failed or is still running.</td><td>Check the <strong>Actions</strong> tab; rerun the failed job.</td></tr>
+</tbody>
+</table>
+</div>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="releasing.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="architecture.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="api_grpc.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="rest-api.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -203,11 +431,11 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="releasing.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="architecture.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="api_grpc.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="rest-api.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

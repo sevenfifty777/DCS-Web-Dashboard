@@ -604,11 +604,22 @@ message StreamEventsResponse {
   }
 }
 
+// `StreamUnits` is a discovery / pre-filter API: it polls every tracked unit
+// through individual `GetTransform` requests (at most 8 in flight per stream)
+// that are throttled by the mission `throughputLimit`. It is not suitable for
+// sub-100 ms telemetry; use targeted unary calls such as
+// `RecoveryService.GetRecoverySnapshot` for that.
 message StreamUnitsRequest {
   // The poll rate in seconds at which the gRPC server communicates with the DCS
   // mission to retrieve the latest unit positions. The lower the `poll_rate`
-  // the higher the amount of requests send to to the DCS mission. Default: 5
+  // the higher the amount of requests send to to the DCS mission. Default: 5.
+  // Ignored when `poll_rate_ms` is set. A value of 0 (with `poll_rate_ms`
+  // unset) is rejected with INVALID_ARGUMENT.
   optional uint32 poll_rate = 1;
+
+  // The poll rate in milliseconds. When set it takes precedence over
+  // `poll_rate`. Values below 50 ms are rejected with INVALID_ARGUMENT.
+  optional uint32 poll_rate_ms = 4;
 
   // The maximum backoff in seconds which the gRPC postpones polling units that
   // haven't moved recently. This is an optimization to dynamically reduce the

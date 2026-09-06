@@ -1214,7 +1214,7 @@ dependencies = [
 [[package]]
 name = "protoc-bundled"
 version = "27.0.0"
-source = "git+https://github.com/rkusa/protoc-bundled.git?rev=27.0.0#d8e8f513cfe007a6243a7eef571677fd366d2cb9"
+source = "git+https://github.com/sevenfifty777/protoc-bundled.git?rev=d8e8f513cfe007a6243a7eef571677fd366d2cb9#d8e8f513cfe007a6243a7eef571677fd366d2cb9"
 
 [[package]]
 name = "quinn"

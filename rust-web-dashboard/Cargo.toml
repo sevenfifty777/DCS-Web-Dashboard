@@ -5,6 +5,9 @@ edition = "2021"
 rust-version = "1.85"
 license = "AGPL-3.0-or-later"
 description = "Standalone Rust web dashboard for a DCS-gRPC server (single-binary axum + tonic)"
+repository = "https://github.com/sevenfifty777/DCS-Web-Dashboard"
+homepage = "https://sevenfifty777.github.io/DCS-Web-Dashboard/"
+readme = "../README.md"
 publish = false
 
 [dependencies]
@@ -84,7 +87,7 @@ regex = "1.13.1"
 
 [build-dependencies]
 tonic-build = "0.13"
-protoc-bundled = { git = "https://github.com/rkusa/protoc-bundled.git", rev = "27.0.0" }
+protoc-bundled = { git = "https://github.com/sevenfifty777/protoc-bundled.git", rev = "d8e8f513cfe007a6243a7eef571677fd366d2cb9" }
 
 [profile.release]
 opt-level = 3

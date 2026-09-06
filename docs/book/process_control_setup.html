@@ -1,0 +1,566 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>DCS &amp; SRS Process Control Setup - DCS-Web-Dashboard Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-e96d0476.css">
+        <link rel="stylesheet" href="css/chrome-d279d366.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/custom-0445da38.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "searchindex-0a4111d4.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc-cd085332.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">DCS-Web-Dashboard Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/sevenfifty777/DCS-Web-Dashboard" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/sevenfifty777/DCS-Web-Dashboard/edit/main/docs/src/process_control_setup.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                            <span class=fa-svg id="git-edit-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M421.7 220.3l-11.3 11.3-22.6 22.6-205 205c-6.6 6.6-14.8 11.5-23.8 14.1L30.8 511c-8.4 2.5-17.5 .2-23.7-6.1S-1.5 489.7 1 481.2L38.7 353.1c2.6-9 7.5-17.2 14.1-23.8l205-205 22.6-22.6 11.3-11.3 33.9 33.9 62.1 62.1 33.9 33.9zM96 353.9l-9.3 9.3c-.9 .9-1.6 2.1-2 3.4l-25.3 86 86-25.3c1.3-.4 2.5-1.1 3.4-2l9.3-9.3H112c-8.8 0-16-7.2-16-16V353.9zM453.3 19.3l39.4 39.4c25 25 25 65.5 0 90.5l-14.5 14.5-22.6 22.6-11.3 11.3-33.9-33.9-62.1-62.1L314.3 67.7l11.3-11.3 22.6-22.6 14.5-14.5c25-25 65.5-25 90.5 0z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <!-- Single source: services/README.md ships in the release ZIP; this page includes it verbatim. -->
+<h1 id="dcs--srs-process-control-setup"><a class="header" href="#dcs--srs-process-control-setup">DCS &amp; SRS Process Control Setup</a></h1>
+<p>This guide explains, step by step, how to make the <strong>Start</strong>, <strong>Stop</strong> and <strong>Restart</strong> buttons of
+the DCS Web Dashboard (Mission page and SRS page) start DCS and SRS <strong>with their window visible</strong>
+on the server, and how to make the server fully unattended so nobody ever has to log on to it.</p>
+<p>No prior knowledge of Windows Task Scheduler is assumed. Every option is explained. The scripts
+mentioned here are in the <code>services</code> folder of the release ZIP (the folder this file is in).</p>
+<p><strong>What you will do, in short:</strong></p>
+<ol>
+<li>Copy the <code>services</code> folder to a permanent place on the server.</li>
+<li>Run one script, once, that creates a few Windows “scheduled tasks”.</li>
+<li>Add two lines to the dashboard’s settings and restart it.</li>
+<li>Optionally make the server log on by itself at boot, so it works with nobody around.</li>
+</ol>
+<h2 id="1-the-problem-this-solves"><a class="header" href="#1-the-problem-this-solves">1. The problem this solves</a></h2>
+<p>The dashboard runs as a Windows <strong>service</strong> (through NSSM). Windows runs services in a hidden
+place called <strong>Session 0</strong>: it has no screen, no desktop, no windows. Anything a service starts
+directly also lands in Session 0. DCS and SRS then run, but their windows exist nowhere you can
+see them, and DCS does not behave well without a real desktop.</p>
+<p>A window can only be shown inside a <strong>user session</strong>, the thing Windows creates when a user logs
+on (at the keyboard, or through Remote Desktop). So the dashboard must ask Windows to start DCS
+<em>inside</em> a user session instead of starting it itself.</p>
+<p>The tool Windows provides for this is <strong>Task Scheduler</strong>. A scheduled task can be told
+“run this program as user X, only when X is logged on”. When a task is triggered, Task Scheduler
+starts the program inside X’s session, with X’s desktop, so the window is visible. The dashboard
+triggers the task, Task Scheduler does the launching.</p>
+<p>Two consequences you must know:</p>
+<ul>
+<li><strong>A user must be logged on.</strong> Locked screen is fine. A Remote Desktop session you <em>disconnected</em>
+is fine (the session stays alive). A session you <em>signed out</em> of is gone, and so is DCS.</li>
+<li>To be unattended, the server must log that user on <strong>by itself at boot</strong>. That is called
+auto-logon and is covered in section 6.</li>
+</ul>
+<h2 id="2-vocabulary"><a class="header" href="#2-vocabulary">2. Vocabulary</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Term</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>Session 0</td><td>The hidden session where Windows services run. No desktop.</td></tr>
+<tr><td>User session</td><td>What you get after logging on: a desktop with windows. Each logged-on user has one. Shown by the <code>quser</code> command with an ID number.</td></tr>
+<tr><td>Console session</td><td>The session attached to the physical screen and keyboard.</td></tr>
+<tr><td>RDP session</td><td>A session created by Remote Desktop. The same account can be moved from console to RDP and back.</td></tr>
+<tr><td>Disconnect vs sign out</td><td><em>Disconnect</em> closes the Remote Desktop window but keeps the session (and DCS) alive. <em>Sign out</em> destroys the session and kills everything in it. Always disconnect.</td></tr>
+<tr><td>Scheduled task</td><td>An entry in Task Scheduler: a program to run, who runs it, when. Can be started on demand.</td></tr>
+<tr><td>“Run only when user is logged on”</td><td>Task option. The program runs inside the user’s session, window visible. This is the option the whole procedure relies on.</td></tr>
+<tr><td>Trigger</td><td>What starts a task automatically (at logon, at a time). Our start tasks have no trigger: the dashboard starts them.</td></tr>
+<tr><td>Auto-logon</td><td>Windows logs a chosen account on automatically at boot, without anyone typing a password.</td></tr>
+<tr><td>NSSM</td><td>The tool that runs the dashboard as a service. Its “Environment” tab holds the dashboard’s settings.</td></tr>
+<tr><td>Watchdog</td><td>A small script that runs all the time and restarts DCS or SRS if they crash.</td></tr>
+<tr><td>Elevated PowerShell</td><td>A PowerShell window opened with “Run as administrator”.</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="3-the-scripts"><a class="header" href="#3-the-scripts">3. The scripts</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Script</th><th>What it does</th><th>Who runs it</th></tr>
+</thead>
+<tbody>
+<tr><td><code>Start-DCS.ps1</code></td><td>Starts <code>DCS_server.exe</code> once and exits.</td><td>The “DCS Server Start” task, on demand.</td></tr>
+<tr><td><code>Start-SRS.ps1</code></td><td>Starts <code>SRS-Server.exe</code> once and exits.</td><td>The “SRS Server Start” task, on demand.</td></tr>
+<tr><td><code>Register-DcsSrsTasks.ps1</code></td><td>Creates the scheduled tasks for you. Called “the helper” below.</td><td>You, once per server.</td></tr>
+<tr><td><code>Watchdog-DCS-SRS.ps1</code></td><td>Starts both at boot, restarts them if they crash.</td><td>The “DCS SRS Watchdog” task, at logon.</td></tr>
+</tbody>
+</table>
+</div>
+<p>All four must stay together in the same folder, and the folder must not move afterwards
+(the tasks store its full path).</p>
+<h3 id="31-start-dcsps1-options"><a class="header" href="#31-start-dcsps1-options">3.1 Start-DCS.ps1 options</a></h3>
+<p>You normally never type these yourself. You pass them once to the helper (section 5), which
+stores them inside the task.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Option</th><th>Default</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><code>-DcsBin</code></td><td><code>C:\Program Files\Eagle Dynamics\DCS World OpenBeta Server\bin</code></td><td>Folder that contains <code>DCS_server.exe</code>. Change it if your DCS is installed elsewhere, for example <code>C:\Program Files\Eagle Dynamics\DCS World Server\bin</code>.</td></tr>
+<tr><td><code>-DcsArgs</code></td><td><code>launch</code></td><td>Arguments given to <code>DCS_server.exe</code>. <code>launch</code> opens the dedicated-server window.</td></tr>
+<tr><td><code>-LogDir</code></td><td><code>&lt;your profile&gt;\Saved Games\DCS.openbeta_server\Logs</code></td><td>Folder where the script writes <code>dcs_start.log</code>. Any folder you like.</td></tr>
+<tr><td><code>-WaitForExitSec</code></td><td><code>30</code></td><td>When the dashboard does a Restart, it kills DCS and then runs this task. DCS may need a moment to disappear. The script waits up to this many seconds for the old DCS to be gone before starting a new one.</td></tr>
+</tbody>
+</table>
+</div>
+<p>What it writes to <code>dcs_start.log</code>, one line per run: who ran it, in which session, then either
+“DCS launched” with the process id, “already running -&gt; skip”, or an error.</p>
+<h3 id="32-start-srsps1-options"><a class="header" href="#32-start-srsps1-options">3.2 Start-SRS.ps1 options</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Option</th><th>Default</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><code>-SrsBin</code></td><td><code>C:\Program Files\DCS-SimpleRadio-Standalone\Server</code></td><td>Folder that contains <code>SRS-Server.exe</code>.</td></tr>
+<tr><td><code>-SrsCfg</code></td><td><code>server.cfg</code> inside <code>-SrsBin</code></td><td>The SRS configuration file to load.</td></tr>
+<tr><td><code>-LogDir</code></td><td>same default as DCS</td><td>Folder for <code>srs_start.log</code>.</td></tr>
+<tr><td><code>-WaitForExitSec</code></td><td><code>30</code></td><td>Same meaning as for DCS.</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="33-register-dcssrstasksps1-options-the-helper"><a class="header" href="#33-register-dcssrstasksps1-options-the-helper">3.3 Register-DcsSrsTasks.ps1 options (the helper)</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Option</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><em>(no option)</em></td><td>Creates the two start tasks “DCS Server Start” and “SRS Server Start”. Running it again is safe: it overwrites the tasks with the same settings, never duplicates them.</td></tr>
+<tr><td><code>-DcsScriptArgs '...'</code></td><td>Text appended to the DCS task’s command line. This is how you pass <code>-DcsBin</code>, <code>-LogDir</code>, etc. to <code>Start-DCS.ps1</code>. The whole text goes inside single quotes, and paths inside it use double quotes.</td></tr>
+<tr><td><code>-SrsScriptArgs '...'</code></td><td>Same for SRS.</td></tr>
+<tr><td><code>-LockAtLogOn</code></td><td>Also creates “Lock Workstation At Logon”: locks the screen 20 seconds after the user logs on. Use it with auto-logon so the server never sits with an open desktop.</td></tr>
+<tr><td><code>-Watchdog</code></td><td>Also creates “DCS SRS Watchdog”: at logon, waits for the network, starts DCS then SRS, then restarts either one if it crashes. Requires <code>-SavedGamesDir</code>.</td></tr>
+<tr><td><code>-SavedGamesDir "..."</code></td><td>Your DCS Saved Games folder, <strong>the same value as <code>DCS_SAVED_GAMES_DIR</code> in NSSM</strong>. The watchdog and the dashboard exchange small “stop” marker files in that folder (see section 7).</td></tr>
+<tr><td><code>-AtLogOn</code></td><td>Alternative to <code>-Watchdog</code>: the two start tasks also fire at logon, with no crash recovery. Do not combine with <code>-Watchdog</code>.</td></tr>
+<tr><td><code>-SkipDcs</code>, <code>-SkipSrs</code></td><td>Do not touch the DCS or SRS start task. Useful to add only the lock task later.</td></tr>
+<tr><td><code>-WhatIf</code></td><td>Shows what would be created without creating anything.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Every task is created with these settings, which you can also check in the Task Scheduler window
+(Start menu, type “Task Scheduler”, the tasks are in the top-level “Task Scheduler Library”):</p>
+<ul>
+<li><strong>General tab</strong>: user = the account you ran the helper as; “Run only when user is logged on”
+selected; “Run with highest privileges” ticked.</li>
+<li><strong>Settings tab</strong>: “Do not start a new instance” if already running; “Stop the task if it runs
+longer than 5 minutes” (no limit for the watchdog); start even on battery.</li>
+<li><strong>Triggers tab</strong>: empty for the start tasks; “At log on” for the lock and watchdog tasks.</li>
+</ul>
+<h2 id="4-prerequisites"><a class="header" href="#4-prerequisites">4. Prerequisites</a></h2>
+<ul>
+<li>The dashboard is installed as an NSSM service and works (see the <em>Configuration (NSSM)</em> page of
+the documentation). Use the dashboard build that came with this <code>services</code> folder, or newer.</li>
+<li>DCS dedicated server and SRS server are installed and you know their folders.</li>
+<li>You know which Windows account will own the DCS window. Below it is called <strong>the DCS account</strong>.
+Use the same account for auto-logon, for running the helper, and for Remote Desktop.</li>
+<li>You can open an <strong>elevated</strong> PowerShell: Start menu, type “PowerShell”, right-click
+“Windows PowerShell”, “Run as administrator”.</li>
+</ul>
+<h2 id="5-step-by-step-the-start-tasks"><a class="header" href="#5-step-by-step-the-start-tasks">5. Step by step: the start tasks</a></h2>
+<p>Do this on each server.</p>
+<h3 id="step-51-copy-the-scripts"><a class="header" href="#step-51-copy-the-scripts">Step 5.1 Copy the scripts</a></h3>
+<p>Copy the whole <code>services</code> folder from the release ZIP next to the dashboard, for example to
+<code>C:\DCS-Web-Dashboard\services</code>. It must contain <code>Start-DCS.ps1</code>, <code>Start-SRS.ps1</code>,
+<code>Register-DcsSrsTasks.ps1</code> and <code>Watchdog-DCS-SRS.ps1</code>. Do not put it inside the DCS
+installation folder (DCS updates may clean it) and do not move it later.</p>
+<h3 id="step-52-log-on-as-the-dcs-account"><a class="header" href="#step-52-log-on-as-the-dcs-account">Step 5.2 Log on as the DCS account</a></h3>
+<p>Log on to the server (console or Remote Desktop) <strong>as the DCS account</strong>. The helper creates the
+tasks for the account that runs it. If you run it as another administrator, the tasks will wait
+for <em>that</em> account to log on and will never run.</p>
+<h3 id="step-53-run-the-helper"><a class="header" href="#step-53-run-the-helper">Step 5.3 Run the helper</a></h3>
+<p>Open PowerShell as administrator, go to the folder, run the helper. Adapt the paths to your server:</p>
+<pre><code class="language-powershell">cd C:\DCS-Web-Dashboard\services
+.\Register-DcsSrsTasks.ps1 `
+    -DcsScriptArgs '-DcsBin "C:\Program Files\Eagle Dynamics\DCS World Server\bin" -LogDir "C:\DCS_Server_Data\Logs"' `
+    -SrsScriptArgs '-LogDir "C:\DCS_Server_Data\Logs"'
+</code></pre>
+<p>The backtick at the end of a line just continues the command on the next line; you can also type
+everything on one line. If your paths match the defaults of sections 3.1 and 3.2, the bare
+<code>.\Register-DcsSrsTasks.ps1</code> is enough. If PowerShell answers that “running scripts is
+disabled on this system”, run it as
+<code>powershell -ExecutionPolicy Bypass -File .\Register-DcsSrsTasks.ps1 ...</code> instead.</p>
+<p>The helper prints each task it created and the exact command line stored in it.</p>
+<h3 id="step-54-test-the-task-without-the-dashboard"><a class="header" href="#step-54-test-the-task-without-the-dashboard">Step 5.4 Test the task without the dashboard</a></h3>
+<p>Still in the same session:</p>
+<pre><code class="language-powershell">Start-ScheduledTask -TaskName 'DCS Server Start'
+</code></pre>
+<p>The DCS window must open on your desktop within a few seconds. Then:</p>
+<pre><code class="language-powershell">Get-Process DCS_server | Select-Object Id, SessionId
+quser
+Get-Content "C:\DCS_Server_Data\Logs\dcs_start.log" -Tail 3
+</code></pre>
+<p><code>SessionId</code> of DCS must be the same number as your session ID in the <code>quser</code> output, and the
+last log line must say “DCS launched”. If <code>SessionId</code> is 0, the task is not set to
+“Run only when user is logged on” (see troubleshooting). Do the same with <code>'SRS Server Start'</code>.</p>
+<h3 id="step-55-tell-the-dashboard-to-use-the-tasks"><a class="header" href="#step-55-tell-the-dashboard-to-use-the-tasks">Step 5.5 Tell the dashboard to use the tasks</a></h3>
+<p>In NSSM (<code>nssm edit "DCS Web Dashboard"</code> in an elevated PowerShell, then the Environment tab)
+add these two lines:</p>
+<pre><code>DCS_SCHEDULED_TASK_NAME=DCS Server Start
+SRS_SCHEDULED_TASK_NAME=SRS Server Start
+</code></pre>
+<p>Keep <code>SRS_CFG_PATH</code> (the SRS settings page needs it). <code>DCS_START_CMD</code> and <code>SRS_START_CMD</code> are no
+longer used when the task names are set; you can remove them. Click “Edit service”, then restart
+the service:</p>
+<pre><code class="language-powershell">Restart-Service "DCS Web Dashboard"
+</code></pre>
+<h3 id="step-56-test-from-the-dashboard"><a class="header" href="#step-56-test-from-the-dashboard">Step 5.6 Test from the dashboard</a></h3>
+<p>From another computer, open the Mission page. Press <strong>Stop</strong> on the DCS box, wait for STOPPED,
+press <strong>Start</strong>, wait for RUNNING, then <strong>Restart</strong>. The window on the server must disappear and
+come back each time. Repeat on the SRS box. If something fails, the reason is shown in red under
+the box. Rerun the commands of step 5.4 to confirm the session id.</p>
+<h2 id="6-step-by-step-unattended-server-auto-logon"><a class="header" href="#6-step-by-step-unattended-server-auto-logon">6. Step by step: unattended server (auto-logon)</a></h2>
+<p>Without this, after a reboot nobody is logged on, and the start tasks cannot show a window until
+someone connects. With it, Windows logs the DCS account on at boot, locks the screen, and the
+dashboard can start and stop DCS at any time.</p>
+<h3 id="risks-to-weigh-before-you-enable-auto-logon"><a class="header" href="#risks-to-weigh-before-you-enable-auto-logon">Risks to weigh before you enable auto-logon</a></h3>
+<p>Auto-logon trades some security for convenience. Read this before step 6.1.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Risk</th><th>Why</th><th>What to do</th></tr>
+</thead>
+<tbody>
+<tr><td>The password is stored on the disk</td><td>Windows must know it to log on by itself. The Autologon tool stores it as an encrypted “LSA secret”, but any administrator of that machine, or anyone who takes the disk out, can recover it. The registry method (<code>DefaultPassword</code>) stores it in clear text, do not use it.</td><td>Use a <strong>dedicated account</strong> for DCS with a password used nowhere else. Never a domain administrator or your personal account. Enable BitLocker on the system disk if the machine is not physically secure.</td></tr>
+<tr><td>The desktop is unlocked right after boot</td><td>Between logon and the lock task there are about 20 seconds with an open desktop.</td><td>Keep the lock task (<code>-LockAtLogOn</code>). Only matters for people with physical access to the machine.</td></tr>
+<tr><td>The account is always logged on</td><td>Whatever runs in that session (DCS, SRS, mission scripts) runs with that account’s rights, all the time.</td><td>Give the account only what it needs. It has to be a local administrator for “Run with highest privileges” to mean anything; if you do not need that, keep it a standard user and the tasks will run with normal rights.</td></tr>
+<tr><td>Remote Desktop exposure</td><td>You connect with the same account, so its password also opens Remote Desktop.</td><td>Do not expose Remote Desktop to the internet. Use a VPN or restrict it by firewall to your IP addresses, keep Network Level Authentication on, use a long password.</td></tr>
+<tr><td>The scripts run at every logon with high rights</td><td>Anyone who can write to the <code>services</code> folder can change what runs at boot.</td><td>Keep the folder where only administrators can write (a folder directly under <code>C:\</code> has that by default). Do not put it on a share.</td></tr>
+<tr><td>The dashboard can now kill and start server processes</td><td>Anyone with dashboard admin access can stop DCS and SRS. This was already true before this guide.</td><td>Protect the dashboard login (strong <code>ADMIN_PASSWORD</code> or Discord roles, HTTPS in front of it).</td></tr>
+</tbody>
+</table>
+</div>
+<p>If none of this is acceptable in your environment, skip section 6: everything else still works,
+but somebody has to connect by Remote Desktop with the DCS account after each reboot, then
+disconnect, before the dashboard can start DCS.</p>
+<h3 id="step-61-configure-auto-logon"><a class="header" href="#step-61-configure-auto-logon">Step 6.1 Configure auto-logon</a></h3>
+<p>Use Microsoft’s <strong>Autologon</strong> tool (Sysinternals): it stores the password encrypted, unlike the
+registry method. Download it from
+<a href="https://learn.microsoft.com/sysinternals/downloads/autologon">https://learn.microsoft.com/sysinternals/downloads/autologon</a>, extract it, then in an elevated
+PowerShell, from the extracted folder:</p>
+<pre><code class="language-powershell">.\Autologon64.exe &lt;DCS account name&gt; $env:COMPUTERNAME &lt;password&gt;
+</code></pre>
+<p>For a Microsoft account (Windows 11), use the sign-in email address as the account name. The
+tool prints “Autologon successfully configured”. To remove it later: <code>.\Autologon64.exe /delete</code>.</p>
+<h3 id="step-62-add-the-lock-task"><a class="header" href="#step-62-add-the-lock-task">Step 6.2 Add the lock task</a></h3>
+<p>So the auto-logged-on desktop is never left open. Logged on as the DCS account, elevated:</p>
+<pre><code class="language-powershell">cd C:\DCS-Web-Dashboard\services
+.\Register-DcsSrsTasks.ps1 -SkipDcs -SkipSrs -LockAtLogOn
+</code></pre>
+<p>(Or rerun your full step 5.3 command with <code>-LockAtLogOn</code> added; both give the same result.)</p>
+<h3 id="step-63-reboot-and-check"><a class="header" href="#step-63-reboot-and-check">Step 6.3 Reboot and check</a></h3>
+<p>Reboot the server. It must reach the lock screen by itself. Connect by Remote Desktop <strong>with the
+DCS account</strong> and run <code>quser</code>: the DCS account must be listed, and you must be inside that same
+session (the <code>&gt;</code> marker). Then press Start in the dashboard: the window appears.</p>
+<h3 id="step-64-operating-rules"><a class="header" href="#step-64-operating-rules">Step 6.4 Operating rules</a></h3>
+<ul>
+<li>Connect with Remote Desktop using the DCS account only.</li>
+<li>When you are done, <strong>disconnect</strong> (close the Remote Desktop window, or Start menu, account
+picture, Disconnect). <strong>Never Sign out.</strong> Signing out kills DCS and SRS and the dashboard
+cannot start them again until the next reboot or logon.</li>
+</ul>
+<h2 id="7-step-by-step-crash-recovery-watchdog"><a class="header" href="#7-step-by-step-crash-recovery-watchdog">7. Step by step: crash recovery (watchdog)</a></h2>
+<p>The watchdog task starts at logon, waits until the network is up, starts DCS, waits 30 seconds,
+starts SRS, then checks every 30 seconds and restarts whichever of the two is missing.</p>
+<p>To make sure it does not fight the dashboard, the two agree on <strong>marker files</strong> in the Saved
+Games folder:</p>
+<ul>
+<li>when you press <strong>Stop</strong> on the DCS box, the dashboard creates <code>dashboard_stop_dcs.flag</code>;
+the watchdog sees it and leaves DCS alone;</li>
+<li>when you press <strong>Start</strong> or <strong>Restart</strong>, the dashboard deletes the file and the watchdog
+resumes guarding DCS;</li>
+<li><code>dashboard_stop_srs.flag</code> does the same for SRS.</li>
+</ul>
+<p>Register it, logged on as the DCS account, elevated, using the same <code>-DcsScriptArgs</code> and
+<code>-SrsScriptArgs</code> as in step 5.3 and your Saved Games folder:</p>
+<pre><code class="language-powershell">cd C:\DCS-Web-Dashboard\services
+.\Register-DcsSrsTasks.ps1 -Watchdog -LockAtLogOn `
+    -SavedGamesDir "C:\Users\&lt;DCS account&gt;\Saved Games\DCS.dcs_serverrelease" `
+    -DcsScriptArgs '-DcsBin "C:\Program Files\Eagle Dynamics\DCS World Server\bin" -LogDir "C:\DCS_Server_Data\Logs"' `
+    -SrsScriptArgs '-LogDir "C:\DCS_Server_Data\Logs"'
+</code></pre>
+<p>If you had another task or script that started DCS at boot before, disable it (do not delete it,
+so you can go back). For the old all-in-one <code>Start-DCS-SRS.ps1</code> script:</p>
+<pre><code class="language-powershell">Get-ScheduledTask | Where-Object { $_.Actions.Arguments -match 'Start-DCS-SRS' } | Disable-ScheduledTask
+</code></pre>
+<p>Start the watchdog now without rebooting: <code>Start-ScheduledTask -TaskName 'DCS SRS Watchdog'</code>.
+Its log is <code>dcs_srs_watchdog.log</code> in <code>&lt;Saved Games&gt;\Logs</code>.</p>
+<p>Test: press Stop in the dashboard, wait two minutes, DCS must stay stopped. Press Start, then
+close DCS by hand from its window: within about a minute the watchdog brings it back.</p>
+<h3 id="what-happens-at-a-server-reboot"><a class="header" href="#what-happens-at-a-server-reboot">What happens at a server reboot</a></h3>
+<p>With auto-logon (section 6) and the watchdog registered, a reboot runs by itself:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Moment</th><th>What runs</th><th>Result</th></tr>
+</thead>
+<tbody>
+<tr><td>Windows starts</td><td>auto-logon</td><td>The DCS account is logged on, a desktop session exists.</td></tr>
+<tr><td>20 s after logon</td><td>“Lock Workstation At Logon”</td><td>The screen is locked. Nothing else changes.</td></tr>
+<tr><td>30 s after logon</td><td>“DCS SRS Watchdog”</td><td>Waits for the network (up to 3 minutes), starts DCS, waits 30 s, starts SRS, then keeps watching.</td></tr>
+<tr><td>any time later</td><td>“DCS Server Start” / “SRS Server Start”</td><td><strong>Not</strong> started by the reboot. They have no trigger and only run when the dashboard (or you) starts them.</td></tr>
+</tbody>
+</table>
+</div>
+<p>So the watchdog is what starts DCS and SRS at boot; the two start tasks exist for the dashboard
+buttons. If you prefer no watchdog, register with <code>-AtLogOn</code> instead of <code>-Watchdog</code>: the start
+tasks then fire once at logon and nothing restarts DCS if it crashes.</p>
+<p>Two things break this chain: removing auto-logon (nothing runs until someone connects with the
+DCS account), and signing out instead of disconnecting (see step 6.4).</p>
+<h2 id="8-checking-and-troubleshooting"><a class="header" href="#8-checking-and-troubleshooting">8. Checking and troubleshooting</a></h2>
+<p>Useful commands (any PowerShell on the server):</p>
+<pre><code class="language-powershell"># state of the tasks and result of their last run (0 = fine)
+Get-ScheduledTask 'DCS Server Start','SRS Server Start' | Get-ScheduledTaskInfo | Select-Object TaskName, LastRunTime, LastTaskResult
+# where the processes live (SessionId 0 = hidden Session 0, wrong)
+Get-Process DCS_server, SRS-Server -ErrorAction SilentlyContinue | Select-Object Name, Id, SessionId
+# who is logged on
+quser
+# what the dashboard did
+Select-String -Path 'C:\DCS-Web-Dashboard\logs\dashboard*.log' -Pattern 'schtasks|Stopping DCS|Stopping SRS|stop flag' | Select-Object -Last 10
+</code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+</thead>
+<tbody>
+<tr><td>Dashboard says RUNNING, no window, <code>SessionId</code> is 0</td><td>The task runs “whether user is logged on or not”, or the dashboard still uses <code>DCS_START_CMD</code>.</td><td>Rerun the helper as the DCS account; check the NSSM variables of step 5.5; restart the service.</td></tr>
+<tr><td>Dashboard shows “its user is not logged on to the server”</td><td>No session for the DCS account.</td><td>Log on (or set up auto-logon, section 6). Never sign out.</td></tr>
+<tr><td>Window opens, but on the physical screen, not in your Remote Desktop</td><td>You connected with a different account than the DCS account.</td><td>Connect with the DCS account.</td></tr>
+<tr><td>Dashboard shows “exit code 1”, <code>LastTaskResult</code> is <code>1</code></td><td><code>Start-DCS.ps1</code> did not find <code>DCS_server.exe</code> (or SRS its config).</td><td>Fix <code>-DcsBin</code> / <code>-SrsCfg</code> in the helper command and rerun it. See the log in <code>-LogDir</code>.</td></tr>
+<tr><td>Dashboard shows “exit code 2”, <code>LastTaskResult</code> is <code>2</code></td><td>Windows refused to launch the executable.</td><td>See the log in <code>-LogDir</code>; check the file is not blocked or missing permissions.</td></tr>
+<tr><td>Dashboard shows “no DCS process appeared within 15s”</td><td>The task ran but DCS did not start, or took too long.</td><td>Look at <code>dcs_start.log</code> and the DCS log itself.</td></tr>
+<tr><td>After Restart the dashboard stays STOPPED</td><td>The old DCS took longer than 30 seconds to die.</td><td>Raise <code>-WaitForExitSec</code> in <code>-DcsScriptArgs</code> and rerun the helper.</td></tr>
+<tr><td>DCS comes back one minute after every Stop</td><td>An old boot script or task is still running (section 7), or the dashboard is older than this <code>services</code> folder.</td><td>Disable that task; update the dashboard.</td></tr>
+<tr><td>“Task is not in the allowed whitelist” on the Tasks page</td><td><code>DCS_TASK_WHITELIST</code> is set in NSSM.</td><td>Add the task names to it, or leave the variable empty.</td></tr>
+<tr><td>Helper refuses to run: “requires … Administrator”</td><td>PowerShell is not elevated.</td><td>Right-click PowerShell, Run as administrator.</td></tr>
+<tr><td>Helper refuses to run: “running scripts is disabled”</td><td>Execution policy.</td><td>Run <code>powershell -ExecutionPolicy Bypass -File .\Register-DcsSrsTasks.ps1 ...</code>.</td></tr>
+</tbody>
+</table>
+</div>
+<p>To undo everything: open Task Scheduler and delete the four tasks (or
+<code>Unregister-ScheduledTask -TaskName 'DCS Server Start'</code> for each), remove the two variables from
+NSSM, run <code>Autologon64.exe /delete</code>.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="configuration.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="features.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="configuration.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="features.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-09f2665d.js"></script>
+
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-abc7f01d.js"></script>
+        <script src="book-609e4cb8.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

@@ -36,10 +36,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-cbd1aaa9.js";
+            window.path_to_searchindex_js = "searchindex-0a4111d4.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-1c680d0f.js"></script>
+        <script src="toc-cd085332.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -182,8 +182,34 @@
                 <div id="mdbook-content" class="content">
                     <main>
                         <h1 id="dcs-web-dashboard-documentation"><a class="header" href="#dcs-web-dashboard-documentation">DCS-Web-Dashboard Documentation</a></h1>
-<p>Welcome to the documentation for DCS-Web-Dashboard!</p>
-<p>This documentation provides details on both the REST API and the gRPC API used by the system. Use the sidebar to navigate to the interactive Swagger UI or the generated gRPC documentation.</p>
+<p>A standalone web dashboard and remote administration tool for DCS World dedicated servers. It is a
+single Windows executable: a Rust backend with the web interface built into it, connecting to your
+server through <a href="https://github.com/sevenfifty777/rust-server">DCS-gRPC</a>. There is no Node.js
+runtime to install and no separate web server to run.</p>
+<h2 id="new-here-start-with-these-in-order"><a class="header" href="#new-here-start-with-these-in-order">New here? Start with these, in order</a></h2>
+<ol>
+<li><strong><a href="./setup.html">Setup &amp; Installation</a></strong> — download or build the dashboard and get it onto your
+server.</li>
+<li><strong><a href="./configuration.html">Configuration (NSSM)</a></strong> — run it as a Windows service and set every
+environment variable, with examples.</li>
+<li><strong><a href="./process_control_setup.html">DCS &amp; SRS Process Control Setup</a></strong> — make the Start, Stop and
+Restart buttons work, and optionally run the server unattended.</li>
+<li><strong><a href="./features.html">Features &amp; Admin Manual</a></strong> — a tour of every page in the dashboard.</li>
+</ol>
+<h2 id="reference"><a class="header" href="#reference">Reference</a></h2>
+<ul>
+<li><strong><a href="./architecture.html">Architecture</a></strong> — how the pieces fit together.</li>
+<li><strong><a href="./releasing.html">Publishing a Release</a></strong> — cutting and publishing a new version.</li>
+<li><strong><a href="./rest-api.html">REST API</a></strong> — interactive Swagger UI for the dashboard’s own API.</li>
+<li><strong><a href="./api_grpc.html">gRPC API</a></strong> — the DCS-gRPC service definitions the dashboard consumes.</li>
+</ul>
+<p>The design documents at the end of the sidebar record how individual features were planned and
+built. They are written for contributors and are not needed to run the dashboard.</p>
+<h2 id="getting-help"><a class="header" href="#getting-help">Getting help</a></h2>
+<p>Report a problem or ask a question on the
+<a href="https://github.com/sevenfifty777/DCS-Web-Dashboard/issues">issue tracker</a>. The dashboard’s own
+logs are the best starting point: with the NSSM setup below they are written to <code>logs\dashboard.log</code>
+and <code>logs\dashboard-error.log</code> beside the executable.</p>
 
                     </main>
 

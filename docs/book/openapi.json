@@ -20,6 +20,19 @@
           {
             "name": "name",
             "in": "query",
+            "description": "Carrier group name (defaults to `CVN-72`). Ignored when `names` is given.",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "names",
+            "in": "query",
+            "description": "Comma-separated carrier group names. When present the response is\n`{ \"reports\": { <name>: <report> } }` and costs one mission Eval for all of them.",
             "required": false,
             "schema": {
               "type": [
@@ -31,7 +44,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Current Airboss data from DCS",
+            "description": "Current carrier telemetry and recovery solution (one report with `name`, `{ reports }` with `names`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -39,6 +52,12 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Invalid carrier group name"
+          },
+          "404": {
+            "description": "Carrier group not found in the mission (single-name form only)"
           }
         },
         "security": [
@@ -66,7 +85,89 @@
         },
         "responses": {
           "200": {
-            "description": "Action executed"
+            "description": "Action accepted (start/resume) or status table (status)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AirbossActionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid action or carrier group name"
+          },
+          "404": {
+            "description": "Carrier group not found in the mission"
+          },
+          "409": {
+            "description": "Recovery already active (start) or not active (resume)"
+          },
+          "422": {
+            "description": "Recovery leg unsafe (land clearance) or circuit could not be restored"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/airboss/carriers": {
+      "get": {
+        "tags": [
+          "dcs"
+        ],
+        "operationId": "airboss_carriers",
+        "responses": {
+          "200": {
+            "description": "Every carrier-type ship group in the running mission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AirbossCarriersResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/airboss/config": {
+      "post": {
+        "tags": [
+          "dcs"
+        ],
+        "operationId": "airboss_config",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AirbossConfigPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Per-carrier target applied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AirbossConfigResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid carrier group name or target out of range"
           }
         },
         "security": [
@@ -398,6 +499,214 @@
         ]
       }
     },
+    "/api/lso/passes": {
+      "get": {
+        "tags": [
+          "lso"
+        ],
+        "operationId": "passes",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum rows to return (default 200, max 2000).",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            }
+          },
+          {
+            "name": "since_id",
+            "in": "query",
+            "description": "Only return passes with an id greater than this (incremental polling).",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recorded passes, newest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LsoPassesResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "LSO_DIR not configured or lso.db not created yet"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/lso/passes/{id}/chart": {
+      "get": {
+        "tags": [
+          "lso"
+        ],
+        "operationId": "chart",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Pass row id from /api/lso/passes",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Final-approach trap sheet PNG",
+            "content": {
+              "image/png": {}
+            }
+          },
+          "404": {
+            "description": "Pass or PNG not found"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/lso/passes/{id}/pattern": {
+      "get": {
+        "tags": [
+          "lso"
+        ],
+        "operationId": "pattern",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Pass row id from /api/lso/passes",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Overhead pattern chart PNG",
+            "content": {
+              "image/png": {}
+            }
+          },
+          "404": {
+            "description": "Pass or PNG not found"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/lso/pilots": {
+      "get": {
+        "tags": [
+          "lso"
+        ],
+        "operationId": "pilots",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Passes to keep per pilot, newest first (default 5, max 2000).",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            }
+          },
+          {
+            "name": "all",
+            "in": "query",
+            "description": "`true` returns every pass for every pilot and ignores `limit`.",
+            "required": false,
+            "schema": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Passes grouped by pilot, newest pilot first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LsoPilotsResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "LSO_DIR not configured or lso.db not created yet"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/lso/status": {
+      "get": {
+        "tags": [
+          "lso"
+        ],
+        "operationId": "status",
+        "responses": {
+          "200": {
+            "description": "Board availability and pass count",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LsoStatus"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
     "/api/mission": {
       "get": {
         "tags": [
@@ -455,6 +764,46 @@
         "responses": {
           "200": {
             "description": "List of .miz files"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/mission/download": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "`GET /api/mission/download?path=<rel>` → stream one `.miz` from the DCS\n`Missions/` tree.",
+        "description": "Unlike [`super::system::mission_browse`], `Missions/Uploads` **is**\ndownloadable here, so the Mission page's \"Uploaded Files\" panel can offer a\ndownload for the files it already lists.",
+        "operationId": "mission_download",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "query",
+            "description": "Mission path relative to the Missions directory",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Mission file",
+            "content": {
+              "application/octet-stream": {}
+            }
+          },
+          "400": {
+            "description": "Invalid path"
+          },
+          "404": {
+            "description": "Mission not found"
           }
         },
         "security": [
@@ -668,7 +1017,7 @@
         "tags": [
           "system"
         ],
-        "summary": "`POST /api/server/dcs-process` → start/stop/restart DCS.exe.",
+        "summary": "`POST /api/server/dcs-process` → start/stop/restart DCS.",
         "operationId": "dcs_process_post",
         "requestBody": {
           "content": {
@@ -683,6 +1032,12 @@
         "responses": {
           "200": {
             "description": "DCS process action executed"
+          },
+          "400": {
+            "description": "Invalid action"
+          },
+          "500": {
+            "description": "Start failed; `error` explains why"
           }
         },
         "security": [
@@ -785,6 +1140,12 @@
         "responses": {
           "200": {
             "description": "SRS process action executed"
+          },
+          "400": {
+            "description": "Invalid action"
+          },
+          "500": {
+            "description": "Start failed; `error` explains why"
           }
         },
         "security": [
@@ -952,6 +1313,65 @@
         ]
       }
     },
+    "/api/tacview/browse": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "`GET /api/tacview/browse` → list recordings under `TACVIEW_DIR`, newest\nfirst, capped at [`TACVIEW_LIST_LIMIT`].",
+        "description": "An unconfigured `TACVIEW_DIR` answers `200` with `configured: false` rather\nthan an error status, so the page can render a \"set this variable\" note\ninstead of a failure toast.",
+        "operationId": "tacview_browse",
+        "responses": {
+          "200": {
+            "description": "List of Tacview recordings"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/tacview/download": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "`GET /api/tacview/download?path=<rel>` → stream one recording from\n`TACVIEW_DIR`.",
+        "operationId": "tacview_download",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "query",
+            "description": "Recording path relative to TACVIEW_DIR",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tacview recording",
+            "content": {
+              "application/octet-stream": {}
+            }
+          },
+          "400": {
+            "description": "Invalid path"
+          },
+          "404": {
+            "description": "Recording not found or TACVIEW_DIR not configured"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
     "/api/triggers": {
       "get": {
         "tags": [
@@ -1069,39 +1489,308 @@
         ],
         "properties": {
           "action": {
+            "type": "string",
+            "description": "`start` (turn into wind), `resume` (normal circuit) or `status`."
+          },
+          "carrier": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Carrier group name (defaults to `CVN-72`)."
+          }
+        }
+      },
+      "AirbossActionResponse": {
+        "type": "object",
+        "description": "Result of `start` / `resume`. `status` returns the controller's status table instead.",
+        "required": [
+          "success",
+          "action",
+          "carrier"
+        ],
+        "properties": {
+          "action": {
             "type": "string"
+          },
+          "carrier": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "AirbossCarrier": {
+        "type": "object",
+        "description": "One carrier-type ship group detected in the mission.",
+        "required": [
+          "group",
+          "unit",
+          "type",
+          "coalition",
+          "deck_class",
+          "attributes",
+          "deck_offset",
+          "target_wod",
+          "backend",
+          "recovery_phase"
+        ],
+        "properties": {
+          "attributes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "DCS attributes that decided the classification."
+          },
+          "backend": {
+            "type": "string",
+            "description": "`foothold` or `standalone`."
+          },
+          "coalition": {
+            "type": "integer",
+            "format": "int32",
+            "description": "0 neutral, 1 red, 2 blue."
+          },
+          "deck_class": {
+            "type": "string",
+            "description": "`catobar`, `stobar`, `vstol` or `unknown` (type-name hint only)."
+          },
+          "deck_offset": {
+            "type": "number",
+            "format": "double",
+            "description": "Angled-deck offset the controller uses for this hull, degrees."
+          },
+          "group": {
+            "type": "string",
+            "description": "Mission Editor group name (what every other airboss call takes)."
+          },
+          "recovery_phase": {
+            "type": "string",
+            "description": "`normal`, `pending`, `aligning` or `active`."
+          },
+          "target_wod": {
+            "type": "number",
+            "format": "double",
+            "description": "Target wind over deck currently in force for this group, knots."
+          },
+          "type": {
+            "type": "string",
+            "description": "DCS unit type name of the lead ship (e.g. `CVN_72`, `LHA_Tarawa`)."
+          },
+          "unit": {
+            "type": "string",
+            "description": "Name of the lead unit."
+          }
+        }
+      },
+      "AirbossCarriersResponse": {
+        "type": "object",
+        "required": [
+          "carriers",
+          "version"
+        ],
+        "properties": {
+          "carriers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AirbossCarrier"
+            }
+          },
+          "version": {
+            "type": "string",
+            "description": "Version of the Lua controller that answered."
+          }
+        }
+      },
+      "AirbossConfigPayload": {
+        "type": "object",
+        "required": [
+          "carrier",
+          "target_wod"
+        ],
+        "properties": {
+          "carrier": {
+            "type": "string",
+            "description": "Carrier group name."
+          },
+          "target_wod": {
+            "type": "number",
+            "format": "double",
+            "description": "Target wind over deck for this ship, knots (10 to 45)."
+          }
+        }
+      },
+      "AirbossConfigResponse": {
+        "type": "object",
+        "required": [
+          "carrier_name",
+          "target_wod",
+          "backend"
+        ],
+        "properties": {
+          "backend": {
+            "type": "string"
+          },
+          "carrier_name": {
+            "type": "string"
+          },
+          "target_wod": {
+            "type": "number",
+            "format": "double",
+            "description": "Effective target after clamping, knots."
           }
         }
       },
       "AirbossDataResponse": {
         "type": "object",
+        "description": "Telemetry and recovery solution for one carrier group, as returned by the\nLua controller's `windReport`.",
         "required": [
+          "carrier_name",
+          "type_name",
+          "carrier_u",
+          "carrier_v",
           "brc",
           "ship_spd",
           "tw_dir",
           "tw_spd",
-          "target_wod"
+          "headwind",
+          "wod",
+          "target_wod",
+          "recovery_heading",
+          "recovery_speed",
+          "regime",
+          "deck_offset",
+          "min_speed",
+          "max_speed",
+          "angled_deck_min_wind",
+          "backend",
+          "coalition",
+          "recovery_phase"
         ],
         "properties": {
+          "angled_deck_min_wind": {
+            "type": "number",
+            "format": "double",
+            "description": "Below this natural wind the ship keeps its course and only adjusts speed."
+          },
+          "backend": {
+            "type": "string",
+            "description": "`foothold` when the Foothold BattleCommander manages this group, else `standalone`."
+          },
           "brc": {
             "type": "number",
+            "format": "double",
+            "description": "Current ship course, degrees true."
+          },
+          "carrier_name": {
+            "type": "string",
+            "description": "Mission Editor group name of the carrier."
+          },
+          "carrier_u": {
+            "type": "number",
+            "format": "double",
+            "description": "Ship position, DCS map coordinates (x north, z east)."
+          },
+          "carrier_v": {
+            "type": "number",
             "format": "double"
+          },
+          "coalition": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Coalition of the group (0 neutral, 1 red, 2 blue)."
+          },
+          "deck_class": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Deck classification: `catobar`, `stobar`, `vstol`, `unknown`, or absent for a non-carrier ship."
+          },
+          "deck_offset": {
+            "type": "number",
+            "format": "double",
+            "description": "Angled-deck offset used for this ship type, degrees."
+          },
+          "headwind": {
+            "type": "number",
+            "format": "double",
+            "description": "Headwind component of the natural wind on the current course, knots."
+          },
+          "max_speed": {
+            "type": "number",
+            "format": "double"
+          },
+          "min_speed": {
+            "type": "number",
+            "format": "double"
+          },
+          "recovery_heading": {
+            "type": "number",
+            "format": "double",
+            "description": "Course the controller would steer for a recovery, degrees true."
+          },
+          "recovery_phase": {
+            "type": "string",
+            "description": "Recovery phase: `normal`, `pending`, `aligning` or `active`."
+          },
+          "recovery_speed": {
+            "type": "number",
+            "format": "double",
+            "description": "Speed the controller would order for a recovery, knots."
+          },
+          "regime": {
+            "type": "string",
+            "description": "Solver regime: `optimal`, `vmax_limited`, `vmin_limited`, `low_wind`, `weak_wind`."
           },
           "ship_spd": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "description": "Current ship speed over ground, knots."
           },
           "target_wod": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "description": "Target wind over the angled deck the controller aims for, knots."
           },
           "tw_dir": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "description": "Natural wind at deck height: direction it blows from, degrees true."
           },
           "tw_spd": {
             "type": "number",
-            "format": "double"
+            "format": "double",
+            "description": "Natural wind speed, knots."
+          },
+          "type_name": {
+            "type": "string",
+            "description": "DCS unit type name of the lead ship (e.g. `CVN_71`)."
+          },
+          "wod": {
+            "type": "number",
+            "format": "double",
+            "description": "Wind over deck on the current course, knots."
+          }
+        }
+      },
+      "AirbossReportsResponse": {
+        "type": "object",
+        "description": "Batched telemetry: one entry per requested group name. A ship that is not\nin the mission gets `{ \"error\": \"<name> is not available.\" }` instead.",
+        "required": [
+          "reports"
+        ],
+        "properties": {
+          "reports": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/AirbossDataResponse"
+            },
+            "propertyNames": {
+              "type": "string"
+            }
           }
         }
       },
@@ -1177,6 +1866,420 @@
         "properties": {
           "password": {
             "type": "string"
+          }
+        }
+      },
+      "LsoPass": {
+        "type": "object",
+        "description": "One recorded pass, mirroring the LSO client's `StoredPass` minus\n`pilot_ucid`. Field names match `/api/passes` of the LSO client so the page\nlogic ports one to one.",
+        "required": [
+          "id",
+          "timestamp",
+          "pilot_name",
+          "pass_grade",
+          "grade_date",
+          "mission_datetime",
+          "outcome"
+        ],
+        "properties": {
+          "actual_nearest_spot": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "aircraft_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "aircraft_type": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "arrest_evidence": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "carrier_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "carrier_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "carrier_type": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "cause": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "completeness": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "confidence": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "dcs_grading": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "distance_to_intended_spot_m": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "generation": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "grade_date": {
+            "type": "string"
+          },
+          "grade_points": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "grading_availability": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "grading_version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "hook_state": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "intended_spot": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lso_notes": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Plain-English translation of `dcs_grading`, computed at query time."
+          },
+          "map_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "max_sample_gap_ms": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "max_scoring_sample_gap_ms": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "max_skew_ms": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "mission_datetime": {
+            "type": "string"
+          },
+          "outcome": {
+            "type": "string"
+          },
+          "pass_grade": {
+            "type": "string"
+          },
+          "pilot_kind": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "pilot_name": {
+            "type": "string"
+          },
+          "points_awarded": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "recovery_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "recovery_mode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "session_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "spot": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "spot_distance_m": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "spot_grade": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "telemetry_health": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "File stem of the pass artifacts, `LSO-<date>-<pilot>-<recovery-id>`."
+          },
+          "wire": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "wire_dcs": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "wire_divergent": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "wire_estimated": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "wire_estimation_confidence": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "LsoPassesResponse": {
+        "type": "object",
+        "description": "`/api/lso/passes` payload.",
+        "required": [
+          "passes",
+          "total"
+        ],
+        "properties": {
+          "passes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LsoPass"
+            },
+            "description": "Newest first."
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Total rows in `lso.db`, independent of `limit`/`since_id`."
+          }
+        }
+      },
+      "LsoPilot": {
+        "type": "object",
+        "description": "One pilot's slice of the board for `/api/lso/pilots`.\n\nPilots are identified by their DCS UCID when the rows carry one, so a pilot\nwho renames keeps a single history; rows without a UCID (legacy databases,\nAI pilots) are grouped by name. The UCID itself never leaves the server.",
+        "required": [
+          "pilot_name",
+          "aliases",
+          "total_passes",
+          "graded_passes",
+          "last_pass_at",
+          "passes"
+        ],
+        "properties": {
+          "aliases": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Other names seen on this pilot's earlier passes (same UCID)."
+          },
+          "avg_points": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Mean project score over `graded_passes`, or null when none were scored."
+          },
+          "graded_passes": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Passes that carry a project score (`points_awarded` not false)."
+          },
+          "last_pass_at": {
+            "type": "string",
+            "description": "`grade_date` (UTC) of the pilot's newest pass."
+          },
+          "passes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LsoPass"
+            },
+            "description": "Newest first, truncated to the requested per-pilot limit."
+          },
+          "pilot_name": {
+            "type": "string",
+            "description": "Name on the pilot's newest pass."
+          },
+          "total_passes": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Every pass on record for this pilot, independent of the per-pilot limit."
+          }
+        }
+      },
+      "LsoPilotsResponse": {
+        "type": "object",
+        "description": "`/api/lso/pilots` payload. Pilots are ordered by their newest pass.",
+        "required": [
+          "pilots",
+          "total_passes"
+        ],
+        "properties": {
+          "per_pilot_limit": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Per-pilot cap that was applied; null means every pass was returned.",
+            "minimum": 0
+          },
+          "pilots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LsoPilot"
+            }
+          },
+          "total_passes": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "LsoStatus": {
+        "type": "object",
+        "description": "`/api/lso/status` payload.",
+        "required": [
+          "configured",
+          "db_present",
+          "pass_count"
+        ],
+        "properties": {
+          "configured": {
+            "type": "boolean",
+            "description": "`LSO_DIR` is set."
+          },
+          "db_path": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "db_present": {
+            "type": "boolean",
+            "description": "`lso.db` exists inside `LSO_DIR`."
+          },
+          "last_pass_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "`grade_date` of the newest pass."
+          },
+          "pass_count": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },
@@ -1268,6 +2371,40 @@
         "properties": {
           "action": {
             "type": "string"
+          }
+        }
+      },
+      "TacviewFile": {
+        "type": "object",
+        "description": "One Tacview recording in the listing.",
+        "required": [
+          "path",
+          "name",
+          "size"
+        ],
+        "properties": {
+          "modified_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Last-modified time in milliseconds since the Unix epoch, or `null` when\nthe filesystem does not report one.",
+            "minimum": 0
+          },
+          "name": {
+            "type": "string",
+            "description": "Bare file name."
+          },
+          "path": {
+            "type": "string",
+            "description": "Path relative to `TACVIEW_DIR`, with `/` separators."
+          },
+          "size": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Size in bytes.",
+            "minimum": 0
           }
         }
       },
@@ -1388,6 +2525,10 @@
     {
       "name": "stream",
       "description": "SSE streaming endpoints"
+    },
+    {
+      "name": "lso",
+      "description": "DCS-gRPC-lso greenie board (file-backed, no DCS-gRPC calls)"
     }
   ]
 }

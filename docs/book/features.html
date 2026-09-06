@@ -36,10 +36,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-cbd1aaa9.js";
+            window.path_to_searchindex_js = "searchindex-0a4111d4.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-1c680d0f.js"></script>
+        <script src="toc-cd085332.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -188,6 +188,15 @@
 <li><strong>RDP Available</strong>: Displays a live indicator showing if there are any active Windows Remote Desktop (RDP) or interactive user sessions on the server host machine.</li>
 <li><strong>Mission Environment</strong>: Quickly see the current Theatre (e.g., Caucasus, Syria) and the in-game Time of the active mission.</li>
 </ul>
+<h3 id="customising-the-left-panel"><a class="header" href="#customising-the-left-panel">Customising the left panel</a></h3>
+<p>The page list in the left panel is yours to arrange:</p>
+<ul>
+<li><strong>Right-click a page</strong> (or press <code>Shift+F10</code> on a focused one) for a menu with <strong>Move up</strong>, <strong>Move down</strong>, <strong>Hide</strong>, <strong>Show hidden pages…</strong> and <strong>Reset to default</strong>.</li>
+<li><strong>Drag to reorder</strong>: press and hold a page, or grab the <code>⋮⋮</code> grip that appears at its right edge, and drop it where you want it. On a phone or tablet use the grip; swiping elsewhere still scrolls the list.</li>
+<li><strong>Hidden pages</strong> are listed in a <code>+ N hidden pages</code> row above <strong>Logout</strong>. Expand it and press <strong>Show</strong> to bring a page back. A hidden page is still reachable by its URL. <strong>Server Status</strong> cannot be hidden, so the list is never empty.</li>
+<li>After hiding or resetting, an <strong>Undo</strong> line appears for a few seconds.</li>
+</ul>
+<p>The layout is saved in the browser (per device); clearing site data or using another browser gives the default order again. Pages added in a future release appear at the end of the list.</p>
 <h2 id="-server-status"><a class="header" href="#-server-status">🟢 Server Status</a></h2>
 <p>The homepage gives you a quick, beautiful overview of the server’s health, current active mission, uptime, and player count.</p>
 <h2 id="-mission"><a class="header" href="#-mission">🗺️ Mission</a></h2>
@@ -198,6 +207,7 @@
 <li><strong>Run Now</strong>: Immediately loads and runs any mission file, bypassing the queue entirely.</li>
 <li><strong>Upload</strong>: Upload a local <code>.miz</code> file from your PC directly to the server.</li>
 <li><strong>Browse Server</strong>: Browse the server’s hard drive to add existing <code>.miz</code> files into the queue.</li>
+<li><strong>Download</strong>: Pull any <code>.miz</code> back to your PC from the server-files browser or the uploads panel. Downloads are restricted to <code>.miz</code> files inside the DCS <code>Missions/</code> tree.</li>
 </ul>
 <h2 id="-weather"><a class="header" href="#-weather">🌤️ Weather</a></h2>
 <p>A fully integrated GUI for the <code>DCS-Dynamic-Weather</code> python script.</p>
@@ -233,9 +243,30 @@
 <h2 id="-airboss-planner"><a class="header" href="#-airboss-planner">⚓ Airboss Planner</a></h2>
 <p>A dynamic toolkit for managing carrier operations on the server.</p>
 <ul>
-<li><strong>Auto-Sync</strong>: Automatically calculates the required Wind Over Deck (WOD) and Base Recovery Course (BRC) using live weather data and carrier speeds.</li>
-<li><strong>Carrier Actions</strong>: Remotely command the carrier to instantly turn into the wind for recovery operations, or resume its normal circuit, mirroring the in-game F10 radio menu functionality.</li>
-<li><strong>Live Deck Views</strong>: Track aircraft assigned to the Carrier and Tarawa decks with dedicated silhouettes for the F-14, F/A-18, AV-8B, A-4E-C, A-6E, E-2 Hawkeye, S-3B Viking, T-45C, AH-64D, CH-47F, Ka-50 III, OH-58D, SA342, and UH-1H families. Stationary fixed-wing aircraft face inward toward the deck centerline according to their port or starboard parking side, while helicopters face ship-forward and use <code>H1</code>–<code>H8</code> terminals on both ships. High-contrast cyan, magenta, and amber markers distinguish fixed-wing parking, helicopter parking, and launch positions; a white dashed ring identifies spots with no assigned taxi route by default. Click any parking marker to add the larger selection halo. Click a route-capable parking marker or aircraft to highlight its route to launch; a soft one-shot shimmer travels through the route line from parking to launch to show traffic flow. Click an amber catapult or STOVL launch marker to display every DCS-defined route connecting that launch point to its possible parking spots. Aircraft without a dedicated asset use the generic fallback marker.</li>
+<li><strong>Carrier detection</strong>: Every carrier-type ship group in the running mission is detected automatically from its DCS attributes (CVN and CV classes, LHA-1 Tarawa, Kuznetsov, and modded hulls such as the HMS Invincible or Essex) and classified as CATOBAR, STOBAR, VSTOL or unclassified. Detection costs one mission Eval per page load or Refresh; between refreshes the radar stream keeps the list live for free, and a carrier that spawns mid-mission triggers one automatic refresh (at most once every 30 s). Hulls that detection misses can be added by name.</li>
+<li><strong>One panel per carrier</strong>: Each detected carrier gets its own panel with a header (group, type, coalition, deck class, controller backend, recovery phase), a <strong>Sync</strong> checkbox, its Carrier Actions, a <strong>Target WOD</strong> control, the wind wheel drawn from that ship’s telemetry and its deck view. Tick a carrier in the sidebar to show it; hidden and unsynced carriers cost no data flow. Sync polls the wind and the controller’s plan for every synced ship in <strong>one</strong> batched request every 2 s (<code>GET /api/airboss?names=CVN-72,CVN-74</code>), so N synced carriers cost one Eval per interval. Headings, positions and deck views always come from the radar stream, so an unsynced panel still shows its deck live and the wheel keeps its last known wind greyed with a “not synced” tag. A ship that leaves the stream greys its panel and shows when it was lost. Shown carriers, Sync flags and targets are remembered per mission in the browser.</li>
+<li><strong>Target WOD per carrier</strong>: A numeric input, slider (15 to 40 kt) and two presets (“CATOBAR 24”, “VSTOL 20”) set the wind over deck the in-game controller aims for on that ship only, via <code>POST /api/airboss/config</code>. The panel’s wheel, the controller plan and the status table all show the target in use; on the Foothold-managed ship the value is also written to <code>CarrierRecoveryTargetWodKt</code> so Foothold’s own solver follows it.</li>
+<li><strong>Deck profiles</strong>: Nimitz-class hulls (CVN-71/72/73/75, Stennis), the Forrestal, the Kuznetsov, the Essex 1944, the HMS Invincible, the ARA Veinticinco de Mayo and the LHA-1 Tarawa draw their full deck with the parking spots, helicopter terminals and taxi-to-launch routes taken from their DCS <code>RunwaysAndRoutes.lua</code> tables (catapults, STOVL runs and deck-run ramps). Any other hull draws a generic outline sized by class until a profile is added to <code>deckProfiles.ts</code>.</li>
+<li><strong>Manual planner</strong>: The reverse WOD calculation with sliders and wheel stays available as a separate panel without a ship.</li>
+<li><strong>Carrier Actions</strong>: Remotely command any carrier group to turn into the wind for a timed recovery window, resume its normal circuit, or report its recovery status. The controller is a dashboard-owned Lua script injected into the running mission on first use, so it works in any mission. In Foothold missions it hands over to Foothold’s own carrier navigation so the ship returns to its lane; elsewhere it resumes the ship’s Mission Editor route, or steams back to where the recovery started when the ship has no route. The land-clearance check, the 60 s warning, the alignment phase and the 30-minute window match the Foothold behaviour, and the page’s solver is pinned to the in-game one by a shared test fixture. Missions can also load <code>rust-web-dashboard/lua/carrier_recovery.lua</code> with a DO SCRIPT FILE trigger and call <code>CarrierRecovery.installMenus("CVN-72")</code> to get the same three commands in the F10 menu; the <code>CarrierRecovery*</code> variables from <code>Foothold Config.lua</code> are honoured when present.</li>
+<li><strong>Live Deck Views</strong>: Track aircraft assigned to the Carrier and Tarawa decks with dedicated silhouettes for the F-14, F/A-18, Su-33, F4U-1D Corsair (both DCS variants), AV-8B, A-4E-C, A-6E, E-2 Hawkeye, S-3B Viking, T-45C, AH-64D, CH-47F, Ka-50 III, OH-58D, SA342, and UH-1H families. Aircraft parked on a catapult, ramp or STOVL start use the launch-configuration icon where one exists. Stationary fixed-wing aircraft face inward toward the deck centerline according to their port or starboard parking side, while helicopters face ship-forward and use <code>H1</code>–<code>H8</code> terminals on both ships. High-contrast cyan, magenta, and amber markers distinguish fixed-wing parking, helicopter parking, and launch positions; a white dashed ring identifies spots with no assigned taxi route by default. Click any parking marker to add the larger selection halo. Click a route-capable parking marker or aircraft to highlight its route to launch; a soft one-shot shimmer travels through the route line from parking to launch to show traffic flow. Click an amber catapult or STOVL launch marker to display every DCS-defined route connecting that launch point to its possible parking spots. Aircraft without a dedicated asset use the generic fallback marker.</li>
+</ul>
+<h2 id="-lso-greenie-board"><a class="header" href="#-lso-greenie-board">🛬 LSO Greenie Board</a></h2>
+<p>Carrier recoveries graded by the <a href="https://github.com/sevenfifty777/DCS-gRPC-lso">DCS-gRPC-lso</a> client, in the same 14-column layout as the client’s former web page (timestamp, grade date, mission time, pilot, aircraft, map, grade, points, wire or spot, outcome, technical status, DCS grade, LSO notes).</p>
+<ul>
+<li>Refreshes every 10 seconds from the client’s <code>lso.db</code>, read directly from <code>LSO_DIR</code>. This tab never calls DCS-gRPC.</li>
+<li>Grade colours follow greenie-board convention: <code>_OK_</code> gold, <code>OK</code> green, <code>(OK)</code> light green, <code>--</code> amber, <code>C</code> red, <code>B</code>/<code>WO</code> grey.</li>
+<li>Filter the table by pilot name. Click a row to open the final-approach trap sheet and the overhead pattern chart the client saved for that pass.</li>
+<li>Pilot UCIDs are never shown. The score is a project-derived training grade, not an official certification.</li>
+<li><strong>By pilot</strong> (<code>/lso/pilots</code>): one section per pilot with passes, average points, last pass, a greenie strip of recent grades, and a table of their last 5 passes (switch to All for the full history). Pilots are grouped by UCID on the server, so a renamed pilot keeps one history and earlier names are listed as aliases; the UCID itself is never sent to the browser.</li>
+</ul>
+<h2 id="-tacview"><a class="header" href="#-tacview">🎬 Tacview</a></h2>
+<p>Download the server’s flight recordings without an RDP session or a file share.</p>
+<ul>
+<li>Lists <code>.acmi</code> recordings (including the compressed <code>.zip.acmi</code> form) found under <code>TACVIEW_DIR</code>, newest first, with file size and recording date.</li>
+<li>Capped at the <strong>200 newest</strong> recordings; the header says how many exist in total when there are more.</li>
+<li>Filter by file name, then download straight to your PC.</li>
+<li>Requires <code>TACVIEW_DIR</code> to be set in the service environment (see <a href="configuration.html">Configuration</a>); until it is, the tab explains what to set. Downloads are restricted to <code>.acmi</code> files inside that folder.</li>
 </ul>
 <h2 id="-settings"><a class="header" href="#-settings">⚙️ Settings</a></h2>
 <p>A visual UI to edit the underlying <code>serverSettings.lua</code> file safely.</p>
@@ -253,7 +284,7 @@
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="configuration.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="process_control_setup.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
@@ -267,7 +298,7 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="configuration.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="process_control_setup.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 

@@ -25,8 +25,10 @@ service WorldService {
   rpc GetAirbaseRunways(GetAirbaseRunwaysRequest) returns (GetAirbaseRunwaysResponse) {}
 
   rpc GetAirbaseID(GetAirbaseIDRequest) returns (GetAirbaseIDResponse) {}
-  rpc GetAirbaseRadioSilentMode(GetAirbaseRadioSilentModeRequest) returns (GetAirbaseRadioSilentModeResponse) {}
-  rpc SetAirbaseRadioSilentMode(SetAirbaseRadioSilentModeRequest) returns (SetAirbaseRadioSilentModeResponse) {}
+  rpc GetAirbaseRadioSilentMode(GetAirbaseRadioSilentModeRequest)
+      returns (GetAirbaseRadioSilentModeResponse) {}
+  rpc SetAirbaseRadioSilentMode(SetAirbaseRadioSilentModeRequest)
+      returns (SetAirbaseRadioSilentModeResponse) {}
   rpc SetAirbaseCoalition(SetAirbaseCoalitionRequest) returns (SetAirbaseCoalitionResponse) {}
 }
 
@@ -120,6 +122,8 @@ message GetAirbaseParkingRequest {
 }
 
 message GetAirbaseParkingResponse {
+  // The singular field name is retained for API compatibility.
+  // protolint:disable:next REPEATED_FIELD_NAMES_PLURALIZED
   repeated AirbaseParking parking = 1;
 }
 

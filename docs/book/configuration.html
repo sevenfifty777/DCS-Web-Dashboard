@@ -36,10 +36,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-cbd1aaa9.js";
+            window.path_to_searchindex_js = "searchindex-0a4111d4.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-1c680d0f.js"></script>
+        <script src="toc-cd085332.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -214,15 +214,32 @@ nssm install "DCS Web Dashboard"
 </ol>
 <p>The release ZIP contains the empty <code>logs\</code> directory. NSSM creates and writes the two log files when the service starts; they are not included in the release archive.</p>
 <h2 id="2-environment-variables"><a class="header" href="#2-environment-variables">2. Environment Variables</a></h2>
-<p>Enter these variables in the NSSM Environment tab, one per line (e.g., <code>JWT_SECRET=my-secret-key</code>).</p>
+<p>Enter these variables in the NSSM Environment tab, <strong>one per line</strong>, in <code>NAME=value</code> form. Do not
+put quotes around a value and do not put spaces around the <code>=</code>. A path with spaces needs no
+quoting here, because NSSM passes the whole line through as-is:</p>
+<pre><code>JWT_SECRET=a-long-random-string-at-least-16-chars
+DCS_SAVED_GAMES_DIR=C:\Users\admin\Saved Games\DCS.dcs_serverrelease
+</code></pre>
+<p>An empty or whitespace-only value counts as unset, so you can blank a line out instead of
+deleting it. The dashboard reads every variable <strong>once at startup</strong>: after any change, restart the
+service with <code>Restart-Service "DCS Web Dashboard"</code>.</p>
+<h3 id="minimum-working-configuration"><a class="header" href="#minimum-working-configuration">Minimum working configuration</a></h3>
+<p>If you only want the dashboard up and talking to DCS, these four lines are enough:</p>
+<pre><code>JWT_SECRET=change-me-to-a-long-random-string
+ADMIN_PASSWORD=your-dashboard-password
+GRPC_ENDPOINT=http://localhost:50051
+DCS_SAVED_GAMES_DIR=C:\Users\admin\Saved Games\DCS.dcs_serverrelease
+</code></pre>
+<p>Everything else switches on an optional tab, and each tab tells you what it is missing until you
+set it.</p>
 <h3 id="required"><a class="header" href="#required">Required</a></h3>
 <div class="table-wrapper">
 <table>
 <thead>
-<tr><th>Variable</th><th>Purpose</th></tr>
+<tr><th>Variable</th><th>Purpose</th><th>Example</th></tr>
 </thead>
 <tbody>
-<tr><td><code>JWT_SECRET</code></td><td>Signing secret for login tokens (HS256). <strong>Must be ≥ 16 characters.</strong> The binary refuses to start otherwise.</td></tr>
+<tr><td><code>JWT_SECRET</code></td><td>Signing secret for login tokens (HS256). <strong>Must be ≥ 16 characters.</strong> The binary refuses to start otherwise. Use a long random string and keep it secret; changing it logs everybody out.</td><td><code>7f3a91c2be04d85a6f1e2c9b</code></td></tr>
 </tbody>
 </table>
 </div>
@@ -230,28 +247,67 @@ nssm install "DCS Web Dashboard"
 <div class="table-wrapper">
 <table>
 <thead>
-<tr><th>Variable</th><th>Default</th><th>Purpose</th></tr>
+<tr><th>Variable</th><th>Default</th><th>Purpose</th><th>Example</th></tr>
 </thead>
 <tbody>
-<tr><td><code>DASHBOARD_ADDR</code></td><td><code>0.0.0.0:3001</code></td><td>Address/port the dashboard listens on. Use <code>127.0.0.1:3001</code> if a proxy is in front.</td></tr>
-<tr><td><code>GRPC_ENDPOINT</code></td><td><code>http://localhost:50051</code></td><td>Where your DCS-gRPC server is listening.</td></tr>
-<tr><td><code>APP_URL</code></td><td><code>http://localhost:3001</code></td><td>Public base URL of the dashboard. <strong>Must match the real public IP/host</strong> for Discord redirects to work.</td></tr>
-<tr><td><code>ADMIN_PASSWORD</code></td><td>—</td><td>Enables master-password login when set.</td></tr>
+<tr><td><code>DASHBOARD_ADDR</code></td><td><code>0.0.0.0:3001</code></td><td>Address/port the dashboard listens on. Use <code>127.0.0.1:3001</code> if a proxy is in front.</td><td><code>0.0.0.0:3001</code></td></tr>
+<tr><td><code>GRPC_ENDPOINT</code></td><td><code>http://localhost:50051</code></td><td>Where your DCS-gRPC server is listening. A bare <code>host:port</code> is accepted and gets <code>http://</code> added.</td><td><code>http://localhost:50051</code></td></tr>
+<tr><td><code>GRPC_API_KEY</code></td><td>—</td><td>Token sent as <code>X-API-Key</code> on every DCS-gRPC call. Required when the server’s <code>dcs-grpc.lua</code> has <code>auth.enabled = true</code>; add a dedicated entry for the dashboard to its <code>auth.tokens</code> list (e.g. <code>{ client = "web-dashboard", token = "..." }</code>) and paste that token here. Leave unset when authentication is off.</td><td><code>d41d8cd98f00b204e9800998</code></td></tr>
+<tr><td><code>APP_URL</code></td><td><code>http://localhost:3001</code></td><td>Public base URL of the dashboard. <strong>Must match the real public IP/host</strong> for Discord redirects to work. A trailing <code>/</code> is stripped.</td><td><code>https://dcs.example.com</code></td></tr>
+<tr><td><code>ADMIN_PASSWORD</code></td><td>—</td><td>Enables master-password login when set. Leave unset to allow Discord login only.</td><td><code>a-strong-password</code></td></tr>
+<tr><td><code>AUDIT_LOG_PATH</code></td><td><code>audit_logs.json</code></td><td>JSON file behind the <strong>Access Logs</strong> page. Relative paths resolve against the service’s startup directory, so set an absolute path if you are unsure.</td><td><code>C:\DCS-Web-Dashboard\logs\audit_logs.json</code></td></tr>
+<tr><td><code>MOBILE_API_KEY</code></td><td>—</td><td>Legacy static bearer token accepted instead of a login, for the mobile app. Anyone holding it has full API access, so leave it unset unless you use that app.</td><td><code>a-long-random-token</code></td></tr>
 </tbody>
 </table>
 </div>
 <h3 id="dcs--srs-control-integration"><a class="header" href="#dcs--srs-control-integration">DCS &amp; SRS Control Integration</a></h3>
+<p>These variables drive the <strong>Start</strong>, <strong>Stop</strong> and <strong>Restart</strong> buttons on the Mission and SRS
+pages, plus the <strong>Tasks</strong> page.</p>
+<p><strong>Read this first.</strong> There are two ways to start DCS and SRS, and they are not equivalent:</p>
+<ul>
+<li><strong>Scheduled task</strong> (<code>DCS_SCHEDULED_TASK_NAME</code> / <code>SRS_SCHEDULED_TASK_NAME</code>) — <strong>recommended.</strong>
+The dashboard asks Windows Task Scheduler to start the program inside a logged-on user’s
+session, so <strong>the DCS window is visible</strong> and DCS gets a real desktop.</li>
+<li><strong>Direct command</strong> (<code>DCS_START_CMD</code> / <code>SRS_START_CMD</code>) — fallback. The service starts the
+program itself, inside the hidden Session 0. <strong>No window will ever appear</strong>, and DCS misbehaves
+without a desktop. Only usable for headless <code>--norender</code>.</li>
+</ul>
+<p>When a task name is set it wins and the matching <code>_START_CMD</code> is ignored entirely. Setting up the
+tasks takes about ten minutes and is written out click by click in
+<a href="./process_control_setup.html">DCS &amp; SRS Process Control Setup</a>. Do that page, then come back and
+set the two task-name variables here.</p>
 <div class="table-wrapper">
 <table>
 <thead>
-<tr><th>Variable</th><th>Purpose</th></tr>
+<tr><th>Variable</th><th>Purpose</th><th>Example</th></tr>
 </thead>
 <tbody>
-<tr><td><code>DCS_SAVED_GAMES_DIR</code></td><td>Absolute path to your DCS <em>Saved Games</em> folder (e.g., <code>C:\Users\admin\Saved Games\DCS.openbeta_server</code>). Drives <code>serverSettings.lua</code> and mission uploads.</td></tr>
-<tr><td><code>DCS_TASK_WHITELIST</code></td><td>Comma-separated allow-list of Windows scheduled tasks the <strong>Tasks</strong> tab can control. If unset, all root tasks are shown.</td></tr>
-<tr><td><code>DCS_START_CMD</code></td><td>Command to launch DCS directly via PowerShell. Example: <code>'"C:\Program Files\Eagle Dynamics\DCS World Server\bin\DCS_server.exe" --server --norender'</code> (Notice the single quotes surrounding the double quotes).</td></tr>
-<tr><td><code>SRS_START_CMD</code></td><td>Command to launch SRS. Example: <code>'Start-Process -FilePath "C:\...\SRS-Server.exe" -ArgumentList "-cfg=\"C:\...\server.cfg\"" -WindowStyle Hidden'</code></td></tr>
-<tr><td><code>SRS_CFG_PATH</code></td><td>Absolute path to your SRS <code>server.cfg</code>. Needed for the SRS settings editor and connected clients list. Example: <code>C:\Program Files\DCS-SimpleRadio-Standalone\Server\server.cfg</code></td></tr>
+<tr><td><code>DCS_SAVED_GAMES_DIR</code></td><td>Absolute path to your DCS <em>Saved Games</em> folder. Drives <code>serverSettings.lua</code>, the mission queue and mission uploads. The folder name differs per install: <code>DCS.dcs_serverrelease</code> for the release dedicated server, <code>DCS.openbeta_server</code> for the old open beta.</td><td><code>C:\Users\admin\Saved Games\DCS.dcs_serverrelease</code></td></tr>
+<tr><td><code>DCS_SCHEDULED_TASK_NAME</code></td><td>Name of the scheduled task the <strong>Start</strong>/<strong>Restart</strong> buttons run to launch DCS. Must match the task name exactly as Task Scheduler shows it. Created for you by <code>Register-DcsSrsTasks.ps1</code>. Takes priority over <code>DCS_START_CMD</code>.</td><td><code>DCS Server Start</code></td></tr>
+<tr><td><code>SRS_SCHEDULED_TASK_NAME</code></td><td>Same for SRS. Takes priority over <code>SRS_START_CMD</code>.</td><td><code>SRS Server Start</code></td></tr>
+<tr><td><code>SRS_CFG_PATH</code></td><td>Absolute path to your SRS <code>server.cfg</code>. Needed for the SRS settings editor and the connected-clients list. If unset, the dashboard tries to read it out of a <code>-cfg=</code> argument in <code>SRS_START_CMD</code>.</td><td><code>C:\Program Files\DCS-SimpleRadio-Standalone\Server\server.cfg</code></td></tr>
+<tr><td><code>DCS_START_CMD</code></td><td>Fallback only, when no DCS task name is set: executable and arguments the dashboard launches itself. Runs hidden in Session 0.</td><td><code>"C:\Program Files\Eagle Dynamics\DCS World Server\bin\DCS_server.exe" --server --norender</code></td></tr>
+<tr><td><code>SRS_START_CMD</code></td><td>Fallback only, when no SRS task name is set. Same hidden-window limitation.</td><td><code>"C:\Program Files\DCS-SimpleRadio-Standalone\Server\SRS-Server.exe" -cfg="C:\Program Files\DCS-SimpleRadio-Standalone\Server\server.cfg"</code></td></tr>
+<tr><td><code>DCS_TASK_WHITELIST</code></td><td>Comma-separated allow-list of scheduled tasks the <strong>Tasks</strong> page may show and control. <strong>If unset, every root task on the machine is listed.</strong> Set it to keep the page to your own tasks. Names are matched case-insensitively.</td><td><code>DCS Server Start,SRS Server Start,DCS SRS Watchdog</code></td></tr>
+<tr><td><code>WINDOWS_SERVICES</code></td><td>Comma-separated allow-list of Windows <strong>services</strong> the Tasks page may show and start/stop. Unset means the services panel stays empty. Use the short service name, not the display name.</td><td><code>DCSServerBot,MySQL80</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>A complete DCS/SRS control block, matching the scripts as registered in the process-control guide:</p>
+<pre><code>DCS_SAVED_GAMES_DIR=C:\Users\admin\Saved Games\DCS.dcs_serverrelease
+DCS_SCHEDULED_TASK_NAME=DCS Server Start
+SRS_SCHEDULED_TASK_NAME=SRS Server Start
+SRS_CFG_PATH=C:\Program Files\DCS-SimpleRadio-Standalone\Server\server.cfg
+DCS_TASK_WHITELIST=DCS Server Start,SRS Server Start,DCS SRS Watchdog
+</code></pre>
+<h3 id="foothold-campaign"><a class="header" href="#foothold-campaign">Foothold Campaign</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Variable</th><th>Default</th><th>Purpose</th><th>Example</th></tr>
+</thead>
+<tbody>
+<tr><td><code>FOOTHOLD_SAVES_DIR</code></td><td><code>&lt;DCS_SAVED_GAMES_DIR&gt;\Missions\Saves</code></td><td>Folder holding the Foothold campaign save files that feed the Leaderboard, Foothold and Config pages. The default suits a standard Foothold install, so set this only if your saves live somewhere else.</td><td><code>C:\Users\admin\Saved Games\DCS.dcs_serverrelease\Missions\Saves</code></td></tr>
 </tbody>
 </table>
 </div>
@@ -259,25 +315,89 @@ nssm install "DCS Web Dashboard"
 <div class="table-wrapper">
 <table>
 <thead>
-<tr><th>Variable</th><th>Purpose</th></tr>
+<tr><th>Variable</th><th>Default</th><th>Purpose</th><th>Example</th></tr>
 </thead>
 <tbody>
-<tr><td><code>DCS_DYNAMIC_WEATHER_DIR</code></td><td>Path to the DCS-Dynamic-Weather generator folder. Required for the Weather tab. Example: <code>C:\Users\admin\Saved Games\DCS.openbeta_server\Missions\Dynamic_Weather_mission</code></td></tr>
-<tr><td><code>PYTHON_EXE</code></td><td>Python interpreter used by the weather generator. Example: <code>C:\Users\admin\AppData\Local\Programs\Python\Python312\python.exe</code></td></tr>
+<tr><td><code>DCS_DYNAMIC_WEATHER_DIR</code></td><td>—</td><td>Path to the DCS-Dynamic-Weather generator folder (the one holding <code>weather_presets.json</code> and <code>weather_generator.py</code>). Required for the Weather tab; unset, the tab reports “not configured”.</td><td><code>C:\Users\admin\Saved Games\DCS.dcs_serverrelease\Missions\Dynamic_Weather_mission</code></td></tr>
+<tr><td><code>PYTHON_EXE</code></td><td><code>python</code></td><td>Python interpreter used by the weather generator. The default only works if <code>python</code> is on the service account’s PATH, so an absolute path is safer.</td><td><code>C:\Users\admin\AppData\Local\Programs\Python\Python312\python.exe</code></td></tr>
 </tbody>
 </table>
 </div>
-<h3 id="discord-oauth-integration"><a class="header" href="#discord-oauth-integration">Discord OAuth Integration</a></h3>
+<h3 id="lso-greenie-board"><a class="header" href="#lso-greenie-board">LSO Greenie Board</a></h3>
 <div class="table-wrapper">
 <table>
 <thead>
 <tr><th>Variable</th><th>Purpose</th></tr>
 </thead>
 <tbody>
-<tr><td><code>DISCORD_CLIENT_ID</code></td><td>Discord OAuth client ID.</td></tr>
-<tr><td><code>DISCORD_CLIENT_SECRET</code></td><td>Discord OAuth app secret.</td></tr>
-<tr><td><code>DISCORD_GUILD_ID</code></td><td>Your Discord server (guild) ID. Users must be a member.</td></tr>
-<tr><td><code>DISCORD_ADMIN_ROLE_ID</code></td><td>Comma-separated list of role IDs allowed to log in.</td></tr>
+<tr><td><code>LSO_DIR</code></td><td>Output directory of the <a href="https://github.com/sevenfifty777/DCS-gRPC-lso">DCS-gRPC-lso</a> client (its <code>--out-dir</code>, the folder holding <code>lso.db</code> and the trap-sheet PNGs). Required for the <strong>LSO</strong> tab. The dashboard opens <code>lso.db</code> read-only and never calls DCS-gRPC for it. Run an LSO client build that enables WAL journaling (0.4.0 or later) so both processes can use the file at the same time. Example: <code>C:\LSO\recordings</code></td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="tacview-downloads"><a class="header" href="#tacview-downloads">Tacview Downloads</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Variable</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td><code>TACVIEW_DIR</code></td><td>Folder holding the server’s Tacview <code>.acmi</code> recordings. Required for the <strong>Tacview</strong> tab; when unset, the tab shows a “not configured” note and the <code>/api/tacview/*</code> routes return no data. There is deliberately <strong>no</strong> automatic <code>%USERPROFILE%\Documents\Tacview</code> fallback: under NSSM the service usually runs as a different account, so a guessed path would silently list nothing. Example: <code>C:\Users\admin\Documents\Tacview</code></td></tr>
+</tbody>
+</table>
+</div>
+<blockquote>
+<p><strong>Service account permissions.</strong> The account the dashboard service runs as must have <strong>read</strong> access to <code>TACVIEW_DIR</code>. A <code>LocalSystem</code> service reading another user’s <code>Documents</code> folder needs the folder ACL to allow it — otherwise the Tacview tab reports the OS error instead of listing files. Either grant the service account read access, or point Tacview at a shared folder (Tacview → Options → Recorder → recordings path).</p>
+</blockquote>
+<h3 id="discord-oauth-integration"><a class="header" href="#discord-oauth-integration">Discord OAuth Integration</a></h3>
+<p>Discord login is <strong>all or nothing</strong>: unless all four variables below are set, the Discord routes
+report “not configured” and only <code>ADMIN_PASSWORD</code> login works. Getting the IDs is covered in
+<a href="./setup.html#3-discord-oauth2-setup-optional">Setup &amp; Installation</a>. To copy an ID out of Discord,
+turn on Settings → Advanced → Developer Mode, then right-click a server or role and “Copy ID”.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Variable</th><th>Purpose</th><th>Example</th></tr>
+</thead>
+<tbody>
+<tr><td><code>DISCORD_CLIENT_ID</code></td><td>Discord OAuth client ID, from your app’s OAuth2 tab.</td><td><code>1198273645098273645</code></td></tr>
+<tr><td><code>DISCORD_CLIENT_SECRET</code></td><td>Discord OAuth app secret, from the same tab. Treat it like a password.</td><td><code>x9Kd2mQ...</code></td></tr>
+<tr><td><code>DISCORD_GUILD_ID</code></td><td>Your Discord server (guild) ID. Users must be a member. Several may be given, comma-separated.</td><td><code>987654321098765432</code></td></tr>
+<tr><td><code>DISCORD_ADMIN_ROLE_ID</code></td><td>Comma-separated list of role IDs allowed to log in. A user needs at least one of them.</td><td><code>112233445566778899,223344556677889900</code></td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="3-a-complete-example"><a class="header" href="#3-a-complete-example">3. A complete example</a></h2>
+<p>A filled-in Environment tab for a server running DCS, SRS, Foothold, the LSO client and Tacview:</p>
+<pre><code>JWT_SECRET=7f3a91c2be04d85a6f1e2c9b5d8a3f60
+ADMIN_PASSWORD=a-strong-password
+DASHBOARD_ADDR=0.0.0.0:3001
+APP_URL=http://203.0.113.10:3001
+GRPC_ENDPOINT=http://localhost:50051
+DCS_SAVED_GAMES_DIR=C:\Users\admin\Saved Games\DCS.dcs_serverrelease
+DCS_SCHEDULED_TASK_NAME=DCS Server Start
+SRS_SCHEDULED_TASK_NAME=SRS Server Start
+SRS_CFG_PATH=C:\Program Files\DCS-SimpleRadio-Standalone\Server\server.cfg
+DCS_TASK_WHITELIST=DCS Server Start,SRS Server Start,DCS SRS Watchdog
+LSO_DIR=C:\LSO\recordings
+TACVIEW_DIR=C:\Users\admin\Documents\Tacview
+DCS_DYNAMIC_WEATHER_DIR=C:\Users\admin\Saved Games\DCS.dcs_serverrelease\Missions\Dynamic_Weather_mission
+PYTHON_EXE=C:\Users\admin\AppData\Local\Programs\Python\Python312\python.exe
+</code></pre>
+<h2 id="4-troubleshooting"><a class="header" href="#4-troubleshooting">4. Troubleshooting</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+</thead>
+<tbody>
+<tr><td>Service starts then stops immediately</td><td><code>JWT_SECRET</code> is unset or shorter than 16 characters. The binary refuses to start.</td><td>Set a longer secret. The reason is written to <code>logs\dashboard-error.log</code>.</td></tr>
+<tr><td>Every page says the server is offline</td><td><code>GRPC_ENDPOINT</code> is wrong, DCS is not running, or the DCS-gRPC mod did not load.</td><td>Check DCS is up and its log mentions gRPC. A “tcp connect error” means nothing is listening on that port.</td></tr>
+<tr><td>Server offline, and DCS-gRPC has <code>auth.enabled = true</code></td><td><code>GRPC_API_KEY</code> is missing or does not match a token in <code>auth.tokens</code>.</td><td>Copy the dashboard’s token from <code>dcs-grpc.lua</code> exactly.</td></tr>
+<tr><td>Discord button does nothing, or “not configured”</td><td>One of the four <code>DISCORD_*</code> variables is missing.</td><td>Set all four, then restart the service.</td></tr>
+<tr><td>Discord login ends on an “invalid redirect URI” error</td><td><code>APP_URL</code> does not match the redirect URI registered in the Discord app.</td><td>Make them identical, including scheme and port.</td></tr>
+<tr><td>A tab says “not configured”</td><td>Its optional variable is unset.</td><td>Set the one named in the tab’s message from the tables above.</td></tr>
+<tr><td>Tacview or LSO tab shows an access-denied error</td><td>The service account cannot read that folder.</td><td>Grant the account read access, or run the service as a user who has it.</td></tr>
+<tr><td>A change to a variable had no effect</td><td>The dashboard reads the environment only at startup.</td><td><code>Restart-Service "DCS Web Dashboard"</code>.</td></tr>
 </tbody>
 </table>
 </div>
@@ -290,7 +410,7 @@ nssm install "DCS Web Dashboard"
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="features.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="process_control_setup.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -304,7 +424,7 @@ nssm install "DCS Web Dashboard"
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="features.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="process_control_setup.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

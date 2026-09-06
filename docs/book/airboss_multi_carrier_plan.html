@@ -1,0 +1,605 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Airboss Multi-Carrier Plan - DCS-Web-Dashboard Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-e96d0476.css">
+        <link rel="stylesheet" href="css/chrome-d279d366.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/custom-0445da38.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "searchindex-0a4111d4.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc-cd085332.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">DCS-Web-Dashboard Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/sevenfifty777/DCS-Web-Dashboard" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/sevenfifty777/DCS-Web-Dashboard/edit/main/docs/src/airboss_multi_carrier_plan.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                            <span class=fa-svg id="git-edit-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M421.7 220.3l-11.3 11.3-22.6 22.6-205 205c-6.6 6.6-14.8 11.5-23.8 14.1L30.8 511c-8.4 2.5-17.5 .2-23.7-6.1S-1.5 489.7 1 481.2L38.7 353.1c2.6-9 7.5-17.2 14.1-23.8l205-205 22.6-22.6 11.3-11.3 33.9 33.9 62.1 62.1 33.9 33.9zM96 353.9l-9.3 9.3c-.9 .9-1.6 2.1-2 3.4l-25.3 86 86-25.3c1.3-.4 2.5-1.1 3.4-2l9.3-9.3H112c-8.8 0-16-7.2-16-16V353.9zM453.3 19.3l39.4 39.4c25 25 25 65.5 0 90.5l-14.5 14.5-22.6 22.6-11.3 11.3-33.9-33.9-62.1-62.1L314.3 67.7l11.3-11.3 22.6-22.6 14.5-14.5c25-25 65.5-25 90.5 0z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="airboss-multi-carrier-plan"><a class="header" href="#airboss-multi-carrier-plan">Airboss Multi-Carrier Plan</a></h1>
+<p>Status: proposed 2026-09-05 and implemented the same day on branch <code>carrier-recovery</code> (Phases A to
+D). Phase E (VSTOL doctrine, per-type geometry) and the live validation checklist remain open.
+Builds on the stand-alone carrier recovery controller (see
+<a href="./carrier_recovery_standalone_plan.html">Carrier Recovery Without Foothold Plan</a>), which already
+accepts any group name and was confirmed working on CVN-72 and CVN-74 in a Foothold mission.</p>
+<p>Where things landed:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Item</th><th>Location</th></tr>
+</thead>
+<tbody>
+<tr><td>Lua: <code>classifyDeck</code>, <code>listCarriers</code>, <code>windReports</code>, <code>groupOverrides</code> / <code>setGroupOverrides</code>, <code>config(groupName)</code>, <code>phase</code></td><td><code>rust-web-dashboard/lua/carrier_recovery.lua</code>, version <code>1.1.0</code></td></tr>
+<tr><td>Rust routes</td><td><code>GET /api/airboss/carriers</code>, <code>GET /api/airboss?names=</code>, <code>POST /api/airboss/config</code> in <code>rust-web-dashboard/src/routes/dcs.rs</code>; script builders and 9 new Lua tests in <code>src/carrier_recovery.rs</code> (<code>cargo test carrier_recovery</code>, 27 tests)</td></tr>
+<tr><td>Deck profiles</td><td><code>web-dashboard/src/app/airboss/deckProfiles.ts</code>: <code>nimitz</code>, <code>forrestal</code>, <code>kuznetsov</code>, <code>essex</code>, <code>invincible</code>, <code>ara-vdm</code>, <code>tarawa</code> with images from <code>public/img/*-top-transp.png</code> (bow left like the Nimitz view, cropped to the hull so the image width is the ship length) and spots plus routes from the DCS tables in <code>Features/Carrier info/</code> (<code>deckSpots.ts</code>, <code>deckRoutes.ts</code>); <code>generic-catobar</code>, <code>generic-vstol</code> outlines. A deck-data invariant test checks every route against its parking and launch spots.</td></tr>
+<tr><td>Renderers</td><td><code>deckRenderer.ts</code> (<code>drawDeckView</code>, <code>drawDeckRouteFlow</code>) and <code>wheelRenderer.ts</code> (<code>drawWindWheel</code>), smoke-tested against a stub 2D context in <code>deckRenderer.test.ts</code></td></tr>
+<tr><td>Panels</td><td><code>CarrierPanel.tsx</code> (per ship), <code>PlannerPanel.tsx</code> (manual planner), <code>useCarrierList.ts</code> (detection + radar-triggered refresh), <code>carrierDetection.ts</code>, <code>carrierPersistence.ts</code>, <code>airbossApi.ts</code>; <code>page.tsx</code> is the coordinator (radar stream, batched poll, layout persistence)</td></tr>
+<tr><td>Tests</td><td><code>node --test "src/app/airboss/*.test.ts"</code> (48 tests)</td></tr>
+</tbody>
+</table>
+</div>
+<p>Deviations from the plan text below:</p>
+<ul>
+<li>
+<p><strong>Attribute strings verified on the live server</strong> (Phase A step 1, done after the first
+deployment) and the D1 table corrected. What DCS actually reports on <code>getDesc().attributes</code>:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Hull</th><th>Relevant attributes</th></tr>
+</thead>
+<tbody>
+<tr><td>CVN-72 <code>CVN_72</code>, CVN-74 <code>Stennis</code></td><td><code>Aircraft Carriers</code>, <code>AircraftCarrier</code>, <code>AircraftCarrier With Catapult</code>, <code>AircraftCarrier With Arresting Gear</code>, <code>catapult</code>, <code>Arresting Gear</code>, <code>ACLS</code>, <code>Link4</code></td></tr>
+<tr><td>LHA-1 Tarawa <code>LHA_Tarawa</code></td><td><code>Aircraft Carriers</code>, <code>AircraftCarrier</code>, <code>AircraftCarrier With Tramplin</code>, <code>ski_jump</code> (no helicopter attribute at all)</td></tr>
+<tr><td>HMS Invincible mod <code>hms_invincible</code></td><td>identical to the Tarawa set (the mod copied it), so it classifies <code>vstol</code> on attributes alone</td></tr>
+<tr><td>Forrestal <code>Forrestal</code>, ARA Veinticinco de Mayo <code>ara_vdm</code></td><td>same set as a CVN (catapult and wires), <code>catobar</code></td></tr>
+<tr><td>Kuznetsov <code>CV_1143_5</code></td><td><code>AircraftCarrier With Arresting Gear</code>, <code>Arresting Gear</code>, <code>AircraftCarrier With Tramplin</code>, <code>ski_jump</code>, <code>Straight_in_approach_type</code>: <code>stobar</code></td></tr>
+<tr><td>Essex 1944 <code>Essex</code></td><td><code>Aircraft Carriers</code>, <code>AircraftCarrier</code>, <code>Arresting Gear</code> (short form only), <code>ski_jump</code>: <code>stobar</code>; its deck is axial, so <code>Essex</code> is in <code>straightDeckTypes</code> for a 0 degree offset</td></tr>
+<tr><td>SS Atlantic Conveyor <code>atconveyor</code></td><td><code>Aircraft Carriers</code>, <code>AircraftCarrier</code>, <code>HelicopterCarrier</code>, <code>Straight_in_approach_type</code>: DCS calls it a carrier but it only takes helicopters, so it is on the <code>CarrierRecovery.excludedTypes</code> list (module 1.1.3) and never listed or steered</td></tr>
+<tr><td>Moskva <code>MOSCOW</code>, Neustrashimy <code>NEUSTRASH</code>, Arleigh Burke <code>USS_Arleigh_Burke_IIa</code>, Perry <code>PERRY</code>, HMS Ariadne <code>leander-gun-ariadne</code></td><td><code>HelicopterCarrier</code> (a helipad flag), <code>Cruisers</code> / <code>Frigates</code></td></tr>
+<tr><td>Rezky, Molniya, Grisha, La Combattante, Type 021, speedboats</td><td>nothing carrier-related</td></tr>
+</tbody>
+</table>
+</div>
+<p>Confirmed on a second mission (Foothold Syria, 2026-09-05) after deploying module 1.1.1: exactly
+the two CVNs, the Tarawa and the HMS Invincible were listed, with the right classes, and every
+helipad-only warship was excluded. That mission names the Invincible group “Tarawa”, which the
+old hard-coded page would have drawn with the Tarawa deck; the profile now follows the type name.</p>
+</li>
+<li>
+<p><strong>Deck offset per hull is still class-based</strong> apart from the straight-deck list: the Kuznetsov
+keeps the 9.14 degree angled-deck offset of the mission config. Its landing strip is angled to
+port but not by the Nimitz value; a per-type offset table belongs to Phase E. The page’s
+<code>useCarrierList</code> also remembers hinted hulls that a scan did not return (the Atlantic Conveyor)
+so they do not trigger a refresh Eval every 30 s.</p>
+</li>
+<li>
+<p><strong>Late-activated placeholders</strong> (module 1.1.2): the Foothold Syria mission carries an LHA-1
+Tarawa group named “FOB ALPHA” that Foothold may spawn later. For the scripting engine it
+exists (<code>isExist()</code> true, it has a position and a life value) but <code>Unit.isActive()</code> is false and
+it is on nobody’s F10 map. <code>listCarriers</code> skips inactive lead units and <code>windData</code> treats them as
+unavailable, so the panel list only shows ships that are in the world; when the mission activates
+one, it appears in the radar stream and triggers the automatic list refresh.</p>
+<p>The first rule (helipad means VSTOL) therefore listed three warships and put the Tarawa in
+<code>stobar</code>. The rule now is: catapult means <code>catobar</code>; arresting gear without catapult means
+<code>stobar</code> (the Kuznetsov’s expected <code>AircraftCarrier With Tramplin</code> plus wires); any other
+fixed-wing deck attribute (<code>Aircraft Carriers</code>, <code>AircraftCarrier</code>, <code>AircraftCarrier With  Tramplin</code>, <code>ski_jump</code>) means <code>vstol</code>; <code>HelicopterCarrier</code> or <code>Landing Ships</code> counts only when the
+type name also hints at a carrier (modded LHDs), otherwise the ship is not listed; a type-name
+hint alone means <code>unknown</code>. The Kuznetsov set is still an expectation, not a measurement: check it
+with <code>return Unit.getByName("&lt;unit&gt;"):getDesc().attributes</code> on the Console page the first time
+one is in a mission and correct <code>CarrierRecovery.deckAttributes</code> if needed.</p>
+</li>
+<li>
+<p>Validation checklist items 1 (detection and one batched request), 5 (one Eval for several
+synced ships) and the target-isolation part of 7 were confirmed on the live Foothold mission
+on 2026-09-05: CVN-72 (Foothold), CVN-74 and Tarawa detected; <code>GET /api/airboss?names=</code> returned
+all of them plus a clean error for an unknown name; setting CVN-74 to 26 kt left CVN-72 at 24 kt
+and did not touch <code>CarrierRecoveryTargetWodKt</code>; out-of-range values are rejected with 400.</p>
+</li>
+<li>
+<p>The Sync checkbox drives the batched poll only; the deck view and the wheel’s actual heading
+always come from the radar stream, as designed. The wheel’s “not synced” state keeps the last
+wind received while the panel was synced.</p>
+</li>
+<li>
+<p>The lost state: while a panel is synced the controller poll is the authority, so the ship is
+lost only when the poll answers “not available”; unsynced, it is lost when the stream carried
+the ship before and dropped it. The tag shows the time the ship disappeared. This matters
+because the radar stream only broadcasts unit <strong>changes</strong> from the moment the browser connects
+(the backend does not replay a snapshot), so a stationary ship such as the Foothold “FOB ALPHA”
+Tarawa never appears in it; its panel then draws the deck from the controller’s position and
+heading, tagged “STATIC · HEADING FROM CONTROLLER”, and cannot show parked aircraft. Replaying
+the last known frame per unit to new SSE subscribers would lift that limit for the radar page
+too and is left as a follow-up.</p>
+</li>
+<li>
+<p>The Target WOD value is persisted only once the user changes it; until then the panel shows the
+controller’s reported target so a reload does not pin the mission default as an override.</p>
+</li>
+<li>
+<p><code>docs/src/openapi.json</code> was regenerated; <code>docs/book/</code> (the built book) was left as is.</p>
+</li>
+</ul>
+<h2 id="goal"><a class="header" href="#goal">Goal</a></h2>
+<ol>
+<li>Detect every carrier-type group in the running mission automatically: CVN and CV classes, LHA-1
+Tarawa, Kuznetsov, and modded hulls such as the HMS Invincible or Essex, without hard-coded
+names or a text box.</li>
+<li>Give each carrier its own panel: the wind “wheel” on top and the corresponding deck view under it.</li>
+<li>Let the user choose which carriers to monitor and control. Each panel has its own <strong>Sync</strong>
+checkbox and its own Carrier Actions, so an unwatched carrier costs no data flow at all.</li>
+<li>Keep VSTOL carriers (straight deck) working with today’s solver at a 0 degree offset. Their
+specific recovery doctrine and deck geometry are a later phase.</li>
+</ol>
+<h2 id="current-state"><a class="header" href="#current-state">Current state</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Area</th><th>Today</th></tr>
+</thead>
+<tbody>
+<tr><td>Carrier identity</td><td>Two hard-coded slots in <code>page.tsx</code>: <code>carrierNameInput</code> (default <code>CVN-72</code>) and <code>tarawaNameInput</code> (default <code>Tarawa</code>). Every piece of per-ship state exists twice (<code>carrierPos</code>/<code>tarawaPos</code>, <code>carrierUnitId</code>/<code>tarawaUnitId</code>, refs, smoothed positions). <code>DeckId</code> in <code>deckRoutes.ts</code> is the union <code>'carrier' | 'tarawa'</code>.</td></tr>
+<tr><td>Deck geometry</td><td><code>drawDeckView</code> is already parameterised (image, length in metres, image rotation, spots, routes) but is called twice with literals: Nimitz 332 m with <code>NIMITZ_*</code> tables, Tarawa 254 m with <code>TARAWA_*</code> tables.</td></tr>
+<tr><td>Wind wheel</td><td>One 660 px canvas fed by the global sliders, or by the CVN telemetry when Auto-Sync is on. The Tarawa has no wheel.</td></tr>
+<tr><td>Data flow</td><td><code>GET /api/airboss?name=</code> polled every 2 s per named ship while Auto-Sync is on (one DCS-gRPC Eval each). The radar SSE stream is opened once and already carries <strong>every ship</strong> with <code>type</code>, <code>name</code>, <code>group.name</code>, <code>group.category</code>, position, heading and velocity, at no extra DCS cost (the backend holds one <code>StreamUnits</code> subscription per category for the life of the process).</td></tr>
+<tr><td>Controller</td><td><code>CarrierRecovery</code> (Lua) is per group name. Deck offset is chosen by a type-name pattern list (<code>straightDeckTypes</code>). <code>POST /api/airboss/action</code> takes <code>carrier</code>.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Two facts drive the design: the radar stream is free, and the ship’s own position, heading and
+speed are already in it. The 2 s poll is only needed for the wind at the ship and the controller’s
+plan.</p>
+<h2 id="design-decisions"><a class="header" href="#design-decisions">Design decisions</a></h2>
+<h3 id="d1-detection-dcs-attributes-in-lua-once-radar-stream-for-liveness"><a class="header" href="#d1-detection-dcs-attributes-in-lua-once-radar-stream-for-liveness">D1. Detection: DCS attributes in Lua once, radar stream for liveness</a></h3>
+<p>Add <code>CarrierRecovery.listCarriers()</code> to the Lua module. It walks <code>coalition.getGroups(side,  Group.Category.SHIP)</code> for both coalitions, reads the lead unit’s <code>getDesc().attributes</code> and type
+name, and classifies:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th><code>deck_class</code></th><th>Rule (attributes from <code>Unit.getDesc</code>, as verified live, see the deviations above)</th><th>Examples</th></tr>
+</thead>
+<tbody>
+<tr><td><code>catobar</code></td><td><code>AircraftCarrier With Catapult</code></td><td>CVN-71/72/73/75, Stennis, Forrestal</td></tr>
+<tr><td><code>stobar</code></td><td><code>AircraftCarrier With Arresting Gear</code> without catapult</td><td>Kuznetsov (expected)</td></tr>
+<tr><td><code>vstol</code></td><td><code>Aircraft Carriers</code>, <code>AircraftCarrier</code>, <code>AircraftCarrier With Tramplin</code> or <code>ski_jump</code> with neither catapult nor wires; or <code>HelicopterCarrier</code> / <code>Landing Ships</code> on a hull whose type name hints at a carrier</td><td>LHA-1 Tarawa, HMS Invincible, Juan Carlos, Type 071</td></tr>
+<tr><td><code>unknown</code></td><td>Type-name hint matched (<code>CV</code>, <code>CVN</code>, <code>LHA</code>, <code>Carrier</code>, <code>Invincible</code>, <code>Essex</code>, <code>Ark</code>, …) but no attribute matched</td><td>modded hulls with unusual attributes</td></tr>
+</tbody>
+</table>
+</div>
+<p>Ships with none of the above are not returned; in particular a bare <code>HelicopterCarrier</code> (the DCS
+helipad flag carried by the Moskva, Neustrashimy and Arleigh Burke) is not a carrier. Mod authors
+are inconsistent, so the classification table lives in one Lua function and is cheap to correct.</p>
+<p>The page calls this once on load and on a <strong>Refresh</strong> button. Between refreshes the radar stream
+keeps the list live: a carrier that dies disappears from the stream and its panel greys out; a ship
+whose group is not in the list and whose type name matches a carrier hint triggers one automatic
+refresh (rate-limited to once per 30 s). This keeps DCS-gRPC cost at one Eval per page load.</p>
+<h3 id="d2-one-deck-profile-registry-instead-of-two-code-paths"><a class="header" href="#d2-one-deck-profile-registry-instead-of-two-code-paths">D2. One deck profile registry instead of two code paths</a></h3>
+<p>New <code>deckProfiles.ts</code> maps a DCS type name (with a fallback on <code>deck_class</code>) to everything the
+renderer needs: image file, length in metres, image rotation, canvas width, parking spots, launch
+routes, and the deck offset shown in the wheel. Existing data moves in unchanged:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Profile</th><th>Types</th><th>Data</th></tr>
+</thead>
+<tbody>
+<tr><td><code>nimitz</code></td><td><code>CVN_71</code>, <code>CVN_72</code>, <code>CVN_73</code>, <code>CVN_75</code>, <code>Stennis</code></td><td>today’s Nimitz image, 332 m, <code>NIMITZ_*</code> spots and routes, 9.14 degrees</td></tr>
+<tr><td><code>tarawa</code></td><td><code>LHA_Tarawa</code></td><td>today’s Tarawa image, 254 m, <code>TARAWA_*</code>, 0 degrees</td></tr>
+<tr><td><code>generic-catobar</code></td><td>any other <code>catobar</code>/<code>stobar</code></td><td>outline rectangle, 300 m, no spots or routes, 9.14 degrees</td></tr>
+<tr><td><code>generic-vstol</code></td><td>any other <code>vstol</code>/<code>unknown</code></td><td>outline rectangle, 210 m, no spots or routes, 0 degrees</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>DeckId</code> becomes the profile key string. Per-type images, spots and routes for Forrestal, Kuznetsov
+or the mods are added later by filling a row, not by touching the page.</p>
+<h3 id="d3-a-carrierpanel-component-per-selected-carrier"><a class="header" href="#d3-a-carrierpanel-component-per-selected-carrier">D3. A <code>CarrierPanel</code> component per selected carrier</a></h3>
+<p>The page becomes: a sidebar with the carrier list and the manual planner, and a scrollable row of
+<code>CarrierPanel</code>s. Each panel owns its state (sync flag, last telemetry, locked unit id, smoothed
+positions, selected routes, status table) and renders, top to bottom:</p>
+<ol>
+<li>Header: group name, type, coalition, deck class, backend (<code>foothold</code>/<code>standalone</code>).</li>
+<li><strong>Sync</strong> checkbox and Carrier Actions (Turn into Wind, Resume Circuit, Check Status) for this
+ship only, with the status table from the existing implementation.</li>
+<li>The wind wheel (480 px so three panels fit side by side) drawn from this ship’s telemetry:
+actual heading from the radar stream, wind and controller plan from the poll when Sync is on.</li>
+<li>The deck view for its profile, fed by the shared radar snapshot.</li>
+</ol>
+<p>The manual planner (today’s sliders and wheel) stays as a separate panel without a ship, so the
+planning workflow does not change.</p>
+<h3 id="d4-data-flow-rules"><a class="header" href="#d4-data-flow-rules">D4. Data flow rules</a></h3>
+<ul>
+<li>The radar stream is shared by all panels and always on while the page is open, as today.</li>
+<li>Deck views never poll; they use the stream, so an unsynced panel still shows the deck live.</li>
+<li>Sync on = this ship is in the wind poll. The poll becomes one batched request,
+<code>GET /api/airboss?names=CVN-72,CVN-74</code>, backed by <code>CarrierRecovery.windReports(names)</code> in Lua,
+so N synced carriers cost one Eval per interval instead of N. The single-name form stays for
+compatibility.</li>
+<li>Sync off = nothing is requested for this ship; the wheel shows the last known wind greyed with a
+“not synced” tag, and the heading needle keeps moving from the stream.</li>
+<li>Actions are on-demand and independent of Sync.</li>
+</ul>
+<h3 id="d5-persistence"><a class="header" href="#d5-persistence">D5. Persistence</a></h3>
+<p>Selected carriers, their Sync flags and their WOD targets are stored in <code>localStorage</code> keyed by the
+mission name from <code>GET /api/mission</code>, so reopening the page on the same mission restores the layout
+without a click.</p>
+<h3 id="d6-user-selectable-wod-target-per-carrier"><a class="header" href="#d6-user-selectable-wod-target-per-carrier">D6. User-selectable WOD target per carrier</a></h3>
+<p>Today the target wind over deck is a mission-wide value: the Lua default of 24 kt, or
+<code>CarrierRecoveryTargetWodKt</code> from <code>Foothold Config.lua</code>. The page slider only affects the manual
+planner, never the ship. Each panel gets a <strong>Target WOD</strong> control whose value is what the
+controller actually uses for that ship.</p>
+<ul>
+<li>Control: a numeric input with a slider, range 15 to 40 kt in 0.5 kt steps, default taken from the
+controller’s reported <code>target_wod</code> on first sync. Two presets next to it, “CATOBAR 24” and
+“VSTOL 20”, so the common cases are one click; the numbers are placeholders until Phase E fixes
+the VSTOL doctrine.</li>
+<li>Where it is stored in the mission: a new per-group override table in the Lua module,
+<code>CarrierRecovery.groupOverrides[groupName].targetWodKt</code>, read by <code>config(groupName)</code> ahead of the
+mission-wide globals. The override survives mission restarts only through the page’s persisted
+value, which is re-sent on the first sync.</li>
+<li>How it reaches the mission: a new <code>POST /api/airboss/config</code> with <code>{ carrier, target_wod }</code>
+calling <code>CarrierRecovery.setGroupOverrides(name, { targetWodKt })</code>. The page sends it when the
+user changes the value (debounced) and once after a page load restores a persisted value. Start
+does not carry the target itself, so a recovery always uses the value visible in the panel.</li>
+<li>Effect while a recovery is active: the monitor re-solves every tick and retargets during the
+<code>aligning</code> phase only, as today, so a change made during <code>active</code> applies to the next recovery.
+The status table shows the target in use.</li>
+<li>Foothold-delegated ship (CVN-72 with <code>bc</code> present): Foothold’s own solver reads the global
+<code>CarrierRecoveryTargetWodKt</code>, so for that ship the module writes the override into that global as
+well. This is mission-wide for Foothold’s ship only, which is the one ship Foothold manages, so
+there is no collision.</li>
+<li>Telemetry: <code>windReports</code> returns each ship’s effective <code>target_wod</code>, so the wheel and the
+controller plan in the panel reflect the chosen value immediately.</li>
+<li>Validation: the backend rejects values outside 10 to 45 kt; the Lua clamps as well.</li>
+</ul>
+<h2 id="phase-a-detection-backend"><a class="header" href="#phase-a-detection-backend">Phase A: detection backend</a></h2>
+<ol>
+<li>Verify attribute strings on the live server through the Console page:
+<code>return Unit.getByName("&lt;unit&gt;"):getDesc().attributes</code> for a CVN, the Tarawa, the Kuznetsov and
+each mod hull in use. Record the results in this document.</li>
+<li>Lua: <code>CarrierRecovery.classifyDeck(desc)</code> (pure, testable) and <code>CarrierRecovery.listCarriers()</code>
+returning <code>{ carriers = { { group, unit, type, coalition, deck_class, attributes }, ... } }</code>.
+Use the classification to choose the deck offset in <code>deckOffsetForType</code>, keeping the name pattern
+list as a fallback. Bump <code>MODULE_VERSION</code>.</li>
+<li>Lua: <code>CarrierRecovery.windReports(names)</code> returning a table keyed by group name.</li>
+<li>Lua: per-group overrides (D6): <code>CarrierRecovery.groupOverrides</code>, <code>setGroupOverrides(name,  table)</code>, and <code>config(groupName)</code> resolving group override, then mission globals, then defaults.
+<code>windData</code>, <code>start</code> and <code>monitor</code> pass the group name to <code>config</code>. For a Foothold-delegated
+group, <code>setGroupOverrides</code> also writes <code>CarrierRecoveryTargetWodKt</code>.</li>
+<li>Rust: <code>GET /api/airboss/carriers</code> (session required) using the probe/install pair;
+<code>GET /api/airboss</code> accepts <code>names</code> (comma-separated, each validated) and returns
+<code>{ reports: { &lt;name&gt;: AirbossDataResponse } }</code>; <code>POST /api/airboss/config</code> with
+<code>{ carrier, target_wod }</code> validated to 10 to 45 kt. Update utoipa and regenerate <code>openapi.json</code>.</li>
+<li>Tests in the mlua harness: a fake <code>coalition.getGroups</code> with a CVN, a Tarawa, a destroyer and a
+mod hull with odd attributes; batched reports with one missing ship; name validation for the
+list form; a group override changing one ship’s solution and <code>target_wod</code> while another ship
+keeps the default; the Foothold global written only for the delegated group. Add fixture cases
+for target 20 kt on a straight deck.</li>
+</ol>
+<h2 id="phase-b-renderer-extraction-no-behaviour-change"><a class="header" href="#phase-b-renderer-extraction-no-behaviour-change">Phase B: renderer extraction (no behaviour change)</a></h2>
+<ol>
+<li>Move <code>drawDeckView</code> and the wheel drawing out of the page effect into <code>deckRenderer.ts</code> and
+<code>wheelRenderer.ts</code> as pure functions taking a profile and a snapshot. Both are large closures
+today; extracting them is the precondition for reuse per panel.</li>
+<li>Create <code>deckProfiles.ts</code> (D2) and change the two existing calls to read from it.</li>
+<li>Add tests: profile lookup by type and by class fallback, and a smoke test that both renderers run
+against a stub 2D context without throwing.</li>
+<li>Confirm the page renders exactly as before (screenshots of CVN and Tarawa decks).</li>
+</ol>
+<h2 id="phase-c-per-carrier-panels"><a class="header" href="#phase-c-per-carrier-panels">Phase C: per-carrier panels</a></h2>
+<ol>
+<li><code>CarrierPanel.tsx</code> (D3) with its own hooks: <code>useShipFromRadar(groupName)</code> for position, heading
+and speed from the shared snapshot; <code>useWindReport(groupName, enabled)</code> for the poll subscription.</li>
+<li><code>useCarrierList()</code> hook: initial fetch, refresh button, and the radar-triggered refresh (D1).</li>
+<li>Sidebar: detected carriers with a <strong>Show</strong> checkbox each, coalition badge, and a “Manual
+planner” toggle. Hidden carriers cost nothing. An “Add by name” field remains for the case where
+detection misses a hull, and feeds the same panel code.</li>
+<li>Batched poll coordinator in the page: collects the synced names, one interval, one request,
+fans results out to panels. Poll interval 2 s as today, configurable constant.</li>
+<li>Carrier Actions move into the panel unchanged, using the panel’s group name.</li>
+<li>Target WOD control in the panel (D6): input plus slider plus the two presets, debounced
+<code>POST /api/airboss/config</code>, initial value from the first report, re-sent after a reload when a
+persisted value exists. The wheel uses the panel’s target, and the status table shows
+“Target WOD” so the user sees what the ship is aiming for.</li>
+<li>Layout: <code>ab-panels</code> horizontal flex with scroll; each panel a fixed-width column. Keep the
+existing CSS variables and button styles.</li>
+<li>Remove <code>carrierNameInput</code>, <code>tarawaNameInput</code> and the duplicated state from <code>page.tsx</code>.</li>
+</ol>
+<h2 id="phase-d-polish"><a class="header" href="#phase-d-polish">Phase D: polish</a></h2>
+<ol>
+<li>Persistence (D5).</li>
+<li>Wheel and deck for a carrier that has left the stream: grey the panel, keep the last frame, show
+“lost” with the last-seen time.</li>
+<li>Sidebar summary line: number of carriers detected, synced, and in recovery (from the batched
+report’s <code>backend</code> and the status phase).</li>
+<li>Docs: features page and README.</li>
+</ol>
+<h2 id="phase-e-later-vstol-doctrine-and-per-type-geometry"><a class="header" href="#phase-e-later-vstol-doctrine-and-per-type-geometry">Phase E (later): VSTOL doctrine and per-type geometry</a></h2>
+<p>Out of scope now, listed so the interfaces above leave room for it:</p>
+<ul>
+<li>VSTOL recovery is axial, so the solver’s 0 degree offset is right, but the doctrine differs: a
+lower target wind over deck and a preference for wind slightly off the port bow for the Harrier
+pattern. Proposed shape: a per-<code>deck_class</code> solver profile in the Lua module
+(<code>targetWodKt</code>, <code>offsetDeg</code>, <code>minSpeedKt</code>) with a fixture section per class.</li>
+<li>Deck data landed on 2026-09-05 for Forrestal, Kuznetsov, Essex, Invincible and ARA Veinticinco de
+Mayo, transcribed from the <code>RunwaysAndRoutes.lua</code> tables kept in <code>Features/Carrier info/</code>. The
+Nimitz and Tarawa tables were re-checked against the same sources: every position and route
+matches. Points to verify on a live deck with a parked aircraft:
+<ul>
+<li>The image is centred on the hull’s mid-length while DCS spot coordinates and the streamed
+ship position are in the model frame, whose origin is not always at mid-length. The first
+live screenshots showed the Forrestal and Kuznetsov spots sitting too far forward (a helo
+terminal floating off the Forrestal’s bow). <code>DeckProfile.imageCenterFwdMeters</code> now carries the
+offset and the renderer draws spots, routes and aircraft that far aft of the image centre. The
+value comes from the take-off run geometry in the DCS file, since a catapult or ramp run ends
+at the bow: Forrestal cats 1 and 2 end at +176.7 m against a 162.5 m half-length, so 13 m;
+Kuznetsov ramps 1 and 2 end at the ski-jump lip, +180 m against 152 m, so 28 m (and the DCS
+“M” helicopter terminal then lands on the painted M of the deck texture). The Nimitz gives
+1 m by the same method, which is why it never needed one. The Essex (deck runs end at
++152..155 m against 137.5 m), ARA (catapult ends at +121.6 m against 106 m, unless the mod’s
+stated 236 m length is the model’s real size) and Invincible (run ends at +92 m against
+104.7 m) are left at 0 until checked with a parked aircraft against deck features. Note that an
+aircraft always sits on its spot marker whatever the offset, because both are in the model
+frame; only its position against the painted deck reveals a wrong offset.</li>
+<li>Tarawa parking labels 6 and 7: DCS numbers terminals by table order, giving 6 at (-85, 14) and
+7 at (-100, 14); the file’s comments and our labels have them the other way round. Positions
+and routes are identical either way.</li>
+<li>ARA Veinticinco de Mayo: the DCS taxi routes stop at (20.6, -11.65), 35 m short of the catapult
+head; the drawn routes add a last leg to the head so the route reaches the launch marker.</li>
+<li>Lengths follow the mod’s <code>GT.Length</code> where stated (Kuznetsov 304.5 m, Essex 275 m, Invincible
+209.4 m); the Forrestal mod copies the Nimitz value (332.9 m) so the real 325 m is used, and the
+ARA mod’s 236 m is far from the ship’s 212 m, so 212 m is used.</li>
+</ul>
+</li>
+</ul>
+<h2 id="validation-checklist"><a class="header" href="#validation-checklist">Validation checklist</a></h2>
+<ol>
+<li>Foothold mission: CVN-72, CVN-74 and Tarawa all detected with the right class; showing only
+CVN-74 with Sync produces one <code>/api/airboss?names=CVN-74</code> request per 2 s and nothing for the
+others (check the browser network tab and the backend log).</li>
+<li>Non-Foothold mission with a Kuznetsov and a modded HMS Invincible: both detected, classes
+<code>stobar</code> and <code>vstol</code>, generic deck outlines drawn, wheel correct, Turn into Wind works on each.</li>
+<li>Kill a carrier mid-session: its panel greys out within one stream cycle, the others continue.</li>
+<li>Spawn a carrier mid-session: the list refreshes once, a new panel appears.</li>
+<li>Two synced carriers: exactly one Eval per interval in the backend log.</li>
+<li>Reload the page: the same panels, Sync flags and WOD targets come back for the same mission.</li>
+<li>Set CVN-74 to 28 kt and CVN-72 to 24 kt, start both: the in-game “turning into wind” messages
+report different speeds, the status tables show the two targets, and the wheel of each panel
+matches its own controller plan. On the Foothold ship, confirm the F10 status report shows the
+new target too.</li>
+</ol>
+<h2 id="effort-estimate"><a class="header" href="#effort-estimate">Effort estimate</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Phase</th><th>Size</th></tr>
+</thead>
+<tbody>
+<tr><td>A</td><td>Small: about 150 lines of Lua, 100 of Rust, plus tests</td></tr>
+<tr><td>B</td><td>Medium: mostly moving code, risk is in preserving pixel-identical rendering</td></tr>
+<tr><td>C</td><td>Large: the page restructure, the bulk of the work</td></tr>
+<tr><td>D</td><td>Small</td></tr>
+</tbody>
+</table>
+</div>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="carrier_recovery_standalone_plan.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="file_downloads_plan.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="carrier_recovery_standalone_plan.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="file_downloads_plan.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-09f2665d.js"></script>
+
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-abc7f01d.js"></script>
+        <script src="book-609e4cb8.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>
