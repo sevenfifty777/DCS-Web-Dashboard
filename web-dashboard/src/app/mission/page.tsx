@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useRef } from 'react';
 import { apiFetch } from '@/lib/api';
+import { downloadFile } from '@/lib/download';
 import { errorMessage } from '@/lib/errors';
 
 interface MissionData {
@@ -29,6 +30,9 @@ export default function MissionPage() {
   const [srsProcess, setSrsProcess] = useState({ running: false, checking: true });
   const [dcsError, setDcsError] = useState('');
   const [srsError, setSrsError] = useState('');
+  // Path of the download in flight, so only the clicked button shows progress.
+  const [downloading, setDownloading] = useState<string | null>(null);
+  const [downloadError, setDownloadError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const initializedFolder = useRef(false);
 
@@ -161,6 +165,27 @@ export default function MissionPage() {
   const manageSrsProcess = (action: 'start' | 'stop' | 'restart') => {
     setSrsProcess(p => ({ ...p, checking: true }));
     void sendProcessAction('/api/server/srs-process', action, setSrsError);
+  };
+
+  // `relPath` is relative to the DCS `Missions/` directory — the same shape
+  // `/api/mission/browse` returns. Uploaded files arrive as absolute paths, so
+  // callers there pass `Uploads/<name>` instead. `browse` can also fall back to
+  // an absolute path when a mission lives behind a junction; the endpoint only
+  // accepts relative paths, so trim anything up to and including `Missions/`.
+  const handleDownload = async (rawPath: string) => {
+    const normalized = rawPath.replace(/\\/g, '/');
+    const relPath = normalized.replace(/^.*?\/[Mm]issions\//, '');
+    const filename = relPath.split('/').pop() || relPath;
+    // Keyed on the caller's path so the clicked button matches on it.
+    setDownloading(rawPath);
+    setDownloadError('');
+    try {
+      await downloadFile(`/api/mission/download?path=${encodeURIComponent(relPath)}`, filename);
+    } catch (err: unknown) {
+      setDownloadError(`${filename}: ${errorMessage(err)}`);
+    } finally {
+      setDownloading(null);
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -627,7 +652,13 @@ export default function MissionPage() {
             maxHeight: '400px'
           }}>
             <h3 style={{ marginTop: 0, color: 'var(--primary)', borderBottom: '1px solid var(--panel-border)', paddingBottom: '0.5rem', marginBottom: '1.5rem' }}>Uploaded Files (Missions/Uploads)</h3>
-            
+
+            {downloadError && (
+              <div style={{ color: '#ff4444', marginBottom: '1rem', fontSize: '12px', fontFamily: 'var(--font-mono)', wordBreak: 'break-word' }}>
+                {downloadError}
+              </div>
+            )}
+
             <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               {(!data?.uploadedMissions || data.uploadedMissions.length === 0) ? (
                 <div style={{ color: 'var(--text-secondary)', fontStyle: 'italic', padding: '1rem', textAlign: 'center' }}>
@@ -659,47 +690,70 @@ export default function MissionPage() {
                         </span>
                       </div>
 
-                      {!isCurrent && (
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                          <button 
-                            onClick={() => sendAction('add_to_queue', { file_name: missionPath })}
-                            style={{
-                              padding: '0.5rem 1rem',
-                              backgroundColor: 'rgba(0, 255, 136, 0.1)',
-                              border: '1px solid var(--success)',
-                              color: 'var(--success)',
-                              borderRadius: '4px',
-                              cursor: 'pointer',
-                              fontWeight: 'bold',
-                              textTransform: 'uppercase',
-                              fontSize: '11px',
-                              whiteSpace: 'nowrap'
-                            }}
-                          >
-                            Add to Queue
-                          </button>
-                          <button 
-                            onClick={() => sendAction('load_file', { file_name: missionPath })}
-                            style={{
-                              padding: '0.5rem 1rem',
-                              backgroundColor: 'transparent',
-                              border: '1px solid var(--primary)',
-                              color: 'var(--primary)',
-                              borderRadius: '4px',
-                              cursor: 'pointer',
-                              fontWeight: 'bold',
-                              textTransform: 'uppercase',
-                              fontSize: '11px',
-                              whiteSpace: 'nowrap'
-                            }}
-                          >
-                            Run Now
-                          </button>
-                        </div>
-                      )}
-                      {isCurrent && (
-                        <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '11px', textTransform: 'uppercase', marginLeft: '1rem' }}>Active</span>
-                      )}
+                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                        {!isCurrent && (
+                          <>
+                            <button
+                              onClick={() => sendAction('add_to_queue', { file_name: missionPath })}
+                              style={{
+                                padding: '0.5rem 1rem',
+                                backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                                border: '1px solid var(--success)',
+                                color: 'var(--success)',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontWeight: 'bold',
+                                textTransform: 'uppercase',
+                                fontSize: '11px',
+                                whiteSpace: 'nowrap'
+                              }}
+                            >
+                              Add to Queue
+                            </button>
+                            <button
+                              onClick={() => sendAction('load_file', { file_name: missionPath })}
+                              style={{
+                                padding: '0.5rem 1rem',
+                                backgroundColor: 'transparent',
+                                border: '1px solid var(--primary)',
+                                color: 'var(--primary)',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontWeight: 'bold',
+                                textTransform: 'uppercase',
+                                fontSize: '11px',
+                                whiteSpace: 'nowrap'
+                              }}
+                            >
+                              Run Now
+                            </button>
+                          </>
+                        )}
+                        {/* Uploaded files come back as absolute paths; the
+                            download endpoint wants them relative to Missions/. */}
+                        <button
+                          onClick={() => handleDownload(`Uploads/${filename}`)}
+                          disabled={downloading !== null}
+                          style={{
+                            padding: '0.5rem 1rem',
+                            backgroundColor: 'transparent',
+                            border: '1px solid var(--primary)',
+                            color: 'var(--primary)',
+                            borderRadius: '4px',
+                            cursor: downloading !== null ? 'not-allowed' : 'pointer',
+                            fontWeight: 'bold',
+                            textTransform: 'uppercase',
+                            fontSize: '11px',
+                            whiteSpace: 'nowrap',
+                            opacity: downloading !== null ? 0.4 : 1
+                          }}
+                        >
+                          {downloading === `Uploads/${filename}` ? '...' : '⬇ Download'}
+                        </button>
+                        {isCurrent && (
+                          <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '11px', textTransform: 'uppercase' }}>Active</span>
+                        )}
+                      </div>
                     </div>
                   );
                 })
@@ -718,7 +772,13 @@ export default function MissionPage() {
             maxHeight: '400px'
           }}>
             <h3 style={{ marginTop: 0, color: 'var(--primary)', borderBottom: '1px solid var(--panel-border)', paddingBottom: '0.5rem', marginBottom: '1rem' }}>Server Files Browser (Missions/)</h3>
-            
+
+            {downloadError && (
+              <div style={{ color: '#ff4444', marginBottom: '1rem', fontSize: '12px', fontFamily: 'var(--font-mono)', wordBreak: 'break-word' }}>
+                {downloadError}
+              </div>
+            )}
+
             <div style={{ marginBottom: '1rem' }}>
               <input 
                 type="text" 
@@ -828,47 +888,69 @@ export default function MissionPage() {
                           )}
                         </div>
 
-                        {!isCurrent && (
-                          <div style={{ display: 'flex', gap: '0.5rem' }}>
-                            <button 
-                              onClick={() => sendAction('add_to_queue', { file_name: missionPath })}
-                              style={{
-                                padding: '0.5rem 1rem',
-                                backgroundColor: 'rgba(0, 255, 136, 0.1)',
-                                border: '1px solid var(--success)',
-                                color: 'var(--success)',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                fontWeight: 'bold',
-                                textTransform: 'uppercase',
-                                fontSize: '11px',
-                                whiteSpace: 'nowrap'
-                              }}
-                            >
-                              Add to Queue
-                            </button>
-                            <button 
-                              onClick={() => sendAction('load_file', { file_name: missionPath })}
-                              style={{
-                                padding: '0.5rem 1rem',
-                                backgroundColor: 'transparent',
-                                border: '1px solid var(--primary)',
-                                color: 'var(--primary)',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                fontWeight: 'bold',
-                                textTransform: 'uppercase',
-                                fontSize: '11px',
-                                whiteSpace: 'nowrap'
-                              }}
-                            >
-                              Run Now
-                            </button>
-                          </div>
-                        )}
-                        {isCurrent && (
-                          <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '11px', textTransform: 'uppercase', marginLeft: '1rem' }}>Active</span>
-                        )}
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                          {!isCurrent && (
+                            <>
+                              <button
+                                onClick={() => sendAction('add_to_queue', { file_name: missionPath })}
+                                style={{
+                                  padding: '0.5rem 1rem',
+                                  backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                                  border: '1px solid var(--success)',
+                                  color: 'var(--success)',
+                                  borderRadius: '4px',
+                                  cursor: 'pointer',
+                                  fontWeight: 'bold',
+                                  textTransform: 'uppercase',
+                                  fontSize: '11px',
+                                  whiteSpace: 'nowrap'
+                                }}
+                              >
+                                Add to Queue
+                              </button>
+                              <button
+                                onClick={() => sendAction('load_file', { file_name: missionPath })}
+                                style={{
+                                  padding: '0.5rem 1rem',
+                                  backgroundColor: 'transparent',
+                                  border: '1px solid var(--primary)',
+                                  color: 'var(--primary)',
+                                  borderRadius: '4px',
+                                  cursor: 'pointer',
+                                  fontWeight: 'bold',
+                                  textTransform: 'uppercase',
+                                  fontSize: '11px',
+                                  whiteSpace: 'nowrap'
+                                }}
+                              >
+                                Run Now
+                              </button>
+                            </>
+                          )}
+                          {/* Browser paths are already relative to Missions/. */}
+                          <button
+                            onClick={() => handleDownload(missionPath)}
+                            disabled={downloading !== null}
+                            style={{
+                              padding: '0.5rem 1rem',
+                              backgroundColor: 'transparent',
+                              border: '1px solid var(--primary)',
+                              color: 'var(--primary)',
+                              borderRadius: '4px',
+                              cursor: downloading !== null ? 'not-allowed' : 'pointer',
+                              fontWeight: 'bold',
+                              textTransform: 'uppercase',
+                              fontSize: '11px',
+                              whiteSpace: 'nowrap',
+                              opacity: downloading !== null ? 0.4 : 1
+                            }}
+                          >
+                            {downloading === missionPath ? '...' : '⬇ Download'}
+                          </button>
+                          {isCurrent && (
+                            <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '11px', textTransform: 'uppercase' }}>Active</span>
+                          )}
+                        </div>
                       </div>
                     );
                   })}

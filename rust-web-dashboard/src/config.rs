@@ -116,6 +116,12 @@ pub struct Config {
     /// holding `lso.db` and the per-pass trap-sheet PNGs. When unset, the
     /// `/api/lso/*` routes report "not configured".
     pub lso_dir: Option<PathBuf>,
+    /// Optional Tacview recordings directory (`Documents\Tacview` on a desktop
+    /// install). There is deliberately no `%USERPROFILE%` fallback: under NSSM
+    /// the service usually runs as a different account, so a guessed path would
+    /// silently list nothing. When unset, the `/api/tacview/*` routes report
+    /// "not configured".
+    pub tacview_dir: Option<PathBuf>,
 }
 
 impl Config {
@@ -193,8 +199,12 @@ impl Config {
         let lso_dir = optional("LSO_DIR")
             .map(|s| PathBuf::from(s.trim().trim_matches('"').trim_matches('\'')));
 
+        let tacview_dir = optional("TACVIEW_DIR")
+            .map(|s| PathBuf::from(s.trim().trim_matches('"').trim_matches('\'')));
+
         Ok(Arc::new(Self {
             lso_dir,
+            tacview_dir,
             foothold_saves_dir,
             jwt_secret: jwt_secret.into_bytes(),
             admin_password: optional("ADMIN_PASSWORD"),

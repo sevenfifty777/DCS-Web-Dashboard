@@ -773,6 +773,46 @@
         ]
       }
     },
+    "/api/mission/download": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "`GET /api/mission/download?path=<rel>` → stream one `.miz` from the DCS\n`Missions/` tree.",
+        "description": "Unlike [`super::system::mission_browse`], `Missions/Uploads` **is**\ndownloadable here, so the Mission page's \"Uploaded Files\" panel can offer a\ndownload for the files it already lists.",
+        "operationId": "mission_download",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "query",
+            "description": "Mission path relative to the Missions directory",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Mission file",
+            "content": {
+              "application/octet-stream": {}
+            }
+          },
+          "400": {
+            "description": "Invalid path"
+          },
+          "404": {
+            "description": "Mission not found"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
     "/api/mission/upload": {
       "post": {
         "tags": [
@@ -977,7 +1017,7 @@
         "tags": [
           "system"
         ],
-        "summary": "`POST /api/server/dcs-process` → start/stop/restart DCS.exe.",
+        "summary": "`POST /api/server/dcs-process` → start/stop/restart DCS.",
         "operationId": "dcs_process_post",
         "requestBody": {
           "content": {
@@ -992,6 +1032,12 @@
         "responses": {
           "200": {
             "description": "DCS process action executed"
+          },
+          "400": {
+            "description": "Invalid action"
+          },
+          "500": {
+            "description": "Start failed; `error` explains why"
           }
         },
         "security": [
@@ -1094,6 +1140,12 @@
         "responses": {
           "200": {
             "description": "SRS process action executed"
+          },
+          "400": {
+            "description": "Invalid action"
+          },
+          "500": {
+            "description": "Start failed; `error` explains why"
           }
         },
         "security": [
@@ -1252,6 +1304,65 @@
         "responses": {
           "200": {
             "description": "SRS configuration updated"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/tacview/browse": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "`GET /api/tacview/browse` → list recordings under `TACVIEW_DIR`, newest\nfirst, capped at [`TACVIEW_LIST_LIMIT`].",
+        "description": "An unconfigured `TACVIEW_DIR` answers `200` with `configured: false` rather\nthan an error status, so the page can render a \"set this variable\" note\ninstead of a failure toast.",
+        "operationId": "tacview_browse",
+        "responses": {
+          "200": {
+            "description": "List of Tacview recordings"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/tacview/download": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "`GET /api/tacview/download?path=<rel>` → stream one recording from\n`TACVIEW_DIR`.",
+        "operationId": "tacview_download",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "query",
+            "description": "Recording path relative to TACVIEW_DIR",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tacview recording",
+            "content": {
+              "application/octet-stream": {}
+            }
+          },
+          "400": {
+            "description": "Invalid path"
+          },
+          "404": {
+            "description": "Recording not found or TACVIEW_DIR not configured"
           }
         },
         "security": [
@@ -2260,6 +2371,40 @@
         "properties": {
           "action": {
             "type": "string"
+          }
+        }
+      },
+      "TacviewFile": {
+        "type": "object",
+        "description": "One Tacview recording in the listing.",
+        "required": [
+          "path",
+          "name",
+          "size"
+        ],
+        "properties": {
+          "modified_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Last-modified time in milliseconds since the Unix epoch, or `null` when\nthe filesystem does not report one.",
+            "minimum": 0
+          },
+          "name": {
+            "type": "string",
+            "description": "Bare file name."
+          },
+          "path": {
+            "type": "string",
+            "description": "Path relative to `TACVIEW_DIR`, with `/` separators."
+          },
+          "size": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Size in bytes.",
+            "minimum": 0
           }
         }
       },

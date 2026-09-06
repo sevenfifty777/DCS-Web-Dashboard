@@ -10,6 +10,7 @@ use crate::state::AppState;
 
 mod auth;
 mod dcs;
+mod downloads;
 mod lso;
 mod stream;
 mod system;
@@ -47,6 +48,9 @@ use utoipa_swagger_ui::SwaggerUi;
         system::settings_post,
         system::mission_upload,
         system::mission_browse,
+        downloads::mission_download,
+        downloads::tacview_browse,
+        downloads::tacview_download,
         system::logs_access,
         system::rdp_status,
         system::tasks_get,
@@ -83,6 +87,7 @@ use utoipa_swagger_ui::SwaggerUi;
             dcs::AirbossConfigPayload, dcs::AirbossConfigResponse,
             system::TaskActionBody, system::WeatherApplyBody, system::DcsProcessAction, system::SrsProcessAction,
             system::WindowsServiceStatus, system::WindowsServiceAction,
+            downloads::TacviewFile,
             crate::lso::LsoPass, crate::lso::LsoPassesResponse, crate::lso::LsoStatus,
             crate::lso::LsoPilot, crate::lso::LsoPilotsResponse
         )
@@ -174,6 +179,10 @@ pub fn router() -> Router<AppState> {
         )
         .route("/api/mission/upload", post(system::mission_upload))
         .route("/api/mission/browse", get(system::mission_browse))
+        .route("/api/mission/download", get(downloads::mission_download))
+        // Tacview recordings (rooted at TACVIEW_DIR, session-protected).
+        .route("/api/tacview/browse", get(downloads::tacview_browse))
+        .route("/api/tacview/download", get(downloads::tacview_download))
         .route("/api/logs/access", get(system::logs_access))
         .route("/api/foothold", get(system::foothold_get))
         .route("/api/foothold/config", get(system::foothold_config_get).post(system::foothold_config_post))
