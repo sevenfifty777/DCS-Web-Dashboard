@@ -28,3 +28,4 @@
 - [File Downloads Plan (Missions + Tacview)](./file_downloads_plan.md)
 - [Left Panel Customisation Plan](./left_panel_customisation_plan.md)
 - [DCS & SRS Process Control Plan](./dcs_srs_process_control_plan.md)
+- [PLAT Camera in the Dashboard: Analysis](./plat_camera_export_analysis.md)
