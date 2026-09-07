@@ -121,3 +121,37 @@ By default, the dashboard runs on port `3001`.
 > [!WARNING]
 > **HTTP vs HTTPS**
 > The dashboard serves plain HTTP. For public internet access, you should set up a Reverse Proxy (Nginx, Caddy, Cloudflare Tunnel) to provide SSL encryption (HTTPS). If you use a reverse proxy, **do not** open port 3001 to the public internet; bind the dashboard to `127.0.0.1:3001` and only allow the proxy to access it.
+
+## 6. Mission upload size
+
+The dashboard accepts mission uploads up to **100 MB**. Larger files are rejected with HTTP 413 and an
+error message on the Mission page. Downloads are streamed and have no server-side size limit.
+
+If you run behind a reverse proxy, its own request-body limit applies **in addition** to the
+dashboard's, and the smaller of the two wins. The limit only affects uploads (client to server);
+responses the dashboard sends back, such as mission and Tacview downloads, are not capped by these
+settings.
+
+Caddy defaults to *no* request-body limit, so uploads up to 100 MB work without extra configuration.
+Only if you have explicitly set `request_body` do you need to raise it:
+
+```caddyfile
+dashboard.example.com {
+	request_body {
+		max_size 100MB
+	}
+	reverse_proxy 127.0.0.1:3001
+}
+```
+
+Nginx is the case that bites: it defaults to `client_max_body_size 1m`, which rejects almost every
+mission. Raise it to match:
+
+```nginx
+client_max_body_size 100m;
+```
+
+To change the dashboard's own limit, edit `MISSION_UPLOAD_LIMIT_BYTES` in
+`rust-web-dashboard/src/routes/system.rs` and the matching `UPLOAD_LIMIT_BYTES` in
+`web-dashboard/src/app/mission/page.tsx`, then rebuild. The upload is buffered in memory, so a large
+limit lets one upload hold that much RAM.

@@ -122,6 +122,31 @@ pub async fn settings_post(
 
 // --- /api/mission/upload ---------------------------------------------------
 
+/// Largest accepted `POST /api/mission/upload` body.
+///
+/// Axum's own default is 2 MiB, which rejects most real missions once they
+/// carry kneeboards, scripts or sound files. The route overrides it with a
+/// `DefaultBodyLimit` layer in [`super::api_router`]; the constant lives here so
+/// the layer and the error message quoted to the user cannot drift apart.
+///
+/// The handler buffers the whole field in memory, so this value also bounds the
+/// RAM one upload can hold.
+pub const MISSION_UPLOAD_LIMIT_BYTES: usize = 100 * 1024 * 1024;
+
+/// 413 with `{ "error": <msg> }` — the body exceeded [`MISSION_UPLOAD_LIMIT_BYTES`].
+fn err_413_too_large() -> Response {
+    (
+        StatusCode::PAYLOAD_TOO_LARGE,
+        Json(json!({
+            "error": format!(
+                "File is too large (limit {} MB). If you are behind a reverse proxy, its own body-size limit applies too.",
+                MISSION_UPLOAD_LIMIT_BYTES / (1024 * 1024)
+            )
+        })),
+    )
+        .into_response()
+}
+
 /// `POST /api/mission/upload` → save a `.miz` upload into `Missions/Uploads`.
 #[utoipa::path(
     post,
@@ -129,7 +154,10 @@ pub async fn settings_post(
     tags = ["system"],
     security(("jwt" = [])),
     request_body(content_type = "multipart/form-data"),
-    responses((status = 200, description = "Mission uploaded successfully"))
+    responses(
+        (status = 200, description = "Mission uploaded successfully"),
+        (status = 413, description = "Upload exceeds the size limit"),
+    )
 )]
 pub async fn mission_upload(
     _user: AuthUser,
@@ -137,11 +165,29 @@ pub async fn mission_upload(
     mut multipart: Multipart,
 ) -> Response {
     let mut uploaded: Option<(Option<String>, Vec<u8>)> = None;
-    while let Ok(Some(field)) = multipart.next_field().await {
+    loop {
+        // A body over the limit surfaces as an error from `next_field` or from
+        // `bytes` depending on where the cut falls, so both arms map it to 413.
+        // Swallowing these (the previous `while let Ok(Some(_))`) reported an
+        // oversize upload as the misleading 400 "No file provided".
+        let field = match multipart.next_field().await {
+            Ok(Some(field)) => field,
+            Ok(None) => break,
+            Err(e) => {
+                return if e.status() == StatusCode::PAYLOAD_TOO_LARGE {
+                    err_413_too_large()
+                } else {
+                    err_400(&e.body_text())
+                }
+            }
+        };
         if field.name() == Some("file") {
             let name = field.file_name().map(str::to_string);
             match field.bytes().await {
                 Ok(bytes) => uploaded = Some((name, bytes.to_vec())),
+                Err(e) if e.status() == StatusCode::PAYLOAD_TOO_LARGE => {
+                    return err_413_too_large()
+                }
                 Err(e) => return err_500(&e.to_string()),
             }
             break;

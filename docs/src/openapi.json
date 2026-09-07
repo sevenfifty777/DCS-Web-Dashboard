@@ -828,6 +828,9 @@
         "responses": {
           "200": {
             "description": "Mission uploaded successfully"
+          },
+          "413": {
+            "description": "Upload exceeds the size limit"
           }
         },
         "security": [

@@ -1,6 +1,7 @@
 //! HTTP route definitions. Mounted onto the application router in `main`.
 
 use axum::{
+    extract::DefaultBodyLimit,
     routing::{get, post},
     Json, Router,
 };
@@ -177,7 +178,14 @@ pub fn router() -> Router<AppState> {
             "/api/settings",
             get(system::settings_get).post(system::settings_post),
         )
-        .route("/api/mission/upload", post(system::mission_upload))
+        // Axum defaults every body to 2 MiB, which rejects most real missions.
+        // The layer is scoped to this one route so the JSON endpoints keep the
+        // small default.
+        .route(
+            "/api/mission/upload",
+            post(system::mission_upload)
+                .layer(DefaultBodyLimit::max(system::MISSION_UPLOAD_LIMIT_BYTES)),
+        )
         .route("/api/mission/browse", get(system::mission_browse))
         .route("/api/mission/download", get(downloads::mission_download))
         // Tacview recordings (rooted at TACVIEW_DIR, session-protected).

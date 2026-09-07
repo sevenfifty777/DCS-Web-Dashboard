@@ -4,6 +4,11 @@ import { apiFetch } from '@/lib/api';
 import { downloadFile } from '@/lib/download';
 import { errorMessage } from '@/lib/errors';
 
+// Mirrors MISSION_UPLOAD_LIMIT_BYTES in rust-web-dashboard/src/routes/system.rs.
+// Checked here only to fail fast; the server enforces the real limit.
+const UPLOAD_LIMIT_BYTES = 100 * 1024 * 1024;
+const UPLOAD_LIMIT_LABEL = `${UPLOAD_LIMIT_BYTES / (1024 * 1024)} MB`;
+
 interface MissionData {
   currentMission?: string;
   isPaused?: boolean;
@@ -192,6 +197,13 @@ export default function MissionPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (file.size > UPLOAD_LIMIT_BYTES) {
+      const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+      setUploadMsg(`Error: ${file.name} is ${sizeMb} MB, over the ${UPLOAD_LIMIT_LABEL} limit.`);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
     setUploading(true);
     setUploadMsg('Uploading...');
     
@@ -203,10 +215,20 @@ export default function MissionPage() {
         method: 'POST',
         body: formData
       });
-      const json = await res.json();
-      
-      if (!res.ok) throw new Error(json.error);
-      
+      // A reverse proxy that rejects the body sends an HTML error page, not
+      // JSON, so parse defensively and fall back to the status code.
+      const json: { error?: string } | null = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        if (res.status === 413) {
+          throw new Error(
+            json?.error ??
+              `File exceeds the upload limit (${UPLOAD_LIMIT_LABEL}). A reverse proxy in front of the dashboard may impose a smaller one.`
+          );
+        }
+        throw new Error(json?.error ?? `Upload failed (HTTP ${res.status})`);
+      }
+
       setUploadMsg('Mission uploaded successfully!');
       setTimeout(() => setUploadMsg(''), 3000);
       fetchMission();
@@ -514,6 +536,7 @@ export default function MissionPage() {
             <h3 style={{ marginTop: 0, color: 'var(--primary)', marginBottom: '1rem' }}>Upload Mission</h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '1.5rem' }}>
               Upload a .miz file directly to the server. It will be added to the queue automatically.
+              Maximum file size {UPLOAD_LIMIT_LABEL}.
             </p>
             
             <input 
