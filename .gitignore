@@ -105,3 +105,8 @@ Features/
 # on every push to main and publishes that build, so the generated HTML is
 # never served from git.
 docs/book/
+
+# Scratch file holding the notes for the release being cut (see
+# docs/src/releasing.md step 7). Its content lives on the GitHub release page,
+# not in the repository, and `git add -A` would otherwise sweep it in.
+release-notes.md
