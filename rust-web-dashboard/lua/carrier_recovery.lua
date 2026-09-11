@@ -22,15 +22,19 @@
     CarrierRecovery.status(groupName, groupId) -> table
     CarrierRecovery.installMenus(groupName)
 
-  When the Foothold BattleCommander global `bc` exists and manages the group
-  (today only "CVN-72"), start and restore are delegated to it so Foothold
-  missions keep their navigation-lane behaviour.
+  When the Foothold BattleCommander global `bc` exists and manages the group,
+  start and restore are delegated to it so Foothold missions keep their
+  navigation-lane behaviour. Foothold hardcodes one set of recovery functions
+  per hull ("CVN-72" and "Tarawa" as of Foothold CA 4.1.0); the delegated
+  groups and their `bc` members are listed in `CarrierRecovery.footholdGroups`,
+  which is the single place to extend when Foothold adds another. Every other
+  carrier in the mission is flown by this module.
 ]]
 
 CarrierRecovery = CarrierRecovery or {}
 local M = CarrierRecovery
 
-M.VERSION = "1.1.3"
+M.VERSION = "1.2.0"
 
 -- Active recoveries keyed by group name. Preserved across a re-injection of a
 -- newer module version so a running recovery is not orphaned.
@@ -808,22 +812,68 @@ end
 -- Foothold delegation
 -- ---------------------------------------------------------------------------
 
+--- Groups whose recovery Foothold implements itself, and the BattleCommander
+--- members that drive each one. Foothold hardcodes one set of functions per
+--- hull rather than taking a group name, so every entry names its own methods
+--- and state field.
+---
+--- TO ADD A CARRIER when a future Foothold release hardcodes another hull:
+--- copy a row, set the Mission Editor group name as the key and the four
+--- `bc` member names Foothold declares for it. A group is only treated as
+--- delegated when `bc` actually carries all of `startFn`, `restoreFn` and
+--- `stateField`, so listing a hull an older Foothold build lacks is harmless:
+--- it simply stays stand-alone and this module flies it. Nothing else needs
+--- to change -- every delegation site reads this table.
+M.footholdGroups = M.footholdGroups or {
+  ["CVN-72"] = {
+    startFn = "_carrierRecoveryStart",     -- (groupId)
+    restoreFn = "_carrierRecoveryRestore", -- (reason, groupId)
+    statusFn = "_carrierRecoveryStatus",   -- (groupId)
+    stateField = "carrierRecoveryIntoWind",
+  },
+  ["Tarawa"] = {
+    startFn = "_tarawaRecoveryStart",
+    restoreFn = "_tarawaRecoveryRestore",
+    statusFn = "_tarawaRecoveryStatus",
+    stateField = "tarawaRecoveryIntoWind",
+  },
+}
+
+--- The Foothold delegation entry for a group, or nil when this mission's
+--- BattleCommander does not manage it. Requires `bc` to expose the entry's
+--- start and restore functions, so a Foothold build without a given hull's
+--- recovery falls back to the stand-alone controller.
+function M.footholdEntry(groupName)
+  local bc = _G.bc
+  if type(bc) ~= "table" then return nil end
+  local entry = M.footholdGroups[groupName]
+  if type(entry) ~= "table" then return nil end
+  if type(bc[entry.startFn]) ~= "function" or type(bc[entry.restoreFn]) ~= "function" then
+    return nil
+  end
+  return entry
+end
+
 --- "foothold" when the Foothold BattleCommander manages this group, else
 --- "standalone".
 function M.backend(groupName)
-  local bc = _G.bc
-  if type(bc) == "table" and bc._carrierRecoveryStart and bc._carrierRecoveryRestore and groupName == "CVN-72" then
-    return "foothold"
-  end
-  return "standalone"
+  return M.footholdEntry(groupName) and "foothold" or "standalone"
+end
+
+--- Foothold's live recovery state table for a delegated group, or nil.
+function M.footholdState(groupName)
+  local entry = M.footholdEntry(groupName)
+  if not entry then return nil end
+  local state = _G.bc[entry.stateField]
+  return type(state) == "table" and state or nil
 end
 
 --- Current recovery phase for a group: `pending`, `aligning`, `active` or
 --- `normal`. Reads Foothold's state for a delegated group.
 function M.phase(groupName)
   if M.backend(groupName) == "foothold" then
-    local recovery = _G.bc and _G.bc.carrierRecoveryIntoWind or nil
-    if type(recovery) == "table" then return recovery.phase or "active" end
+    local recovery = M.footholdState(groupName)
+    if recovery then return recovery.phase or "active" end
     return "normal"
   end
   local recovery = M.active[groupName]
@@ -868,10 +918,11 @@ end
 function M.start(groupName, groupId)
   groupName = groupName or "CVN-72"
   local cfg = M.config(groupName)
-  if M.backend(groupName) == "foothold" then
+  local entry = M.footholdEntry(groupName)
+  if entry then
     local group = Group.getByName(groupName)
     local id = groupId or (group and group:getID()) or 0
-    local ok, text = callFootholdCapturing(function() return bc:_carrierRecoveryStart(id) end)
+    local ok, text = callFootholdCapturing(function() return bc[entry.startFn](bc, id) end)
     if ok then return true, "ok" end
     return false, text or "failed to start"
   end
@@ -920,10 +971,11 @@ end
 
 function M.restore(reason, groupName, groupId)
   groupName = groupName or "CVN-72"
-  if M.backend(groupName) == "foothold" then
+  local entry = M.footholdEntry(groupName)
+  if entry then
     local group = Group.getByName(groupName)
     local id = groupId or (group and group:getID()) or 0
-    local ok, text = callFootholdCapturing(function() return bc:_carrierRecoveryRestore(reason or "manual", id) end)
+    local ok, text = callFootholdCapturing(function() return bc[entry.restoreFn](bc, reason or "manual", id) end)
     if ok then return true, "ok" end
     return false, text or "failed to resume"
   end
@@ -1059,7 +1111,7 @@ function M.status(groupName, groupId)
   local backend = M.backend(groupName)
   local phase, activeUntil = nil, nil
   if backend == "foothold" then
-    local recovery = bc.carrierRecoveryIntoWind
+    local recovery = M.footholdState(groupName)
     if recovery then
       phase = recovery.phase or "active"
       activeUntil = recovery.activeUntil
