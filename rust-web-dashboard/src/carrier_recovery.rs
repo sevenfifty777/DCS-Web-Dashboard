@@ -18,7 +18,7 @@
 pub const LUA_MODULE: &str = include_str!("../lua/carrier_recovery.lua");
 
 /// Must match `CarrierRecovery.VERSION` in the Lua file (checked by a test).
-pub const MODULE_VERSION: &str = "1.1.3";
+pub const MODULE_VERSION: &str = "1.2.0";
 
 /// Default carrier group when the client does not name one.
 pub const DEFAULT_GROUP: &str = "CVN-72";
@@ -771,6 +771,9 @@ end
         .unwrap();
         assert_eq!(eval::<String>(&lua, "return CarrierRecovery.backend('CVN-72')"), "foothold");
         assert_eq!(eval::<String>(&lua, "return CarrierRecovery.backend('CVN-71')"), "standalone");
+        // Tarawa is a listed hull, but this Foothold build has no Tarawa
+        // recovery: it must stay stand-alone rather than delegate into nil.
+        assert_eq!(eval::<String>(&lua, "return CarrierRecovery.backend('Tarawa')"), "standalone");
         let (ok, message): (bool, String) = eval(&lua, "return CarrierRecovery.start('CVN-72')");
         assert!(!ok);
         assert!(message.contains("already pending or active"), "{message}");
@@ -785,6 +788,114 @@ end
         assert_eq!(text(&status, "backend"), "foothold");
         assert_eq!(text(&status, "phase"), "active");
         assert_eq!(num(&status, "remaining_sec"), 900.0);
+    }
+
+    /// Foothold CA 4.1.0 implements Tarawa recovery with its own `bc` members
+    /// (`_tarawaRecoveryStart` / `_tarawaRecoveryRestore`, state in
+    /// `tarawaRecoveryIntoWind`). Both hulls must delegate independently while
+    /// every other carrier stays on the stand-alone controller.
+    #[test]
+    fn delegates_cvn72_and_tarawa_to_their_own_foothold_functions() {
+        let lua = fleet_world();
+        lua.load(
+            r#"
+            Sim.groupName = "CVN-72"
+            bc = {
+              _carrierRecoveryStart = function(self, id) self.started = "CVN-72" return true end,
+              _carrierRecoveryRestore = function(self, reason, id) self.restored = "CVN-72:" .. reason return true end,
+              _tarawaRecoveryStart = function(self, id)
+                trigger.action.outTextForGroup(id, "Tarawa is already turning into wind.", 10)
+                return false
+              end,
+              _tarawaRecoveryRestore = function(self, reason, id) self.restored = "Tarawa:" .. reason return true end,
+            }
+            "#,
+        )
+        .exec()
+        .unwrap();
+
+        assert_eq!(eval::<String>(&lua, "return CarrierRecovery.backend('CVN-72')"), "foothold");
+        assert_eq!(eval::<String>(&lua, "return CarrierRecovery.backend('Tarawa')"), "foothold");
+        // Every other carrier in the fleet is still ours to fly.
+        for group in ["Kuznetsov", "Essex", "HMS Invincible", "Escort"] {
+            assert_eq!(
+                eval::<String>(&lua, &format!("return CarrierRecovery.backend('{group}')")),
+                "standalone",
+                "{group} must not be delegated"
+            );
+        }
+
+        // Each hull reaches its own Foothold function, not the CVN-72 pair.
+        let (ok, _): (bool, String) = eval(&lua, "return CarrierRecovery.start('CVN-72')");
+        assert!(ok);
+        assert_eq!(eval::<String>(&lua, "return bc.started"), "CVN-72");
+        let (ok, message): (bool, String) = eval(&lua, "return CarrierRecovery.start('Tarawa')");
+        assert!(!ok, "Foothold refused, so the dashboard must report the refusal");
+        assert!(message.contains("already turning into wind"), "{message}");
+        assert!(eval::<bool>(&lua, "return bc.started == 'CVN-72'"), "Tarawa must not call the CVN-72 start");
+
+        let (ok, _): (bool, String) = eval(&lua, "return CarrierRecovery.restore('manual', 'Tarawa')");
+        assert!(ok);
+        assert_eq!(eval::<String>(&lua, "return bc.restored"), "Tarawa:manual");
+
+        // Phase and status read each hull's own state field.
+        lua.load(
+            "bc.carrierRecoveryIntoWind = { phase = 'aligning' }
+             bc.tarawaRecoveryIntoWind = { phase = 'active', activeUntil = 600 }",
+        )
+        .exec()
+        .unwrap();
+        assert_eq!(eval::<String>(&lua, "return CarrierRecovery.phase('CVN-72')"), "aligning");
+        assert_eq!(eval::<String>(&lua, "return CarrierRecovery.phase('Tarawa')"), "active");
+        let tarawa: Table = eval(&lua, "return CarrierRecovery.status('Tarawa')");
+        assert_eq!(text(&tarawa, "backend"), "foothold");
+        assert_eq!(text(&tarawa, "phase"), "active");
+        assert_eq!(num(&tarawa, "remaining_sec"), 600.0);
+        // A stand-alone hull keeps its own state even while Foothold is busy.
+        assert_eq!(eval::<String>(&lua, "return CarrierRecovery.phase('Kuznetsov')"), "normal");
+
+        // The listing marks the delegated hulls and only those.
+        let carriers: Table = eval(&lua, "return CarrierRecovery.listCarriers().carriers");
+        for row in carriers.sequence_values::<Table>() {
+            let row = row.unwrap();
+            let group = text(&row, "group");
+            let expected = if group == "Tarawa" || group == "CVN-72" { "foothold" } else { "standalone" };
+            assert_eq!(text(&row, "backend"), expected, "{group}");
+        }
+    }
+
+    /// The extension contract: adding a hull is one row in `footholdGroups`.
+    #[test]
+    fn a_new_foothold_hull_needs_only_a_registry_row() {
+        let lua = fleet_world();
+        lua.load(
+            r#"
+            bc = {
+              _cvn74RecoveryStart = function(self, id) self.started = "CVN-74" return true end,
+              _cvn74RecoveryRestore = function(self, reason, id) return true end,
+              cvn74RecoveryIntoWind = { phase = 'pending' },
+            }
+            Sim.addShip({ groupName = "CVN-74", typeName = "CVN_74", coalition = 2,
+              attributes = { ["AircraftCarrier"] = true, ["AircraftCarrier With Catapult"] = true } })
+            "#,
+        )
+        .exec()
+        .unwrap();
+        // Unknown to the registry: flown by this module.
+        assert_eq!(eval::<String>(&lua, "return CarrierRecovery.backend('CVN-74')"), "standalone");
+
+        lua.load(
+            r#"CarrierRecovery.footholdGroups["CVN-74"] = {
+                 startFn = "_cvn74RecoveryStart", restoreFn = "_cvn74RecoveryRestore",
+                 statusFn = "_cvn74RecoveryStatus", stateField = "cvn74RecoveryIntoWind" }"#,
+        )
+        .exec()
+        .unwrap();
+        assert_eq!(eval::<String>(&lua, "return CarrierRecovery.backend('CVN-74')"), "foothold");
+        let (ok, _): (bool, String) = eval(&lua, "return CarrierRecovery.start('CVN-74')");
+        assert!(ok);
+        assert_eq!(eval::<String>(&lua, "return bc.started"), "CVN-74");
+        assert_eq!(eval::<String>(&lua, "return CarrierRecovery.phase('CVN-74')"), "pending");
     }
 
     #[test]
