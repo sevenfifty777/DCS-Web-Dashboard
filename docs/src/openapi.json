@@ -1043,6 +1043,51 @@
         ]
       }
     },
+    "/api/screen-messages": {
+      "get": {
+        "tags": [
+          "dcs"
+        ],
+        "summary": "`GET /api/screen-messages?from=N` → scripted on-screen messages since `N`\n(CustomService.Eval; installs the capture module on first use).",
+        "operationId": "screen_messages",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "description": "Cursor returned as `last` by the previous call; omit for everything buffered.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int64",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Messages after the cursor and the next cursor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScreenMessagesResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Failed to read messages (Eval disabled or DCS unreachable)"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
     "/api/server/dcs-process": {
       "get": {
         "tags": [
@@ -2444,6 +2489,76 @@
               "string",
               "null"
             ]
+          }
+        }
+      },
+      "ScreenMessage": {
+        "type": "object",
+        "description": "One scripted on-screen message.",
+        "required": [
+          "id",
+          "time",
+          "scope",
+          "text",
+          "duration",
+          "clear_view"
+        ],
+        "properties": {
+          "clear_view": {
+            "type": "boolean"
+          },
+          "duration": {
+            "type": "number",
+            "format": "double",
+            "description": "Requested display time, seconds."
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Monotonic id within the current mission; restarts at 1 with the mission.",
+            "minimum": 0
+          },
+          "scope": {
+            "type": "string",
+            "description": "`all`, `coalition`, `country`, `group` or `unit`."
+          },
+          "target": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Coalition id (0 neutral, 1 red, 2 blue), country id, group id or unit\nid depending on `scope`; absent for `all`."
+          },
+          "text": {
+            "type": "string"
+          },
+          "time": {
+            "type": "number",
+            "format": "double",
+            "description": "Mission absolute time in seconds (`timer.getAbsTime()`)."
+          }
+        }
+      },
+      "ScreenMessagesResponse": {
+        "type": "object",
+        "required": [
+          "messages",
+          "last"
+        ],
+        "properties": {
+          "last": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Cursor to pass as `from` next time.",
+            "minimum": 0
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScreenMessage"
+            },
+            "description": "Messages after the cursor, oldest first. When the cursor was ahead of\nthe mission's log (mission restarted) this is the whole buffer."
           }
         }
       },

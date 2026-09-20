@@ -32,6 +32,7 @@ use utoipa_swagger_ui::SwaggerUi;
         dcs::players,
         dcs::chat,
         dcs::chat_history,
+        dcs::screen_messages,
         dcs::banned_players,
         dcs::console,
         dcs::get_flag,
@@ -83,6 +84,7 @@ use utoipa_swagger_ui::SwaggerUi;
         schemas(
             auth::LoginRequest, auth::TokenResponse, dcs::ChatBody,
             dcs::ChatMessage, dcs::ChatHistoryResponse,
+            crate::screen_messages::ScreenMessage, crate::screen_messages::ScreenMessagesResponse,
             dcs::ConsoleBody, dcs::SetFlagBody, dcs::MissionBody, dcs::MissionPayload,
             dcs::PlayerActionBody, dcs::AnnouncementBody,
             dcs::AirbossDataResponse, dcs::AirbossActionPayload, dcs::AirbossActionResponse,
@@ -165,6 +167,7 @@ pub fn router() -> Router<AppState> {
         .route("/api/players/banned", get(dcs::banned_players))
         .route("/api/chat", post(dcs::chat))
         .route("/api/chat/history", get(dcs::chat_history))
+        .route("/api/screen-messages", get(dcs::screen_messages))
         .route("/api/announcements", post(dcs::announcements))
         .route("/api/console", post(dcs::console))
         .route("/api/triggers", get(dcs::get_flag).post(dcs::set_flag))

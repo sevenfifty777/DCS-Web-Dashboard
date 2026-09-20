@@ -58,6 +58,7 @@ A dedicated tab for managing SRS.
 
 - **Players**: See exactly who is online, their ping, coalition, and what aircraft they are flying.
 - **Chat**: View the live in-game multiplayer chat and send messages directly to players from your web browser! The feed is the same server chat log the stock DCS WebGUI shows, so it also carries the "system" lines that scripts and mods post there (Tacview loading, live-telemetry connections, ...). Those can be hidden with a checkbox. The page polls DCS every three seconds while it is open and needs `evalEnabled = true` in `dcs-grpc.lua`, like the Console and Airboss pages.
+- **Screen Messages**: a second panel next to the chat lists every on-screen text message the mission issues (`trigger.action.outText*` from Foothold, CTLD or any script, Mission Editor "message to" actions, and the dashboard's own announcements), tagged with who could see it (all, red, blue, a group, a unit) and filterable. The dashboard installs a small capture wrapper into the mission on first use, so messages sent before the page was first opened in a mission are not listed. AI radio calls (ATC, AWACS, tankers) are **not** available: those voice lines and their subtitles exist only inside each player's own DCS client (the in-game Journal), and testing on a live dedicated server confirmed that the DCS hook callbacks for radio and trigger messages never fire on the server.
 
 ## 🏆 Foothold Campaign (Leaderboard & Status)
 

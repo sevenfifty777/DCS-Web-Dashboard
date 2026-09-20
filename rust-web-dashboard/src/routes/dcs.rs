@@ -25,6 +25,7 @@ use crate::auth::AuthUser;
 use crate::carrier_recovery;
 use crate::grpc;
 use crate::pb::dcs::common::v0::Coalition;
+use crate::screen_messages;
 use crate::settings_lua;
 use crate::state::AppState;
 
@@ -326,6 +327,45 @@ pub async fn chat_history(
                 .unwrap_or(serde_json::Value::Null);
             Json(parse_chat_history(&json, from)).into_response()
         }
+        Err(e) => err_simple(e),
+    }
+}
+
+// --- /api/screen-messages --------------------------------------------------
+//
+// On-screen text has no server-side event either. `crate::screen_messages`
+// injects a wrapper around `trigger.action.outText*` into the mission (same
+// probe/install pattern as the Airboss controller), read by cursor like the
+// chat history.
+
+#[derive(Deserialize, utoipa::IntoParams)]
+pub struct ScreenMessagesQuery {
+    /// Cursor returned as `last` by the previous call; omit for everything buffered.
+    from: Option<u64>,
+}
+
+/// `GET /api/screen-messages?from=N` → scripted on-screen messages since `N`
+/// (CustomService.Eval; installs the capture module on first use).
+#[utoipa::path(
+    get,
+    path = "/api/screen-messages",
+    tags = ["dcs"],
+    security(("jwt" = [])),
+    params(ScreenMessagesQuery),
+    responses(
+        (status = 200, description = "Messages after the cursor and the next cursor", body = screen_messages::ScreenMessagesResponse),
+        (status = 500, description = "Failed to read messages (Eval disabled or DCS unreachable)")
+    )
+)]
+pub async fn screen_messages(
+    _user: AuthUser,
+    State(state): State<AppState>,
+    Query(q): Query<ScreenMessagesQuery>,
+) -> Response {
+    let from = q.from.unwrap_or(0);
+    let module = format!("ScreenMessages {}", screen_messages::MODULE_VERSION);
+    match eval_installable(mission_eval(&state), screen_messages::since_scripts(from), &module).await {
+        Ok(json) => Json(screen_messages::parse_screen_messages(&json, from)).into_response(),
         Err(e) => err_simple(e),
     }
 }
@@ -750,15 +790,39 @@ pub async fn announcements(_user: AuthUser, State(state): State<AppState>, Json(
 /// Run a controller call: the cheap probe first, the full install script only
 /// when the mission does not have the module at the expected version yet.
 async fn eval_controller(state: &AppState, scripts: carrier_recovery::Scripts) -> Result<serde_json::Value, tonic::Status> {
-    let parse = |res: crate::pb::dcs::custom::v0::EvalResponse| {
-        serde_json::from_str::<serde_json::Value>(&res.json).unwrap_or(serde_json::Value::Null)
-    };
-    let first = parse(grpc::custom_eval(state.grpc.clone(), scripts.probe).await?);
+    let module = format!("CarrierRecovery {}", carrier_recovery::MODULE_VERSION);
+    eval_installable(mission_eval(state), scripts, &module).await
+}
+
+/// Run a call against an on-demand-installed Lua module: the cheap probe
+/// first, the full install script only when the probe reports the module is
+/// missing or outdated. `eval` is the environment to run in (currently always
+/// [`mission_eval`]); `module` only labels the install log line.
+async fn eval_installable<F, Fut>(
+    eval: F,
+    scripts: carrier_recovery::Scripts,
+    module: &str,
+) -> Result<serde_json::Value, tonic::Status>
+where
+    F: Fn(String) -> Fut,
+    Fut: std::future::Future<Output = Result<String, tonic::Status>>,
+{
+    let parse = |json: String| serde_json::from_str::<serde_json::Value>(&json).unwrap_or(serde_json::Value::Null);
+    let first = parse(eval(scripts.probe).await?);
     if !carrier_recovery::needs_install(&first) {
         return Ok(first);
     }
-    tracing::info!("installing CarrierRecovery {} into the mission", carrier_recovery::MODULE_VERSION);
-    Ok(parse(grpc::custom_eval(state.grpc.clone(), scripts.install).await?))
+    tracing::info!("installing {module} into DCS");
+    Ok(parse(eval(scripts.install).await?))
+}
+
+/// `CustomService.Eval` (mission scripting environment) as an [`eval_installable`] callback.
+fn mission_eval(state: &AppState) -> impl Fn(String) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<String, tonic::Status>> + Send>> {
+    let conn = state.grpc.clone();
+    move |lua| {
+        let conn = conn.clone();
+        Box::pin(async move { grpc::custom_eval(conn, lua).await.map(|r| r.json) })
+    }
 }
 
 /// Telemetry and recovery solution for one carrier group, as returned by the
