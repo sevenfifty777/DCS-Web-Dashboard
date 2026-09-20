@@ -57,7 +57,7 @@ A dedicated tab for managing SRS.
 ## 👥 Players & Chat
 
 - **Players**: See exactly who is online, their ping, coalition, and what aircraft they are flying.
-- **Chat**: View the live in-game multiplayer chat and send messages directly to players from your web browser!
+- **Chat**: View the live in-game multiplayer chat and send messages directly to players from your web browser! The feed is the same server chat log the stock DCS WebGUI shows, so it also carries the "system" lines that scripts and mods post there (Tacview loading, live-telemetry connections, ...). Those can be hidden with a checkbox. The page polls DCS every three seconds while it is open and needs `evalEnabled = true` in `dcs-grpc.lua`, like the Console and Airboss pages.
 
 ## 🏆 Foothold Campaign (Leaderboard & Status)
 

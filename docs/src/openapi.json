@@ -7,7 +7,7 @@
       "name": "AGPL-3.0-or-later",
       "identifier": "AGPL-3.0-or-later"
     },
-    "version": "0.1.1"
+    "version": "0.1.2"
   },
   "paths": {
     "/api/airboss": {
@@ -343,6 +343,51 @@
           },
           "500": {
             "description": "Failed to send chat"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/api/chat/history": {
+      "get": {
+        "tags": [
+          "dcs"
+        ],
+        "summary": "`GET /api/chat/history?from=N` → server chat log since cursor `N`\n(HookService.Eval → `net.get_chat_history`).",
+        "operationId": "chat_history",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "description": "Cursor returned as `last` by the previous call. Omit or pass `0` for the\nwhole log since the server started.",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chat lines after the cursor and the next cursor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatHistoryResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Failed to read chat history (Eval disabled or DCS unreachable)"
           }
         },
         "security": [
@@ -1836,6 +1881,57 @@
               "string",
               "null"
             ]
+          }
+        }
+      },
+      "ChatHistoryResponse": {
+        "type": "object",
+        "required": [
+          "messages",
+          "last"
+        ],
+        "properties": {
+          "last": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Cursor to pass as `from` on the next call.",
+            "minimum": 0
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatMessage"
+            },
+            "description": "New lines after the `from` cursor, oldest first."
+          }
+        }
+      },
+      "ChatMessage": {
+        "type": "object",
+        "description": "One line of the server chat log.",
+        "required": [
+          "time",
+          "coalition",
+          "name",
+          "message"
+        ],
+        "properties": {
+          "coalition": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Sender coalition as reported by DCS: 0 neutral/system, 1 red, 2 blue."
+          },
+          "message": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "description": "Sender name; empty for system lines (`net.recv_chat` with `from = 0`)."
+          },
+          "time": {
+            "type": "number",
+            "format": "double",
+            "description": "Mission absolute time in seconds (seconds since mission midnight)."
           }
         }
       },
