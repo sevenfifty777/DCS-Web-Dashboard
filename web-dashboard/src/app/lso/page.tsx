@@ -15,7 +15,9 @@ import {
   cell,
   formatPoints,
   gradeClass,
+  gradeNotation,
   matchesPilot,
+  notesText,
   shortTimestamp,
   technicalStatus,
   wireOrSpot,
@@ -234,10 +236,10 @@ function PassTable({
                   <td>{cell(p.outcome)}</td>
                   <td>{technicalStatus(p)}</td>
                   <td className={styles.wrap}>
-                    <div className={styles.gradeText}>{cell(p.dcs_grading)}</div>
+                    <div className={styles.gradeText}>{gradeNotation(p)}</div>
                   </td>
                   <td className={`${styles.notes} ${styles.wrap}`}>
-                    <div className={styles.notesText}>{cell(p.lso_notes)}</div>
+                    <div className={styles.notesText}>{notesText(p)}</div>
                   </td>
                 </tr>
               );

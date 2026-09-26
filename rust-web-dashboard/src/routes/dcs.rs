@@ -25,6 +25,7 @@ use crate::auth::AuthUser;
 use crate::carrier_recovery;
 use crate::grpc;
 use crate::pb::dcs::common::v0::Coalition;
+use crate::screen_messages;
 use crate::settings_lua;
 use crate::state::AppState;
 
@@ -219,6 +220,153 @@ pub async fn chat(
     match grpc::send_chat(state.grpc.clone(), message, coalition).await {
         Ok(()) => Json(json!({ "success": true })).into_response(),
         Err(e) => err_detail("Failed to send chat", e),
+    }
+}
+
+// --- /api/chat/history -----------------------------------------------------
+//
+// The DCS server keeps its own chat log, the one the stock WebGUI shows in its
+// Chat tab. It contains player chat, everything the dashboard itself sends,
+// and "system" lines that scripts and mods push with `net.recv_chat(msg, 0)`
+// (Tacview's "Flight Data Recorder loaded" / real-time telemetry connections,
+// for instance). None of that is echoed on `Mission.StreamEvents`, so the feed
+// is read the same way the WebGUI does: `net.get_chat_history(from)` in the
+// hook environment, through `HookService.Eval`, with an incremental cursor so
+// each poll only transfers new lines.
+
+#[derive(Deserialize, utoipa::IntoParams)]
+pub struct ChatHistoryQuery {
+    /// Cursor returned as `last` by the previous call. Omit or pass `0` for the
+    /// whole log since the server started.
+    from: Option<u32>,
+}
+
+/// One line of the server chat log.
+#[derive(serde::Serialize, utoipa::ToSchema)]
+pub struct ChatMessage {
+    /// Mission absolute time in seconds (seconds since mission midnight).
+    pub time: f64,
+    /// Sender coalition as reported by DCS: 0 neutral/system, 1 red, 2 blue.
+    pub coalition: i32,
+    /// Sender name; empty for system lines (`net.recv_chat` with `from = 0`).
+    pub name: String,
+    pub message: String,
+}
+
+#[derive(serde::Serialize, utoipa::ToSchema)]
+pub struct ChatHistoryResponse {
+    /// New lines after the `from` cursor, oldest first.
+    pub messages: Vec<ChatMessage>,
+    /// Cursor to pass as `from` on the next call.
+    pub last: u32,
+}
+
+/// Lua run in the hook environment for one history poll.
+fn chat_history_lua(from: u32) -> String {
+    format!(
+        "local history, last = net.get_chat_history({from})\n\
+         return {{ history = history or {{}}, last = last }}"
+    )
+}
+
+/// Turn the `{ history = {{abstime, side, name, message}, ...}, last = n }`
+/// table returned by [`chat_history_lua`] into the REST shape. Malformed
+/// rows are skipped rather than failing the whole poll; a missing `last`
+/// (empty log) leaves the caller's cursor unchanged.
+fn parse_chat_history(json: &serde_json::Value, from: u32) -> ChatHistoryResponse {
+    let messages = json
+        .get("history")
+        .and_then(|h| h.as_array())
+        .map(|rows| {
+            rows.iter()
+                .filter_map(|row| {
+                    let row = row.as_array()?;
+                    if row.len() < 4 {
+                        return None;
+                    }
+                    Some(ChatMessage {
+                        time: row[0].as_f64().unwrap_or(0.0),
+                        coalition: row[1].as_i64().unwrap_or(0) as i32,
+                        name: row[2].as_str().unwrap_or("").to_string(),
+                        message: row[3].as_str().unwrap_or("").to_string(),
+                    })
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    let last = json
+        .get("last")
+        .and_then(|l| l.as_f64())
+        .map(|l| l.max(0.0) as u32)
+        .unwrap_or(from);
+    ChatHistoryResponse { messages, last }
+}
+
+/// `GET /api/chat/history?from=N` → server chat log since cursor `N`
+/// (HookService.Eval → `net.get_chat_history`).
+#[utoipa::path(
+    get,
+    path = "/api/chat/history",
+    tags = ["dcs"],
+    security(("jwt" = [])),
+    params(ChatHistoryQuery),
+    responses(
+        (status = 200, description = "Chat lines after the cursor and the next cursor", body = ChatHistoryResponse),
+        (status = 500, description = "Failed to read chat history (Eval disabled or DCS unreachable)")
+    )
+)]
+pub async fn chat_history(
+    _user: AuthUser,
+    State(state): State<AppState>,
+    Query(q): Query<ChatHistoryQuery>,
+) -> Response {
+    let from = q.from.unwrap_or(0);
+    match grpc::hook_eval(state.grpc.clone(), chat_history_lua(from)).await {
+        Ok(resp) => {
+            let json = serde_json::from_str::<serde_json::Value>(&resp.json)
+                .unwrap_or(serde_json::Value::Null);
+            Json(parse_chat_history(&json, from)).into_response()
+        }
+        Err(e) => err_simple(e),
+    }
+}
+
+// --- /api/screen-messages --------------------------------------------------
+//
+// On-screen text has no server-side event either. `crate::screen_messages`
+// injects a wrapper around `trigger.action.outText*` into the mission (same
+// probe/install pattern as the Airboss controller), read by cursor like the
+// chat history.
+
+#[derive(Deserialize, utoipa::IntoParams)]
+pub struct ScreenMessagesQuery {
+    /// Cursor returned as `last` by the previous call; omit for everything buffered.
+    from: Option<u64>,
+}
+
+/// `GET /api/screen-messages?from=N` → scripted on-screen messages since `N`
+/// (CustomService.Eval; installs the capture module on first use).
+#[utoipa::path(
+    get,
+    path = "/api/screen-messages",
+    tags = ["dcs"],
+    security(("jwt" = [])),
+    params(ScreenMessagesQuery),
+    responses(
+        (status = 200, description = "Messages after the cursor and the next cursor", body = screen_messages::ScreenMessagesResponse),
+        (status = 500, description = "Failed to read messages (Eval disabled or DCS unreachable)")
+    )
+)]
+pub async fn screen_messages(
+    _user: AuthUser,
+    State(state): State<AppState>,
+    Query(q): Query<ScreenMessagesQuery>,
+) -> Response {
+    let from = q.from.unwrap_or(0);
+    let module = format!("ScreenMessages {}", screen_messages::MODULE_VERSION);
+    match eval_installable(mission_eval(&state), screen_messages::since_scripts(from), &module).await {
+        Ok(json) => Json(screen_messages::parse_screen_messages(&json, from)).into_response(),
+        Err(e) => err_simple(e),
     }
 }
 
@@ -642,15 +790,39 @@ pub async fn announcements(_user: AuthUser, State(state): State<AppState>, Json(
 /// Run a controller call: the cheap probe first, the full install script only
 /// when the mission does not have the module at the expected version yet.
 async fn eval_controller(state: &AppState, scripts: carrier_recovery::Scripts) -> Result<serde_json::Value, tonic::Status> {
-    let parse = |res: crate::pb::dcs::custom::v0::EvalResponse| {
-        serde_json::from_str::<serde_json::Value>(&res.json).unwrap_or(serde_json::Value::Null)
-    };
-    let first = parse(grpc::custom_eval(state.grpc.clone(), scripts.probe).await?);
+    let module = format!("CarrierRecovery {}", carrier_recovery::MODULE_VERSION);
+    eval_installable(mission_eval(state), scripts, &module).await
+}
+
+/// Run a call against an on-demand-installed Lua module: the cheap probe
+/// first, the full install script only when the probe reports the module is
+/// missing or outdated. `eval` is the environment to run in (currently always
+/// [`mission_eval`]); `module` only labels the install log line.
+async fn eval_installable<F, Fut>(
+    eval: F,
+    scripts: carrier_recovery::Scripts,
+    module: &str,
+) -> Result<serde_json::Value, tonic::Status>
+where
+    F: Fn(String) -> Fut,
+    Fut: std::future::Future<Output = Result<String, tonic::Status>>,
+{
+    let parse = |json: String| serde_json::from_str::<serde_json::Value>(&json).unwrap_or(serde_json::Value::Null);
+    let first = parse(eval(scripts.probe).await?);
     if !carrier_recovery::needs_install(&first) {
         return Ok(first);
     }
-    tracing::info!("installing CarrierRecovery {} into the mission", carrier_recovery::MODULE_VERSION);
-    Ok(parse(grpc::custom_eval(state.grpc.clone(), scripts.install).await?))
+    tracing::info!("installing {module} into DCS");
+    Ok(parse(eval(scripts.install).await?))
+}
+
+/// `CustomService.Eval` (mission scripting environment) as an [`eval_installable`] callback.
+fn mission_eval(state: &AppState) -> impl Fn(String) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<String, tonic::Status>> + Send>> {
+    let conn = state.grpc.clone();
+    move |lua| {
+        let conn = conn.clone();
+        Box::pin(async move { grpc::custom_eval(conn, lua).await.map(|r| r.json) })
+    }
 }
 
 /// Telemetry and recovery solution for one carrier group, as returned by the
@@ -997,5 +1169,53 @@ pub async fn airboss_action(_user: AuthUser, State(state): State<AppState>, Json
                 (carrier_refusal_status(&message), Json(json!({ "error": message }))).into_response()
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn chat_history_lua_embeds_cursor() {
+        let lua = chat_history_lua(42);
+        assert!(lua.contains("net.get_chat_history(42)"));
+        assert!(lua.contains("return { history = history or {}, last = last }"));
+    }
+
+    #[test]
+    fn parse_chat_history_maps_rows_and_cursor() {
+        let json = serde_json::json!({
+            "history": [
+                [14640.5, 0, "", "Tacview Flight Data Recorder 1.9.4.200 Loaded."],
+                [43560, 2, "Apex", "hello"],
+                ["bad row"],
+                [1, 1, "Red", "short"]
+            ],
+            "last": 4
+        });
+        let parsed = parse_chat_history(&json, 0);
+        assert_eq!(parsed.last, 4);
+        assert_eq!(parsed.messages.len(), 3);
+        assert_eq!(parsed.messages[0].coalition, 0);
+        assert_eq!(parsed.messages[0].name, "");
+        assert_eq!(parsed.messages[0].message, "Tacview Flight Data Recorder 1.9.4.200 Loaded.");
+        assert_eq!(parsed.messages[1].time, 43560.0);
+        assert_eq!(parsed.messages[1].coalition, 2);
+        assert_eq!(parsed.messages[1].name, "Apex");
+        assert_eq!(parsed.messages[2].coalition, 1);
+    }
+
+    #[test]
+    fn parse_chat_history_keeps_cursor_when_log_is_empty() {
+        // An empty Lua table serialises as `[]` and `last` may be absent.
+        let json = serde_json::json!({ "history": [] });
+        let parsed = parse_chat_history(&json, 17);
+        assert!(parsed.messages.is_empty());
+        assert_eq!(parsed.last, 17);
+
+        let parsed = parse_chat_history(&serde_json::Value::Null, 3);
+        assert!(parsed.messages.is_empty());
+        assert_eq!(parsed.last, 3);
     }
 }

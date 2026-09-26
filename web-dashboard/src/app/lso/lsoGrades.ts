@@ -22,7 +22,11 @@ export interface LsoPass {
   dcs_grading: string | null;
   aircraft_type: string | null;
   map_name: string | null;
+  /** Shorthand as Discord shows it; null for rows older than LSO migration 8. */
+  lso_notation: string | null;
   lso_notes: string | null;
+  /** `dcs` or `measured` (LSO wrote the notation because DCS wrote none). */
+  lso_notes_source: string | null;
   grade_date: string;
   grade_points: number | null;
   points_awarded: boolean | null;
@@ -180,6 +184,33 @@ export const SERVICE_BADGE: Record<ServiceBranch, { src: string; label: string }
 /** Cell text for nullable fields, matching the old page's `esc()` fallback. */
 export function cell(value: string | number | null | undefined): string {
   return value == null ? '-' : String(value);
+}
+
+/** Label Discord appends when LSO, not DCS, wrote the notation. */
+export const MEASURED_LABEL = '(measured by LSO, not a DCS comment)';
+
+/**
+ * The grading-comment cell, as the Discord embed shows it: the DCS comment, or
+ * LSO's measured notation, labelled as such, when DCS wrote none.
+ */
+export function gradeNotation(
+  pass: Pick<LsoPass, 'dcs_grading' | 'lso_notation' | 'lso_notes_source'>,
+): string {
+  if (pass.dcs_grading != null) return pass.dcs_grading;
+  if (pass.lso_notation != null) {
+    return pass.lso_notes_source === 'measured'
+      ? `${pass.lso_notation} ${MEASURED_LABEL}`
+      : pass.lso_notation;
+  }
+  return '-';
+}
+
+/** The notes cell; measured notes carry the same label as in Discord. */
+export function notesText(pass: Pick<LsoPass, 'lso_notes' | 'lso_notes_source'>): string {
+  if (pass.lso_notes == null) return '-';
+  return pass.lso_notes_source === 'measured'
+    ? `${pass.lso_notes} ${MEASURED_LABEL}`
+    : pass.lso_notes;
 }
 
 /** Case-insensitive pilot filter; a pilot's aliases match too. */

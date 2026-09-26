@@ -68,8 +68,15 @@ pub struct LsoPass {
     pub dcs_grading: Option<String>,
     pub aircraft_type: Option<String>,
     pub map_name: Option<String>,
-    /// Plain-English translation of `dcs_grading`, computed at query time.
+    /// LSO shorthand exactly as the Discord embed shows it: the DCS comment, or
+    /// LSO's measured episodes when DCS wrote none (see `lso_notes_source`).
+    /// Null for rows written before LSO migration 8.
+    pub lso_notation: Option<String>,
+    /// Plain-English notes exactly as the Discord embed shows them. Rows written
+    /// before LSO migration 8 get `dcs_grading` translated at query time.
     pub lso_notes: Option<String>,
+    /// `dcs` or `measured`: where `lso_notation`/`lso_notes` come from.
+    pub lso_notes_source: Option<String>,
     pub grade_date: String,
     pub grade_points: Option<f64>,
     pub points_awarded: Option<bool>,
@@ -474,10 +481,19 @@ fn col<T: FromSql>(
 
 fn row_to_pass(row: &Row<'_>, columns: &HashSet<String>) -> rusqlite::Result<LsoPass> {
     let dcs_grading: Option<String> = col(row, columns, "dcs_grading")?;
-    let lso_notes = dcs_grading
-        .as_deref()
-        .map(crate::lso_notation::to_english)
-        .filter(|notes| !notes.is_empty());
+    let lso_notation: Option<String> = col(row, columns, "lso_notation")?;
+    let lso_notes_source: Option<String> = col(row, columns, "lso_notes_source")?;
+    // Since LSO migration 8 the client stores the notes it sent to Discord; a
+    // row carrying `lso_notes_source` is authoritative even when it has no
+    // notes. Only older rows are translated here.
+    let lso_notes = if lso_notes_source.is_some() {
+        col(row, columns, "lso_notes")?
+    } else {
+        dcs_grading
+            .as_deref()
+            .map(crate::lso_notation::to_english)
+            .filter(|notes| !notes.is_empty())
+    };
     Ok(LsoPass {
         id: row.get("id")?,
         timestamp: col::<String>(row, columns, "timestamp")?.unwrap_or_default(),
@@ -494,7 +510,9 @@ fn row_to_pass(row: &Row<'_>, columns: &HashSet<String>) -> rusqlite::Result<Lso
         dcs_grading,
         aircraft_type: col(row, columns, "aircraft_type")?,
         map_name: col(row, columns, "map_name")?,
+        lso_notation,
         lso_notes,
+        lso_notes_source,
         grade_date: col::<String>(row, columns, "grade_date")?.unwrap_or_default(),
         grade_points: col(row, columns, "grade_points")?,
         points_awarded: col(row, columns, "points_awarded")?,
@@ -600,10 +618,58 @@ mod tests {
                 wire_divergent INTEGER NOT NULL DEFAULT 0,
                 points_awarded INTEGER NOT NULL DEFAULT 1,
                 arrest_evidence TEXT,
-                hook_state TEXT
+                hook_state TEXT,
+                lso_notation TEXT,
+                lso_notes TEXT,
+                lso_notes_source TEXT
             );",
         )
         .expect("current schema");
+    }
+
+    #[test]
+    fn stored_notes_are_shown_as_discord_showed_them() {
+        let dir = TempLsoDir::new("notes");
+        {
+            let conn = dir.writer();
+            create_current_schema(&conn);
+            // DCS comment: the stored notes win over re-translating `dcs_grading`.
+            conn.execute(
+                "INSERT INTO passes(timestamp, pilot_name, pass_grade, dcs_grading,
+                                    lso_notation, lso_notes, lso_notes_source)
+                 VALUES ('LSO-a', 'Pilot', 'WO', 'LSO: GRADE:WO  WO(AFU)IC [BC]',
+                         'LSO: GRADE:WO  WO(AFU)IC [BC]', 'Stored by LSO', 'dcs')",
+                [],
+            )
+            .unwrap();
+            // Touch-and-go: no DCS comment, LSO's measured notation.
+            conn.execute(
+                "INSERT INTO passes(timestamp, pilot_name, pass_grade,
+                                    lso_notation, lso_notes, lso_notes_source)
+                 VALUES ('LSO-b', 'Pilot', '(OK)', '(SLOIM)',
+                         'A little slow in the middle', 'measured')",
+                [],
+            )
+            .unwrap();
+            // Written before migration 8: translated at query time.
+            conn.execute(
+                "INSERT INTO passes(timestamp, pilot_name, pass_grade, dcs_grading)
+                 VALUES ('LSO-c', 'Pilot', 'C', 'LSO: GRADE:C : _LOAR_  WIRE# 1')",
+                [],
+            )
+            .unwrap();
+        }
+        let conn = open_read_only(dir.path()).unwrap();
+        let passes = list_passes(&conn, DEFAULT_LIMIT, None).unwrap().passes;
+        let legacy = &passes[0];
+        assert_eq!(legacy.lso_notes.as_deref(), Some("Low at the ramp (gross), wire 1"));
+        assert_eq!(legacy.lso_notes_source, None);
+        let measured = &passes[1];
+        assert_eq!(measured.dcs_grading, None);
+        assert_eq!(measured.lso_notation.as_deref(), Some("(SLOIM)"));
+        assert_eq!(measured.lso_notes.as_deref(), Some("A little slow in the middle"));
+        assert_eq!(measured.lso_notes_source.as_deref(), Some("measured"));
+        assert_eq!(passes[2].lso_notes.as_deref(), Some("Stored by LSO"));
     }
 
     #[test]

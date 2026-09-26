@@ -5,7 +5,9 @@ import {
   cell,
   formatPoints,
   gradeClass,
+  gradeNotation,
   matchesPilot,
+  notesText,
   points,
   serviceBranch,
   shortTimestamp,
@@ -83,6 +85,30 @@ test('cell renders nulls as a dash and numbers as text', () => {
   assert.equal(cell(undefined), '-');
   assert.equal(cell(0), '0');
   assert.equal(cell('Caucasus'), 'Caucasus');
+});
+
+test('grading comment and notes read as in the Discord embed', () => {
+  const dcs = {
+    dcs_grading: 'LSO: GRADE:WO  WO(AFU)IC [BC]',
+    lso_notation: 'LSO: GRADE:WO  WO(AFU)IC [BC]',
+    lso_notes: 'Waveoff: all fouled up in close, ball call',
+    lso_notes_source: 'dcs',
+  };
+  assert.equal(gradeNotation(dcs), 'LSO: GRADE:WO  WO(AFU)IC [BC]');
+  assert.equal(notesText(dcs), 'Waveoff: all fouled up in close, ball call');
+
+  const measured = {
+    dcs_grading: null,
+    lso_notation: '(SLOIM)',
+    lso_notes: 'A little slow in the middle',
+    lso_notes_source: 'measured',
+  };
+  assert.equal(gradeNotation(measured), '(SLOIM) (measured by LSO, not a DCS comment)');
+  assert.equal(notesText(measured), 'A little slow in the middle (measured by LSO, not a DCS comment)');
+
+  const legacy = { dcs_grading: null, lso_notation: null, lso_notes: null, lso_notes_source: null };
+  assert.equal(gradeNotation(legacy), '-');
+  assert.equal(notesText(legacy), '-');
 });
 
 test('pilot filter is case-insensitive and ignores surrounding whitespace', () => {
