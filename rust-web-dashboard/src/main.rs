@@ -12,6 +12,7 @@ mod grpc;
 mod pb;
 mod proto_json;
 mod routes;
+mod screen_messages;
 mod settings_lua;
 mod state;
 mod telemetry;

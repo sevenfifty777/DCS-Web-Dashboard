@@ -31,6 +31,12 @@
 .PARAMETER LogDir
     Folder for dcs_srs_watchdog.log. Defaults to <SavedGamesDir>\Logs.
 
+.PARAMETER StartScriptTimeoutSec
+    Longest the watchdog waits for Start-DCS.ps1 / Start-SRS.ps1 to return before
+    moving on. The start scripts normally return within a second (or within their
+    -WaitForExitSec during a dashboard restart). Never applies to DCS or SRS
+    themselves: the watchdog only waits for the start script, not for the game.
+
 .PARAMETER Once
     Do a single pass (network wait, start both, one check) and exit. For testing.
 
@@ -48,6 +54,7 @@ param(
     [ValidateRange(0, 3600)] [int]$DelayBeforeSrsSec = 30,
     [ValidateRange(5, 3600)] [int]$CheckIntervalSec = 30,
     [ValidateRange(0, 3600)] [int]$RestartCooldownSec = 60,
+    [ValidateRange(5, 900)] [int]$StartScriptTimeoutSec = 120,
     [switch]$Once
 )
 
@@ -79,8 +86,18 @@ function Invoke-StartScript([string]$Label, [string]$ScriptPath, [string]$ExtraA
     if (-not [string]::IsNullOrWhiteSpace($ExtraArgs)) { $argument += " $ExtraArgs" }
     LogLine "$Label -> powershell.exe $argument"
     try {
-        $p = Start-Process -FilePath "powershell.exe" -ArgumentList $argument -WindowStyle Hidden -Wait -PassThru
-        LogLine "$Label start script exit code $($p.ExitCode)"
+        # Deliberately NOT `Start-Process -Wait`: on Windows, -Wait waits for the
+        # process AND all its descendants, i.e. for DCS_server.exe / SRS-Server.exe
+        # themselves. That blocked the watchdog on the DCS start for as long as DCS
+        # lived, so SRS was never started at boot and nothing was watched.
+        # Process.WaitForExit() waits for the start script only.
+        $p = Start-Process -FilePath "powershell.exe" -ArgumentList $argument -WindowStyle Hidden -PassThru
+        $null = $p.Handle   # cache the handle so ExitCode is readable after exit
+        if ($p.WaitForExit($StartScriptTimeoutSec * 1000)) {
+            LogLine "$Label start script exit code $($p.ExitCode)"
+        } else {
+            LogLine "WARNING: $Label start script (pid=$($p.Id)) still running after ${StartScriptTimeoutSec}s -> not waiting any longer"
+        }
     } catch {
         LogLine "$Label start script failed to run: $($_.Exception.Message)"
     }

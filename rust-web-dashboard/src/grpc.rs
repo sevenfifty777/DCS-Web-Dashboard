@@ -249,6 +249,17 @@ pub async fn get_banned_players(conn: Grpc) -> Result<dcs::hook::v0::GetBannedPl
     Ok(resp.into_inner())
 }
 
+/// `HookService.Eval` — evaluate Lua in the DCS *hook* (GUI) environment, where
+/// the `net.*` and `DCS.*` server APIs live; the result is returned as a JSON
+/// string. Gated by the same `evalEnabled` flag as [`custom_eval`].
+pub async fn hook_eval(conn: Grpc, lua: String) -> Result<dcs::hook::v0::EvalResponse, Status> {
+    let mut client = HookServiceClient::new(conn.service());
+    let resp = client
+        .eval(Request::new(dcs::hook::v0::EvalRequest { lua }))
+        .await?;
+    Ok(resp.into_inner())
+}
+
 // --- CustomService ---------------------------------------------------------
 
 /// `CustomService.Eval` — evaluate Lua in the mission environment; the result

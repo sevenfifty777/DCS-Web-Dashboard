@@ -346,6 +346,7 @@ Select-String -Path 'C:\DCS-Web-Dashboard\logs\dashboard*.log' -Pattern 'schtask
 | Dashboard shows "no DCS process appeared within 15s" | The task ran but DCS did not start, or took too long. | Look at `dcs_start.log` and the DCS log itself. |
 | After Restart the dashboard stays STOPPED | The old DCS took longer than 30 seconds to die. | Raise `-WaitForExitSec` in `-DcsScriptArgs` and rerun the helper. |
 | DCS comes back one minute after every Stop | An old boot script or task is still running (section 7), or the dashboard is older than this `services` folder. | Disable that task; update the dashboard. |
+| After a reboot DCS starts but SRS does not, and `dcs_srs_watchdog.log` ends with the `DCS -> powershell.exe ...` line (no "exit code" line, no "entering loop") | An older `Watchdog-DCS-SRS.ps1` waited for the whole process tree of the start script, i.e. for DCS itself, and never got to SRS. | Replace `Watchdog-DCS-SRS.ps1` with the current one (no need to rerun the helper), then `Stop-ScheduledTask` / `Start-ScheduledTask -TaskName 'DCS SRS Watchdog'`. |
 | "Task is not in the allowed whitelist" on the Tasks page | `DCS_TASK_WHITELIST` is set in NSSM. | Add the task names to it, or leave the variable empty. |
 | Helper refuses to run: "requires ... Administrator" | PowerShell is not elevated. | Right-click PowerShell, Run as administrator. |
 | Helper refuses to run: "running scripts is disabled" | Execution policy. | Run `powershell -ExecutionPolicy Bypass -File .\Register-DcsSrsTasks.ps1 ...`. |
