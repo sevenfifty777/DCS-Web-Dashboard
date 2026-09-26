@@ -8,7 +8,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
 import { errorMessage } from '@/lib/errors';
 import styles from './page.module.css';
-import { cell, formatPoints, gradeClass, wireOrSpot, type LsoPass } from './lsoGrades';
+import { cell, formatPoints, gradeClass, notesText, wireOrSpot, type LsoPass } from './lsoGrades';
 
 type ChartState =
   | { kind: 'loading' }
@@ -128,7 +128,7 @@ export function TrapSheetModal({ pass, onClose }: { pass: LsoPass; onClose: () =
               <span>Wire/Spot {wireOrSpot(pass)}</span>
               <span>Pts {formatPoints(pass)}</span>
               <span>{cell(pass.outcome)}</span>
-              {pass.lso_notes && <span>{pass.lso_notes}</span>}
+              {pass.lso_notes && <span>{notesText(pass)}</span>}
             </p>
             <p className={styles.modalStem}>{pass.timestamp}</p>
           </div>

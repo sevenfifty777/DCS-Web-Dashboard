@@ -14,7 +14,9 @@ import {
   cell,
   formatPoints,
   gradeClass,
+  gradeNotation,
   matchesPilot,
+  notesText,
   technicalStatus,
   wireOrSpot,
   type LsoPass,
@@ -254,10 +256,10 @@ function PilotSection({ pilot, onSelect }: { pilot: LsoPilot; onSelect: (pass: L
                   <td>{cell(p.outcome)}</td>
                   <td>{technicalStatus(p)}</td>
                   <td className={board.wrap}>
-                    <div className={board.gradeText}>{cell(p.dcs_grading)}</div>
+                    <div className={board.gradeText}>{gradeNotation(p)}</div>
                   </td>
                   <td className={`${board.notes} ${board.wrap}`}>
-                    <div className={board.notesText}>{cell(p.lso_notes)}</div>
+                    <div className={board.notesText}>{notesText(p)}</div>
                   </td>
                 </tr>
               );
