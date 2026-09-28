@@ -105,6 +105,15 @@ pub struct LsoPass {
     pub grading_availability: Option<String>,
     pub arrest_evidence: Option<String>,
     pub hook_state: Option<String>,
+    /// Case DCS's Marshal is expected to order (ED's weather rule): `I`, `II`,
+    /// `III` or `indeterminate`. Null for rows older than LSO migration 9.
+    pub ordered_case: Option<String>,
+    /// Case from NATOPS minima; diagnostic only, never used for grading.
+    pub natops_case: Option<String>,
+    /// NATOPS night window at the carrier; null when unknown.
+    pub night: Option<bool>,
+    /// `overhead_pattern`, `straight_in` or `unknown`; null for V/STOL.
+    pub flown_approach: Option<String>,
 }
 
 /// `/api/lso/passes` payload.
@@ -541,6 +550,10 @@ fn row_to_pass(row: &Row<'_>, columns: &HashSet<String>) -> rusqlite::Result<Lso
         grading_availability: col(row, columns, "grading_availability")?,
         arrest_evidence: col(row, columns, "arrest_evidence")?,
         hook_state: col(row, columns, "hook_state")?,
+        ordered_case: col(row, columns, "ordered_case")?,
+        natops_case: col(row, columns, "natops_case")?,
+        night: col(row, columns, "night")?,
+        flown_approach: col(row, columns, "flown_approach")?,
     })
 }
 
@@ -670,6 +683,45 @@ mod tests {
         assert_eq!(measured.lso_notes.as_deref(), Some("A little slow in the middle"));
         assert_eq!(measured.lso_notes_source.as_deref(), Some("measured"));
         assert_eq!(passes[2].lso_notes.as_deref(), Some("Stored by LSO"));
+    }
+
+    #[test]
+    fn recovery_case_columns_are_read_when_present() {
+        let dir = TempLsoDir::new("case");
+        {
+            let conn = dir.writer();
+            create_current_schema(&conn);
+            conn.execute_batch(
+                "ALTER TABLE passes ADD COLUMN ordered_case TEXT;
+                 ALTER TABLE passes ADD COLUMN natops_case TEXT;
+                 ALTER TABLE passes ADD COLUMN night INTEGER;
+                 ALTER TABLE passes ADD COLUMN flown_approach TEXT;",
+            )
+            .unwrap();
+            conn.execute(
+                "INSERT INTO passes(timestamp, pilot_name, pass_grade)
+                 VALUES ('LSO-a', 'Pilot', 'OK')",
+                [],
+            )
+            .unwrap();
+            conn.execute(
+                "INSERT INTO passes(timestamp, pilot_name, pass_grade,
+                                    ordered_case, natops_case, night, flown_approach)
+                 VALUES ('LSO-b', 'Pilot', 'OK', 'III', 'II', 1, 'straight_in')",
+                [],
+            )
+            .unwrap();
+        }
+        let conn = open_read_only(dir.path()).unwrap();
+        let passes = list_passes(&conn, DEFAULT_LIMIT, None).unwrap().passes;
+        let assessed = &passes[0];
+        assert_eq!(assessed.ordered_case.as_deref(), Some("III"));
+        assert_eq!(assessed.natops_case.as_deref(), Some("II"));
+        assert_eq!(assessed.night, Some(true));
+        assert_eq!(assessed.flown_approach.as_deref(), Some("straight_in"));
+        let before_migration_9 = &passes[1];
+        assert_eq!(before_migration_9.ordered_case, None);
+        assert_eq!(before_migration_9.night, None);
     }
 
     #[test]

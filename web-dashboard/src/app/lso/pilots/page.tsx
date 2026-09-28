@@ -17,6 +17,8 @@ import {
   gradeNotation,
   matchesPilot,
   notesText,
+  recoveryCase,
+  recoveryCaseDetail,
   technicalStatus,
   wireOrSpot,
   type LsoPass,
@@ -216,6 +218,7 @@ function PilotSection({ pilot, onSelect }: { pilot: LsoPilot; onSelect: (pass: L
               <th title="LSO community: USMC STOVL for the Harrier, US Navy otherwise">LSO</th>
               <th>Aircraft</th>
               <th>Carrier</th>
+              <th title="Recovery case DCS's Marshal orders from the weather (ED rule); hover a cell for details">Case</th>
               <th>Grade</th>
               <th>Pts</th>
               <th>Wire/Spot</th>
@@ -250,6 +253,7 @@ function PilotSection({ pilot, onSelect }: { pilot: LsoPilot; onSelect: (pass: L
                   </td>
                   <td>{cell(p.aircraft_type)}</td>
                   <td>{cell(p.carrier_name ?? p.carrier_type)}</td>
+                  <td className={board.case} title={recoveryCaseDetail(p)}>{recoveryCase(p)}</td>
                   <td className={`${board.grade} ${gc ? board[gc] : ''}`}>{cell(p.pass_grade)}</td>
                   <td className={board.pts}>{formatPoints(p)}</td>
                   <td>{wireOrSpot(p)}</td>

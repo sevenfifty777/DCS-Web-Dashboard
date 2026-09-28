@@ -18,6 +18,8 @@ import {
   gradeNotation,
   matchesPilot,
   notesText,
+  recoveryCase,
+  recoveryCaseDetail,
   shortTimestamp,
   technicalStatus,
   wireOrSpot,
@@ -184,6 +186,7 @@ function PassTable({
             <th>Pilot</th>
             <th>Aircraft</th>
             <th>Map</th>
+            <th title="Recovery case DCS's Marshal orders from the weather (ED rule); hover a cell for details">Case</th>
             <th>Grade</th>
             <th>Pts</th>
             <th>Wire/Spot</th>
@@ -196,7 +199,7 @@ function PassTable({
         <tbody>
           {visible.length === 0 ? (
             <tr>
-              <td colSpan={15} className={styles.empty}>
+              <td colSpan={16} className={styles.empty}>
                 {passes.length === 0 ? 'No passes recorded yet.' : 'No passes match this pilot filter.'}
               </td>
             </tr>
@@ -230,6 +233,7 @@ function PassTable({
                   <td>{cell(p.pilot_name)}</td>
                   <td>{cell(p.aircraft_type)}</td>
                   <td>{cell(p.map_name)}</td>
+                  <td className={styles.case} title={recoveryCaseDetail(p)}>{recoveryCase(p)}</td>
                   <td className={`${styles.grade} ${gc ? styles[gc] : ''}`}>{cell(p.pass_grade)}</td>
                   <td className={styles.pts}>{formatPoints(p)}</td>
                   <td>{wireOrSpot(p)}</td>

@@ -9,6 +9,9 @@ import {
   matchesPilot,
   notesText,
   points,
+  approachMismatch,
+  recoveryCase,
+  recoveryCaseDetail,
   serviceBranch,
   shortTimestamp,
   technicalStatus,
@@ -109,6 +112,41 @@ test('grading comment and notes read as in the Discord embed', () => {
   const legacy = { dcs_grading: null, lso_notation: null, lso_notes: null, lso_notes_source: null };
   assert.equal(gradeNotation(legacy), '-');
   assert.equal(notesText(legacy), '-');
+});
+
+test('recovery case reads like the Discord "Recovery" field', () => {
+  assert.equal(recoveryCase({ ordered_case: 'I', night: false }), 'Case I');
+  assert.equal(recoveryCase({ ordered_case: 'II', night: null }), 'Case II');
+  assert.equal(recoveryCase({ ordered_case: 'III', night: true }), 'Case III (night)');
+  assert.equal(recoveryCase({ ordered_case: 'indeterminate', night: true }), '-');
+  assert.equal(recoveryCase({ ordered_case: null, night: null }), '-');
+});
+
+test('approach mismatch follows LSO: break in Case III, straight-in in Case I/II', () => {
+  assert.equal(approachMismatch({ ordered_case: 'III', flown_approach: 'overhead_pattern' }), true);
+  assert.equal(approachMismatch({ ordered_case: 'I', flown_approach: 'straight_in' }), true);
+  assert.equal(approachMismatch({ ordered_case: 'II', flown_approach: 'straight_in' }), true);
+  assert.equal(approachMismatch({ ordered_case: 'III', flown_approach: 'straight_in' }), false);
+  assert.equal(approachMismatch({ ordered_case: 'I', flown_approach: 'unknown' }), false);
+  assert.equal(approachMismatch({ ordered_case: 'indeterminate', flown_approach: 'straight_in' }), false);
+});
+
+test('recovery case tooltip lists the NATOPS diagnostic and the flown approach', () => {
+  const detail = recoveryCaseDetail({
+    ordered_case: 'III',
+    natops_case: 'II',
+    night: true,
+    flown_approach: 'overhead_pattern',
+  });
+  assert.match(detail, /Ordered \(ED weather rule\): III/);
+  assert.match(detail, /NATOPS minima: II/);
+  assert.match(detail, /Night/);
+  assert.match(detail, /Flown: overhead pattern/);
+  assert.match(detail, /does not match/);
+  assert.match(
+    recoveryCaseDetail({ ordered_case: null, natops_case: null, night: null, flown_approach: null }),
+    /not assessed/,
+  );
 });
 
 test('pilot filter is case-insensitive and ignores surrounding whitespace', () => {

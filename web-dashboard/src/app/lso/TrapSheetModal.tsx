@@ -8,7 +8,16 @@ import { useCallback, useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
 import { errorMessage } from '@/lib/errors';
 import styles from './page.module.css';
-import { cell, formatPoints, gradeClass, notesText, wireOrSpot, type LsoPass } from './lsoGrades';
+import {
+  cell,
+  formatPoints,
+  gradeClass,
+  notesText,
+  recoveryCase,
+  recoveryCaseDetail,
+  wireOrSpot,
+  type LsoPass,
+} from './lsoGrades';
 
 type ChartState =
   | { kind: 'loading' }
@@ -125,6 +134,9 @@ export function TrapSheetModal({ pass, onClose }: { pass: LsoPass; onClose: () =
               <span>{cell(pass.aircraft_type)}</span>
               <span>{cell(pass.carrier_name ?? pass.carrier_type)}</span>
               <span>{cell(pass.grade_date)} UTC</span>
+              {pass.ordered_case != null && (
+                <span title={recoveryCaseDetail(pass)}>{recoveryCase(pass)}</span>
+              )}
               <span>Wire/Spot {wireOrSpot(pass)}</span>
               <span>Pts {formatPoints(pass)}</span>
               <span>{cell(pass.outcome)}</span>
