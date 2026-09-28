@@ -267,6 +267,32 @@ export function recoveryCaseDetail(pass: CaseFields): string {
   return lines.join('\n');
 }
 
+/** Best to worst as a greenie board reads: `_OK_` highest, cut pass lowest. */
+const GRADE_RANK: Record<string, number> = {
+  '_OK_': 6,
+  'OK': 5,
+  '(OK)': 4,
+  '--': 3,
+  'B': 2,
+  'WO': 1,
+  'C': 0,
+};
+
+/** Sort key for the grade column; null for grades outside the NAVAIR set. */
+export function gradeRank(grade: string | null | undefined): number | null {
+  if (!grade) return null;
+  return GRADE_RANK[grade] ?? null;
+}
+
+const CASE_RANK: Record<string, number> = { I: 1, II: 2, III: 3 };
+
+/** Sort key for the case column: I < II < III, a night pass just after its day case. */
+export function caseRank(pass: Pick<LsoPass, 'ordered_case' | 'night'>): number | null {
+  const rank = pass.ordered_case ? CASE_RANK[pass.ordered_case] : undefined;
+  if (rank === undefined) return null;
+  return rank * 2 + (pass.night === true ? 1 : 0);
+}
+
 /** Case-insensitive pilot filter; a pilot's aliases match too. */
 export function matchesPilot(
   pass: Pick<LsoPass, 'pilot_name'> & { aliases?: string[] },
