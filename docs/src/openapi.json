@@ -7,7 +7,7 @@
       "name": "AGPL-3.0-or-later",
       "identifier": "AGPL-3.0-or-later"
     },
-    "version": "0.1.2"
+    "version": "0.2.0"
   },
   "paths": {
     "/api/airboss": {
@@ -2101,6 +2101,13 @@
             ],
             "format": "double"
           },
+          "flown_approach": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "`overhead_pattern`, `straight_in` or `unknown`; null for V/STOL."
+          },
           "generation": {
             "type": [
               "integer",
@@ -2146,12 +2153,26 @@
               "null"
             ]
           },
+          "lso_notation": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "LSO shorthand exactly as the Discord embed shows it: the DCS comment, or\nLSO's measured episodes when DCS wrote none (see `lso_notes_source`).\nNull for rows written before LSO migration 8."
+          },
           "lso_notes": {
             "type": [
               "string",
               "null"
             ],
-            "description": "Plain-English translation of `dcs_grading`, computed at query time."
+            "description": "Plain-English notes exactly as the Discord embed shows them. Rows written\nbefore LSO migration 8 get `dcs_grading` translated at query time."
+          },
+          "lso_notes_source": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "`dcs` or `measured`: where `lso_notation`/`lso_notes` come from."
           },
           "map_name": {
             "type": [
@@ -2182,6 +2203,27 @@
           },
           "mission_datetime": {
             "type": "string"
+          },
+          "natops_case": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Case from NATOPS minima; diagnostic only, never used for grading."
+          },
+          "night": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "NATOPS night window at the carrier; null when unknown."
+          },
+          "ordered_case": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Case DCS's Marshal is expected to order (ED's weather rule): `I`, `II`,\n`III` or `indeterminate`. Null for rows older than LSO migration 9."
           },
           "outcome": {
             "type": "string"
