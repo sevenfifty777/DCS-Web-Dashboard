@@ -219,6 +219,11 @@
   font-size: 0.8rem;
 }
 
+.case {
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
 .notes {
   color: var(--text-muted);
   font-size: 0.8rem;

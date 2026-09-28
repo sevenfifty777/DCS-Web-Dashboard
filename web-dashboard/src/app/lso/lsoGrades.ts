@@ -55,6 +55,14 @@ export interface LsoPass {
   grading_availability: string | null;
   arrest_evidence: string | null;
   hook_state: string | null;
+  /** Case ED's Marshal orders: `I`, `II`, `III` or `indeterminate`; null before LSO migration 9. */
+  ordered_case: string | null;
+  /** Case from NATOPS minima; diagnostic only. */
+  natops_case: string | null;
+  /** NATOPS night window at the carrier; null when unknown. */
+  night: boolean | null;
+  /** `overhead_pattern`, `straight_in` or `unknown`; null for V/STOL. */
+  flown_approach: string | null;
 }
 
 export interface LsoPassesResponse {
@@ -211,6 +219,52 @@ export function notesText(pass: Pick<LsoPass, 'lso_notes' | 'lso_notes_source'>)
   return pass.lso_notes_source === 'measured'
     ? `${pass.lso_notes} ${MEASURED_LABEL}`
     : pass.lso_notes;
+}
+
+type CaseFields = Pick<LsoPass, 'ordered_case' | 'natops_case' | 'night' | 'flown_approach'>;
+
+const KNOWN_CASES = new Set(['I', 'II', 'III']);
+
+/**
+ * Recovery case as the Discord "Recovery" field shows it, e.g. `Case III (night)`;
+ * `-` when the case is indeterminate or was not assessed (rows before LSO migration 9).
+ */
+export function recoveryCase(pass: Pick<LsoPass, 'ordered_case' | 'night'>): string {
+  if (!pass.ordered_case || !KNOWN_CASES.has(pass.ordered_case)) return '-';
+  const label = `Case ${pass.ordered_case}`;
+  return pass.night === true ? `${label} (night)` : label;
+}
+
+const FLOWN_LABELS: Record<string, string> = {
+  overhead_pattern: 'overhead pattern',
+  straight_in: 'straight-in',
+  unknown: 'unknown',
+};
+
+/**
+ * Whether the flown approach contradicts the ordered case (LSO's
+ * `approach_does_not_match_ordered_case` diagnostic, never a penalty):
+ * a break in Case III, or a straight-in in Case I/II.
+ */
+export function approachMismatch(pass: Pick<LsoPass, 'ordered_case' | 'flown_approach'>): boolean {
+  if (pass.ordered_case === 'III') return pass.flown_approach === 'overhead_pattern';
+  if (pass.ordered_case === 'I' || pass.ordered_case === 'II') {
+    return pass.flown_approach === 'straight_in';
+  }
+  return false;
+}
+
+/** Tooltip for the case cell: ordered case, NATOPS diagnostic and flown approach. */
+export function recoveryCaseDetail(pass: CaseFields): string {
+  if (pass.ordered_case == null) return 'Recovery case not assessed (pass recorded before LSO migration 9)';
+  const lines = [`Ordered (ED weather rule): ${pass.ordered_case}`];
+  if (pass.natops_case) lines.push(`NATOPS minima: ${pass.natops_case}`);
+  if (pass.night != null) lines.push(pass.night ? 'Night (NATOPS window)' : 'Day');
+  if (pass.flown_approach) {
+    lines.push(`Flown: ${FLOWN_LABELS[pass.flown_approach] ?? pass.flown_approach}`);
+  }
+  if (approachMismatch(pass)) lines.push('Flown approach does not match the ordered case (not a penalty)');
+  return lines.join('\n');
 }
 
 /** Case-insensitive pilot filter; a pilot's aliases match too. */
