@@ -11,22 +11,16 @@ import { errorMessage } from '@/lib/errors';
 import board from '../page.module.css';
 import styles from './page.module.css';
 import {
-  cell,
   formatPoints,
   gradeClass,
-  gradeNotation,
   matchesPilot,
-  notesText,
-  recoveryCase,
-  recoveryCaseDetail,
-  technicalStatus,
-  wireOrSpot,
   type LsoPass,
   type LsoPilot,
   type LsoPilotsResponse,
 } from '../lsoGrades';
+import { PILOTS_TABLE } from '../lsoColumns';
 import { LsoLegend } from '../LsoLegend';
-import { ServiceBadge } from '../ServiceBadge';
+import { ColumnsMenu, LsoTable } from '../LsoTable';
 import { TrapSheetModal } from '../TrapSheetModal';
 
 const REFRESH_MS = 15_000;
@@ -111,6 +105,7 @@ export default function LsoPilotsPage() {
           <Link href="/lso" className={board.navLink}>
             All passes
           </Link>
+          <ColumnsMenu spec={PILOTS_TABLE} />
           <div className={styles.toggle} role="group" aria-label="Passes per pilot">
             <button
               type="button"
@@ -160,6 +155,8 @@ export default function LsoPilotsPage() {
 
 function PilotSection({ pilot, onSelect }: { pilot: LsoPilot; onSelect: (pass: LsoPass) => void }) {
   const shown = pilot.passes.length;
+  const total = pilot.total_passes;
+  const indexOf = useCallback((position: number) => total - position, [total]);
   return (
     <section className={`${board.panel} ${styles.pilot}`}>
       <header className={styles.pilotHeader}>
@@ -208,69 +205,14 @@ function PilotSection({ pilot, onSelect }: { pilot: LsoPilot; onSelect: (pass: L
         </div>
       </header>
 
-      <div className={`${board.tableWrap} ${styles.pilotTable}`}>
-        <table className={board.table}>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th title="Recovery time in UTC">Grade Date (UTC)</th>
-              <th>Mission Time</th>
-              <th title="LSO community: USMC STOVL for the Harrier, US Navy otherwise">LSO</th>
-              <th>Aircraft</th>
-              <th>Carrier</th>
-              <th title="Recovery case DCS's Marshal orders from the weather (ED rule); hover a cell for details">Case</th>
-              <th>Grade</th>
-              <th>Pts</th>
-              <th>Wire/Spot</th>
-              <th>Outcome</th>
-              <th>Technical status</th>
-              <th>DCS Grade</th>
-              <th>LSO Notes</th>
-            </tr>
-          </thead>
-          <tbody>
-            {pilot.passes.map((p, i) => {
-              const gc = gradeClass(p.pass_grade);
-              return (
-                <tr
-                  key={p.id}
-                  className={board.row}
-                  tabIndex={0}
-                  onClick={() => onSelect(p)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      onSelect(p);
-                    }
-                  }}
-                  title="Open trap sheet"
-                >
-                  <td className={board.index}>{pilot.total_passes - i}</td>
-                  <td className={board.gdate}>{cell(p.grade_date)}</td>
-                  <td className={board.gdate}>{cell(p.mission_datetime)}</td>
-                  <td className={board.badgeCell}>
-                    <ServiceBadge aircraftType={p.aircraft_type} />
-                  </td>
-                  <td>{cell(p.aircraft_type)}</td>
-                  <td>{cell(p.carrier_name ?? p.carrier_type)}</td>
-                  <td className={board.case} title={recoveryCaseDetail(p)}>{recoveryCase(p)}</td>
-                  <td className={`${board.grade} ${gc ? board[gc] : ''}`}>{cell(p.pass_grade)}</td>
-                  <td className={board.pts}>{formatPoints(p)}</td>
-                  <td>{wireOrSpot(p)}</td>
-                  <td>{cell(p.outcome)}</td>
-                  <td>{technicalStatus(p)}</td>
-                  <td className={board.wrap}>
-                    <div className={board.gradeText}>{gradeNotation(p)}</div>
-                  </td>
-                  <td className={`${board.notes} ${board.wrap}`}>
-                    <div className={board.notesText}>{notesText(p)}</div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      <LsoTable
+        spec={PILOTS_TABLE}
+        passes={pilot.passes}
+        indexOf={indexOf}
+        onSelect={onSelect}
+        emptyMessage="No passes recorded yet."
+        wrapClassName={`${board.tableWrap} ${styles.pilotTable}`}
+      />
       {shown < pilot.total_passes && (
         <div className={styles.more}>
           Showing the last {shown} of {pilot.total_passes} passes. Switch to All to see every pass.

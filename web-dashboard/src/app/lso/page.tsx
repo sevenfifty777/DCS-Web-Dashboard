@@ -7,28 +7,19 @@
 // (`/api/lso/*`); nothing here costs the DCS server a single gRPC call.
 
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiFetch } from '@/lib/api';
 import { errorMessage } from '@/lib/errors';
 import styles from './page.module.css';
 import {
-  cell,
-  formatPoints,
-  gradeClass,
-  gradeNotation,
   matchesPilot,
-  notesText,
-  recoveryCase,
-  recoveryCaseDetail,
-  shortTimestamp,
-  technicalStatus,
-  wireOrSpot,
   type LsoPass,
   type LsoPassesResponse,
   type LsoStatus,
 } from './lsoGrades';
+import { BOARD_TABLE } from './lsoColumns';
 import { LsoLegend } from './LsoLegend';
-import { ServiceBadge } from './ServiceBadge';
+import { ColumnsMenu, LsoTable } from './LsoTable';
 import { TrapSheetModal } from './TrapSheetModal';
 
 const REFRESH_MS = 10_000;
@@ -119,6 +110,7 @@ export default function LsoPage() {
           <Link href="/lso/pilots" className={styles.navLink}>
             By pilot
           </Link>
+          <ColumnsMenu spec={BOARD_TABLE} />
           <input
             type="search"
             className={styles.search}
@@ -171,86 +163,29 @@ function PassTable({
   pilotQuery: string;
   onSelect: (pass: LsoPass) => void;
 }) {
-  const visible = passes.filter((p) => matchesPilot(p, pilotQuery));
+  // Filter first, but keep each row's number from its place in the full page:
+  // same countdown as the original board, newest row carries the highest
+  // number, and `total` covers rows beyond the page limit.
+  const { visible, numbers } = useMemo(() => {
+    const rows: LsoPass[] = [];
+    const nums: number[] = [];
+    passes.forEach((p, position) => {
+      if (matchesPilot(p, pilotQuery)) {
+        rows.push(p);
+        nums.push(total - position);
+      }
+    });
+    return { visible: rows, numbers: nums };
+  }, [passes, pilotQuery, total]);
+  const indexOf = useCallback((position: number) => numbers[position], [numbers]);
 
   return (
-    <div className={styles.tableWrap}>
-      <table className={styles.table}>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th title="Recording time on the LSO server's local clock">Timestamp (server local)</th>
-            <th title="Recovery time in UTC">Grade Date (UTC)</th>
-            <th>Mission Time</th>
-            <th title="LSO community: USMC STOVL for the Harrier, US Navy otherwise">LSO</th>
-            <th>Pilot</th>
-            <th>Aircraft</th>
-            <th>Map</th>
-            <th title="Recovery case DCS's Marshal orders from the weather (ED rule); hover a cell for details">Case</th>
-            <th>Grade</th>
-            <th>Pts</th>
-            <th>Wire/Spot</th>
-            <th>Outcome</th>
-            <th>Technical status</th>
-            <th>DCS Grade</th>
-            <th>LSO Notes</th>
-          </tr>
-        </thead>
-        <tbody>
-          {visible.length === 0 ? (
-            <tr>
-              <td colSpan={16} className={styles.empty}>
-                {passes.length === 0 ? 'No passes recorded yet.' : 'No passes match this pilot filter.'}
-              </td>
-            </tr>
-          ) : (
-            visible.map((p) => {
-              // Same countdown as the original board: newest row carries the
-              // highest number. `total` covers rows beyond the page limit.
-              const index = total - passes.indexOf(p);
-              const gc = gradeClass(p.pass_grade);
-              return (
-                <tr
-                  key={p.id}
-                  className={styles.row}
-                  tabIndex={0}
-                  onClick={() => onSelect(p)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      onSelect(p);
-                    }
-                  }}
-                  title="Open trap sheet"
-                >
-                  <td className={styles.index}>{index}</td>
-                  <td className={styles.stamp} title={p.timestamp}>{shortTimestamp(p.timestamp)}</td>
-                  <td className={styles.gdate}>{cell(p.grade_date)}</td>
-                  <td className={styles.gdate}>{cell(p.mission_datetime)}</td>
-                  <td className={styles.badgeCell}>
-                    <ServiceBadge aircraftType={p.aircraft_type} />
-                  </td>
-                  <td>{cell(p.pilot_name)}</td>
-                  <td>{cell(p.aircraft_type)}</td>
-                  <td>{cell(p.map_name)}</td>
-                  <td className={styles.case} title={recoveryCaseDetail(p)}>{recoveryCase(p)}</td>
-                  <td className={`${styles.grade} ${gc ? styles[gc] : ''}`}>{cell(p.pass_grade)}</td>
-                  <td className={styles.pts}>{formatPoints(p)}</td>
-                  <td>{wireOrSpot(p)}</td>
-                  <td>{cell(p.outcome)}</td>
-                  <td>{technicalStatus(p)}</td>
-                  <td className={styles.wrap}>
-                    <div className={styles.gradeText}>{gradeNotation(p)}</div>
-                  </td>
-                  <td className={`${styles.notes} ${styles.wrap}`}>
-                    <div className={styles.notesText}>{notesText(p)}</div>
-                  </td>
-                </tr>
-              );
-            })
-          )}
-        </tbody>
-      </table>
-    </div>
+    <LsoTable
+      spec={BOARD_TABLE}
+      passes={visible}
+      indexOf={indexOf}
+      onSelect={onSelect}
+      emptyMessage={passes.length === 0 ? 'No passes recorded yet.' : 'No passes match this pilot filter.'}
+    />
   );
 }
