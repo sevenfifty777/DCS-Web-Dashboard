@@ -122,6 +122,13 @@ pub struct Config {
     /// silently list nothing. When unset, the `/api/tacview/*` routes report
     /// "not configured".
     pub tacview_dir: Option<PathBuf>,
+    /// Base URL of the dcs-ai-commander service (`AI_COMMANDER_URL`, e.g.
+    /// `http://127.0.0.1:3010`). Together with `ai_commander_secret` it enables
+    /// the `/api/ai/*` proxy; when either is unset those routes report
+    /// "not configured".
+    pub ai_commander_url: Option<String>,
+    /// Shared secret sent as `X-Commander-Key` to the dcs-ai-commander service.
+    pub ai_commander_secret: Option<String>,
 }
 
 impl Config {
@@ -202,9 +209,16 @@ impl Config {
         let tacview_dir = optional("TACVIEW_DIR")
             .map(|s| PathBuf::from(s.trim().trim_matches('"').trim_matches('\'')));
 
+        let ai_commander_url = optional("AI_COMMANDER_URL")
+            .map(|s| s.trim().trim_matches('"').trim_end_matches('/').to_string())
+            .filter(|s| !s.is_empty());
+        let ai_commander_secret = optional("AI_COMMANDER_SECRET").map(|s| s.trim().to_string());
+
         Ok(Arc::new(Self {
             lso_dir,
             tacview_dir,
+            ai_commander_url,
+            ai_commander_secret,
             foothold_saves_dir,
             jwt_secret: jwt_secret.into_bytes(),
             admin_password: optional("ADMIN_PASSWORD"),

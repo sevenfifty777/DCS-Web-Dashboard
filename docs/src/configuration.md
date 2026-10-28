@@ -125,6 +125,8 @@ DCS_TASK_WHITELIST=DCS Server Start,SRS Server Start,DCS SRS Watchdog
 | Variable | Purpose |
 | --- | --- |
 | `LSO_DIR` | Output directory of the [DCS-gRPC-lso](https://github.com/sevenfifty777/DCS-gRPC-lso) client (its `--out-dir`, the folder holding `lso.db` and the trap-sheet PNGs). Required for the **LSO** tab. The dashboard opens `lso.db` read-only and never calls DCS-gRPC for it. Run an LSO client build that enables WAL journaling (0.4.0 or later) so both processes can use the file at the same time. Example: `C:\LSO\recordings` |
+| `AI_COMMANDER_URL` | Base URL of the dcs-ai-commander service, e.g. `http://127.0.0.1:3010`. With `AI_COMMANDER_SECRET`, enables the AI Commander page (`/api/ai/*`). |
+| `AI_COMMANDER_SECRET` | Shared secret sent to dcs-ai-commander as `X-Commander-Key`. |
 
 ### Tacview Downloads
 | Variable | Purpose |

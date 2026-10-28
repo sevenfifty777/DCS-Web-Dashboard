@@ -34,6 +34,7 @@ export const NAV_PAGES: readonly NavPage[] = [
   { id: 'lso', href: '/lso', label: 'LSO', match: 'prefix' },
   { id: 'tacview', href: '/tacview', label: 'Tacview' },
   { id: 'tasks', href: '/tasks', label: 'Tasks' },
+  { id: 'ai-commander', href: '/ai-commander', label: 'AI Commander' },
 ];
 
 /** Does `pathname` count as being "on" this page for the active highlight? */

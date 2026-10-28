@@ -2,13 +2,14 @@
 
 use axum::{
     extract::DefaultBodyLimit,
-    routing::{get, post},
+    routing::{any, get, post},
     Json, Router,
 };
 use serde_json::json;
 
 use crate::state::AppState;
 
+mod ai;
 mod auth;
 mod dcs;
 mod downloads;
@@ -235,6 +236,10 @@ pub fn router() -> Router<AppState> {
         // Telemetry streams (public; an EventSource cannot send auth headers).
         .route("/api/events/stream", get(stream::events_stream))
         .route("/api/radar/stream", get(stream::radar_stream))
+        // AI Commander: proxied to the dcs-ai-commander service (session-protected;
+        // the SSE stream verifies the JWT from `?token=`).
+        .route("/api/ai/stream", get(ai::stream))
+        .route("/api/ai/{*path}", any(ai::proxy))
 }
 
 /// Liveness probe for the dashboard process itself (not the DCS-gRPC server).

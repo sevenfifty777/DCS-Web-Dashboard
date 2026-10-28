@@ -49,6 +49,7 @@ jsonwebtoken = "9.3"
 reqwest = { version = "0.12", default-features = false, features = [
     "json",
     "rustls-tls",
+    "stream",
 ] }
 
 # Embedded static frontend (Next.js `out/`)
