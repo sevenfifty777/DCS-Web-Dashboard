@@ -116,6 +116,10 @@ export const ai = {
   log: (since = 0, limit = 100) =>
     apiFetch(`/api/ai/log?since=${since}&limit=${limit}`).then((r) => readJson<{ tool_calls: ToolCallRow[]; llm_calls: LlmCallRow[] }>(r)),
   settings: () => apiFetch('/api/ai/settings').then((r) => readJson<AiSettings>(r)),
+  /** Archive the commander's conversation; it starts from an empty history at its next wake. */
+  resetConversation: (by = 'dashboard') =>
+    apiFetch('/api/ai/conversation/reset', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ by }) })
+      .then((r) => readJson<{ reset: string; applies: string; by: string }>(r)),
   updateSettings: (patch: Partial<Pick<AiSettings, 'kill_switch' | 'mission_brief' | 'daily_budget_usd' | 'protected_flags'>> & { tool_tiers?: Record<string, string | null> }) =>
     apiFetch('/api/ai/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch) })
       .then((r) => readJson<{ changed: string[] }>(r)),

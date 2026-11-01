@@ -14,7 +14,8 @@ const head: React.CSSProperties = { ...cell, color: 'var(--text-dim)', fontFamil
 
 function when(iso: string): string {
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  if (Number.isNaN(d.getTime())) return iso;
+  return `${d.toLocaleDateString([], { day: '2-digit', month: 'short' })} ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
 }
 
 function statusColor(status: string): string {

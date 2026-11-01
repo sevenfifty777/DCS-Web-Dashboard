@@ -13,6 +13,27 @@ import { AiSettings } from '@/components/ai/AiSettings';
 const STATUS_POLL_MS = 5000;
 /** Lines kept in the transcript; older ones are dropped from the top. */
 const MAX_CHAT_LINES = 600;
+/** localStorage key of the transcript cursor set by "Clear view"; lines up to it stay hidden on this browser. */
+const CHAT_CURSOR_KEY = 'ai-commander.chat-cursor';
+
+function readStoredCursor(): number {
+  try {
+    const raw = window.localStorage.getItem(CHAT_CURSOR_KEY);
+    const n = raw ? Number(raw) : 0;
+    return Number.isFinite(n) && n > 0 ? n : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function storeCursor(cursor: number): void {
+  try {
+    if (cursor > 0) window.localStorage.setItem(CHAT_CURSOR_KEY, String(cursor));
+    else window.localStorage.removeItem(CHAT_CURSOR_KEY);
+  } catch {
+    // private window or blocked storage: the clear then lasts for this page load only
+  }
+}
 
 type Tab = 'log' | 'settings';
 
@@ -24,6 +45,7 @@ export default function AiCommanderPage() {
   const [approvals, setApprovals] = useState<Approval[]>([]);
   const [tab, setTab] = useState<Tab>('log');
   const [logVersion, setLogVersion] = useState(0);
+  const [hiddenHistory, setHiddenHistory] = useState(false);
   const chatCursor = useRef(0);
   const tempId = useRef(-1);
 
@@ -56,9 +78,15 @@ export default function AiCommanderPage() {
     }
   }, []);
 
-  // Initial load + status polling.
+  // Initial load + status polling. A cursor stored by "Clear view" hides the
+  // lines before it on this browser.
   useEffect(() => {
     const initial = setTimeout(() => {
+      const stored = readStoredCursor();
+      if (stored > 0) {
+        chatCursor.current = stored;
+        setHiddenHistory(true);
+      }
       void loadStatus();
       void loadChat();
       void loadApprovals();
@@ -110,6 +138,30 @@ export default function AiCommanderPage() {
     void loadStatus();
   };
 
+  /** Hide everything so far: advance the cursor past the newest stored line and empty the view. */
+  const clearChat = async () => {
+    const body = await ai.chat(chatCursor.current, 1000);
+    if (body.last_id > chatCursor.current) chatCursor.current = body.last_id;
+    storeCursor(chatCursor.current);
+    setChat([]);
+    setHiddenHistory(true);
+  };
+
+  const showAllChat = async () => {
+    chatCursor.current = 0;
+    storeCursor(0);
+    setChat([]);
+    setHiddenHistory(false);
+    await loadChat();
+  };
+
+  /** Server-side reset of the commander's memory, then a cleared view; its notice arrives with the next wake. */
+  const resetConversation = async () => {
+    await ai.resetConversation('dashboard');
+    await clearChat();
+    void loadStatus();
+  };
+
   const tabButton = (id: Tab, label: string) => (
     <button
       type="button"
@@ -131,7 +183,7 @@ export default function AiCommanderPage() {
       <AiStatusBar status={status} error={error} streamOpen={streamOpen} onToggleKill={toggleKill} />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(320px, 1fr)', gap: '20px', marginTop: '20px' }}>
-        <AiChat lines={chat} onSend={sendOrder} disabled={!status} />
+        <AiChat lines={chat} onSend={sendOrder} onClear={clearChat} onReset={resetConversation} onShowAll={showAllChat} hiddenHistory={hiddenHistory} disabled={!status} />
         <AiApprovals items={approvals} onResolve={resolve} />
       </div>
 
